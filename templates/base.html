@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}AI Runner{% endblock %} — AI Runner</title>
+<style>
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
+  --accent: #6c8ef7; --accent2: #a78bfa;
+  --success: #34d399; --info: #347bd3; --warning: #fbbf24; --danger: #f87171;
+  --text: #e2e8f0; --muted: #7c8ca0; --border: #2d3555;
+  --font: 'JetBrains Mono', 'Fira Code', monospace;
+  --sans: system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Nav */
+nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 0; height: 52px; }
+.nav-brand { font-family: var(--font); font-weight: 700; font-size: 16px; color: var(--accent2); margin-right: 32px; }
+nav a { color: var(--muted); padding: 4px 14px; border-radius: 6px; font-size: 13px; transition: all .15s; }
+nav a:hover, nav a.active { color: var(--text); background: var(--surface2); text-decoration: none; }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* Layout */
+main { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+.page-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 14px; }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+.badge-pending  { background: #334155; color: #94a3b8; }
+.badge-running  { background: #1e3a5f; color: #60a5fa; }
+.badge-done     { background: #14432a; color: var(--success); }
+.badge-failed   { background: #3b1a1a; color: var(--danger); }
+.badge-cancelled{ background: #2d2d3a; color: #7c8ca0; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+
+/* Forms */
+.form-group { margin-bottom: 16px; }
+label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+input, select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 6px; font-size: 13px; font-family: inherit; transition: border .15s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+textarea { font-family: var(--font); resize: vertical; min-height: 90px; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #5a7ef5; }
+.btn-danger  { background: #3b1a1a; color: var(--danger); border: 1px solid #5a2525; }
+.btn-danger:hover { background: #522222; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--text); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-success { background: #14432a; color: var(--success); border: 1px solid #1d6040; }
+.btn-success:hover { background: #1d5e38; }
+
+/* Alerts */
+.alert { padding: 10px 16px; border-radius: 6px; margin-bottom: 14px; font-size: 13px; }
+.alert-success { background: #14432a; color: var(--success); border: 1px solid #1d6040; }
+.alert-error   { background: #3b1a1a; color: var(--danger); border: 1px solid #5a2525; }
+.alert-info    { background: #1e3a5f; color: #60a5fa; border: 1px solid #2a5591; }
+.alert-warning { background: #3b2a12; color: var(--warning); border: 1px solid #5c4218; }
+
+/* Log viewer */
+.log-box { background: #070a0f; border: 1px solid var(--border); border-radius: 8px; padding: 14px; height: 420px; overflow-y: auto; font-family: var(--font); font-size: 12px; line-height: 1.7; }
+.log-line { display: flex; gap: 12px; }
+.log-ts   { color: #3d5065; flex-shrink: 0; }
+.log-level-SUCESS    { color: var(--success); }
+.log-level-INFO    { color: var(--info); }
+.log-level-WARNING { color: var(--warning); }
+.log-level-ERROR   { color: var(--danger); }
+.log-level-DEBUG   { color: #4a6080; }
+.log-msg { color: var(--text); word-break: break-all; }
+
+/* Stats row */
+.stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 24px; flex: 1; min-width: 140px; }
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.stat-value { font-size: 28px; font-weight: 700; font-family: var(--font); margin-top: 4px; }
+
+/* Dot indicators */
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot-green { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.dot-red   { background: var(--danger); }
+.dot-yellow{ background: var(--warning); box-shadow: 0 0 6px var(--warning); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+/* Misc */
+.monospace { font-family: var(--font); }
+.text-muted { color: var(--muted); }
+.text-success { color: var(--success); }
+.text-danger  { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.mt-8 { margin-top: 8px; }
+.mt-16{ margin-top: 16px; }
+.flex { display: flex; }
+.gap-8 { gap: 8px; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+/* Pagination */
+.pagination { display: flex; gap: 6px; margin-top: 16px; }
+.pagination a, .pagination span { padding: 5px 10px; border-radius: 5px; font-size: 12px; border: 1px solid var(--border); }
+.pagination a:hover { background: var(--surface2); text-decoration: none; }
+.pagination .current { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+@media(max-width: 768px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .stats { gap: 10px; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <span class="nav-brand">⚡ AI Runner</span>
+  <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
+  <a href="{{ url_for('task_create') }}" class="{{ 'active' if request.endpoint == 'task_create' }}">+ New Task</a>
+  <a href="{{ url_for('keys_list') }}" class="{{ 'active' if request.endpoint == 'keys_list' }}">API Keys</a>
+  <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' }}">Settings</a>
+  <a href="{{ url_for('glossary_view') }}" class="{{ 'active' if request.endpoint == 'glossary_view' }}">Glossary</a>
+  <div class="nav-right">
+    {% if session.get('user') %}
+      <span style="font-size:12px; color:var(--muted)">{{ session['user'] }}</span>
+      <a href="{{ url_for('logout') }}" style="font-size:12px; color:var(--muted); padding:4px 10px; border:1px solid var(--border); border-radius:6px;">Logout</a>
+    {% endif %}
+  </div>
+</nav>
+
+<main>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'error' if cat == 'error' else cat }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+</main>
+
+<script>
+// Utility: relative time
+function relTime(ts) {
+  if (!ts) return '—';
+  const diff = Date.now()/1000 - ts;
+  if (diff < 60) return Math.round(diff) + 's ago';
+  if (diff < 3600) return Math.round(diff/60) + 'm ago';
+  if (diff < 86400) return Math.round(diff/3600) + 'h ago';
+  return Math.round(diff/86400) + 'd ago';
+}
+function dur(a, b) {
+  if (!a || !b) return '—';
+  const d = b - a;
+  if (d < 60) return d.toFixed(1) + 's';
+  return Math.round(d/60) + 'm ' + (d%60).toFixed(0) + 's';
+}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

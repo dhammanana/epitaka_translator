@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Settings</h1>
+
+<div class="grid-2" style="align-items:start">
+  <div class="card">
+    <div class="card-title">AI Provider &amp; Model</div>
+    <form method="post">
+      <div class="form-group">
+        <label>Provider</label>
+        <select name="provider" id="provider-select" onchange="updateModels()">
+          {% for p in available_models.keys() %}
+          <option value="{{ p }}" {{ 'selected' if current.provider == p }}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Model</label>
+        <select name="model" id="model-select">
+          {% for p, models in available_models.items() %}
+          {% for m in models %}
+          <option value="{{ m }}"
+            data-provider="{{ p }}"
+            {{ 'selected' if current.model == m }}
+            style="{{ 'display:none' if current.provider != p }}">
+            {{ m }}
+          </option>
+          {% endfor %}
+          {% endfor %}
+        </select>
+        <div class="text-muted mt-8" style="font-size:11px">
+          For Gemini free tier: <code>gemini-1.5-flash</code> is recommended (high quota).
+        </div>
+      </div>
+      <hr>
+      <div class="card-title" style="margin-top:16px">Paths</div>
+      <div class="form-group">
+        <label>Source DB Path <span class="text-muted">(path to epitaka.db)</span></label>
+        <input type="text" name="source_db" value="{{ current.source_db }}"
+               placeholder="/path/to/epitaka.db">
+      </div>
+      <hr>
+      <div class="card-title" style="margin-top:16px">Worker Tuning</div>
+      <div class="form-group">
+        <label>Query Timeout (seconds) <span class="text-muted">default: 300 = 5 min</span></label>
+        <input type="number" name="query_timeout" value="{{ current.query_timeout }}" min="30" max="1800">
+      </div>
+      <div class="form-group">
+        <label>Worker Poll Interval (seconds)</label>
+        <input type="number" name="worker_poll" value="{{ current.worker_poll }}" min="1" max="60">
+      </div>
+      <div class="form-group">
+        <label>Max Concurrent Tasks</label>
+        <input type="number" name="max_concurrent" value="{{ current.max_concurrent }}" min="1" max="5">
+        <div class="text-muted mt-8" style="font-size:11px">
+          Keep at 1 for free-tier Gemini to avoid hitting quota.
+        </div>
+      </div>
+      <hr>
+      <div class="card-title" style="margin-top:16px">Telegram Notifications</div>
+      <div class="form-group">
+        <label>Bot Token <span class="text-muted">(from @BotFather)</span></label>
+        <input type="text" name="telegram_token" value="{{ current.telegram_token }}"
+               placeholder="123456789:ABCdef...">
+      </div>
+      <div class="form-group">
+        <label>Chat ID <span class="text-muted">(your user or group ID)</span></label>
+        <input type="text" name="telegram_chat_id" value="{{ current.telegram_chat_id }}"
+               placeholder="-1001234567890">
+        <div class="text-muted mt-8" style="font-size:11px">
+          Leave both blank to disable notifications.
+          Get your chat ID from <code>@userinfobot</code>.
+        </div>
+      </div>
+      <hr>
+      <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+    </form>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-title">Current Config</div>
+      <table style="font-size:13px">
+        {% for k, v in current.items() %}
+        <tr>
+          <td class="text-muted monospace" style="width:150px">{{ k }}</td>
+          <td>{{ v or '<em style="color:var(--muted)">not set</em>' | safe }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Provider Notes</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8">
+        <strong style="color:var(--text)">Gemini free tier</strong><br>
+        • Flash: 15 RPM, 1M TPM, 1500 RPD<br>
+        • Pro: 2 RPM, 32K TPM, 50 RPD<br>
+        <br>
+        <strong style="color:var(--text)">Timeout note</strong><br>
+        Gemini sometimes silently hangs. The worker enforces a hard
+        thread-level timeout. Set 300s (5 min) for safety.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MODELS = {{ available_models | tojson }};
+
+function updateModels() {
+  const provider = document.getElementById('provider-select').value;
+  const sel      = document.getElementById('model-select');
+  Array.from(sel.options).forEach(opt => {
+    const show = opt.dataset.provider === provider;
+    opt.style.display = show ? '' : 'none';
+    if (show && !MODELS[provider].some(m => sel.value === m)) {
+      sel.value = opt.value;
+    }
+  });
+}
+updateModels();
+</script>
+{% endblock %}

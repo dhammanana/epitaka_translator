@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between" style="margin-bottom:20px">
+  <h1 class="page-title" style="margin:0">Dashboard</h1>
+  <div class="flex gap-8">
+    <a href="{{ url_for('task_create') }}" class="btn btn-primary">＋ New Task</a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  {% set pending  = tasks | selectattr('status','eq','pending')  | list | length %}
+  {% set running  = tasks | selectattr('status','eq','running')  | list | length %}
+  {% set done     = tasks | selectattr('status','eq','done')     | list | length %}
+  {% set failed   = tasks | selectattr('status','eq','failed')   | list | length %}
+  <div class="stat-card">
+    <div class="stat-label">Pending</div>
+    <div class="stat-value" style="color:var(--muted)">{{ pending }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Running</div>
+    <div class="stat-value" style="color:var(--accent)">{{ running }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Done</div>
+    <div class="stat-value" style="color:var(--success)">{{ done }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Failed</div>
+    <div class="stat-value" style="color:var(--danger)">{{ failed }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Glossary Entries</div>
+    <div class="stat-value" style="color:var(--accent2)">{{ gloss_count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">API Keys</div>
+    <div class="stat-value">{{ keys | length }}</div>
+  </div>
+</div>
+
+<!-- Quick key status -->
+{% if keys %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-title">API Key Status</div>
+  <div class="flex gap-8" style="flex-wrap:wrap">
+    {% for k in keys %}
+    <span style="font-size:12px; padding:4px 10px; border-radius:6px;
+      background:{% if not k.is_active %}#1a1d27; color:#4a5568
+      {% elif k.exhausted_at %}#3b2a12; color:var(--warning)
+      {% else %}#14432a; color:var(--success){% endif %};">
+      {% if not k.is_active %}⊘
+      {% elif k.exhausted_at %}⏳
+      {% else %}<span class="dot dot-green" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:4px"></span>{% endif %}
+      {{ k.alias }} <span class="text-muted">({{ k.provider }})</span>
+    </span>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="alert alert-warning">
+  No API keys configured. <a href="{{ url_for('keys_list') }}">Add keys →</a>
+</div>
+{% endif %}
+
+<!-- Tasks table -->
+<div class="card">
+  <div class="flex items-center justify-between" style="margin-bottom:14px">
+    <div class="card-title" style="margin:0">Recent Tasks</div>
+    <span class="text-muted" style="font-size:11px" id="last-refresh">—</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Job Type</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Duration</th>
+        <th>API Key</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="task-table-body">
+      {% for t in tasks %}
+      <tr>
+        <td class="monospace text-muted">#{{ t.id }}</td>
+        <td>{{ t.job_type }}</td>
+        <td>
+          <span class="badge badge-{{ t.status }}">
+            {% if t.status == 'running' %}<span class="dot dot-yellow"></span>{% endif %}
+            {{ t.status }}
+          </span>
+        </td>
+        <td class="text-muted" data-ts="{{ t.created_at }}">{{ t.created_at }}</td>
+        <td class="text-muted monospace" data-start="{{ t.started_at or '' }}" data-end="{{ t.finished_at or '' }}">—</td>
+        <td class="text-muted">{{ t.api_key_id or '—' }}</td>
+        <td><a href="{{ url_for('task_detail', task_id=t.id) }}" class="btn btn-ghost btn-sm">View →</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center; padding:32px; color:var(--muted)">No tasks yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update relative times
+function refreshTimes() {
+  document.querySelectorAll('[data-ts]').forEach(el => {
+    el.textContent = relTime(parseFloat(el.dataset.ts));
+  });
+  document.querySelectorAll('[data-start]').forEach(el => {
+    const s = parseFloat(el.dataset.start);
+    const e = parseFloat(el.dataset.end);
+    if (s) el.textContent = dur(s, e || Date.now()/1000);
+  });
+  document.getElementById('last-refresh').textContent =
+    'Updated ' + relTime(Date.now()/1000 - 1);
+}
+refreshTimes();
+setInterval(refreshTimes, 5000);
+
+// Auto-reload if any running tasks
+const hasRunning = {{ 'true' if tasks | selectattr('status','eq','running') | list else 'false' }};
+if (hasRunning) {
+  setTimeout(() => location.reload(), 10000);
+}
+</script>
+{% endblock %}

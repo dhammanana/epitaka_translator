@@ -1,0 +1,8 @@
+data/
+__pycache__/*
+logs
+*.pyc
+.DS_Store
+progress/
+.env
+

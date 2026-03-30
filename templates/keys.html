@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}API Keys{% endblock %}
+
+{% block content %}
+<h1 class="page-title">API Keys</h1>
+
+<!-- Add key form -->
+<div class="card" style="margin-bottom:24px">
+  <div class="card-title">Add New Key</div>
+  <form method="post" action="{{ url_for('key_add') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+    <div class="form-group" style="flex:0 0 130px;margin:0">
+      <label>Provider</label>
+      <select name="provider">
+        {% for p in providers %}
+        <option value="{{ p }}">{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group" style="flex:1;min-width:150px;margin:0">
+      <label>Alias <span class="text-muted">(nickname)</span></label>
+      <input type="text" name="alias" placeholder="e.g. key-1-free" required>
+    </div>
+    <div class="form-group" style="flex:2;min-width:280px;margin:0">
+      <label>API Key</label>
+      <input type="password" name="api_key" placeholder="AIzaSy…" required>
+    </div>
+    <button type="submit" class="btn btn-primary" style="margin-bottom:0">Add Key</button>
+  </form>
+</div>
+
+<!-- Keys table -->
+<div class="card">
+  <div class="card-title">All Keys ({{ keys | length }})</div>
+  {% if keys %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Provider</th>
+        <th>Alias</th>
+        <th>Status</th>
+        <th>Calls</th>
+        <th>Errors</th>
+        <th>Cooldown ends</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for k in keys %}
+      <tr>
+        <td class="monospace text-muted">{{ k.id }}</td>
+        <td>{{ k.provider }}</td>
+        <td class="monospace">{{ k.alias }}</td>
+        <td>
+          {% if not k.is_active %}
+            <span class="badge badge-cancelled">Disabled</span>
+          {% elif k.exhausted_at %}
+            <span class="badge" style="background:#3b2a12;color:var(--warning)">⏳ Cooldown</span>
+          {% else %}
+            <span class="badge badge-done"><span class="dot dot-green"></span>Active</span>
+          {% endif %}
+        </td>
+        <td class="monospace">{{ k.total_calls }}</td>
+        <td class="monospace {% if k.total_errors > 0 %}text-warning{% endif %}">{{ k.total_errors }}</td>
+        <td class="text-muted monospace" style="font-size:11px">
+          {% if k.exhausted_at %}
+            <span data-cooldown="{{ k.exhausted_at }}">—</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <div class="flex gap-8">
+            {% if k.exhausted_at %}
+            <form method="post" action="{{ url_for('key_reset', key_id=k.id) }}">
+              <button class="btn btn-success btn-sm">↺ Reset</button>
+            </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('key_toggle', key_id=k.id) }}">
+              <input type="hidden" name="active" value="{{ '0' if k.is_active else '1' }}">
+              <button class="btn btn-ghost btn-sm">
+                {{ 'Disable' if k.is_active else 'Enable' }}
+              </button>
+            </form>
+            <form method="post" action="{{ url_for('key_delete', key_id=k.id) }}" onsubmit="return confirm('Delete this key?')">
+              <button class="btn btn-danger btn-sm">✕</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="text-align:center;padding:32px;color:var(--muted)">
+    No API keys configured yet. Add one above.
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-title">Rotation Policy</div>
+  <p style="color:var(--muted);font-size:13px;line-height:1.7">
+    Keys are used in round-robin order, preferring the key with the fewest total calls.
+    When a key hits a rate limit, it enters a <strong style="color:var(--warning)">1-hour cooldown</strong>.
+    After the cooldown it is automatically restored.
+    You can also click <strong>Reset</strong> to clear the cooldown manually.
+  </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const COOLDOWN = 3600; // seconds
+document.querySelectorAll('[data-cooldown]').forEach(el => {
+  const exhausted = parseFloat(el.dataset.cooldown);
+  const endsAt    = exhausted + COOLDOWN;
+  const remaining = endsAt - Date.now()/1000;
+  if (remaining > 0) {
+    const m = Math.ceil(remaining / 60);
+    el.textContent = `~${m}m`;
+  } else {
+    el.textContent = 'clearing…';
+  }
+});
+</script>
+{% endblock %}
