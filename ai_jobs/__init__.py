@@ -9,11 +9,13 @@ To add a new job type:
 from ai_jobs.base_job import BaseJob
 from ai_jobs.glossary_builder import GlossaryBuilderJob
 from ai_jobs.st_job import SentenceTranslatorJob
+from ai_jobs.ut_job import UnifiedTranslatorJob
 
 JOB_REGISTRY: dict[str, type[BaseJob]] = {
     "glossary_builder": GlossaryBuilderJob,
     "translator":      SentenceTranslatorJob, 
-    # "line_splitter":   LineSplitterJob,
+    "translator_all": UnifiedTranslatorJob,
+
 }
 
 

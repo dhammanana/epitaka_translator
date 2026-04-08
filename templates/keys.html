@@ -32,6 +32,7 @@
 <div class="card">
   <div class="card-title">All Keys ({{ keys | length }})</div>
   {% if keys %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -89,6 +90,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div style="text-align:center;padding:32px;color:var(--muted)">
     No API keys configured yet. Add one above.

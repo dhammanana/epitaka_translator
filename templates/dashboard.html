@@ -71,6 +71,7 @@
     <div class="card-title" style="margin:0">Recent Tasks</div>
     <span class="text-muted" style="font-size:11px" id="last-refresh">—</span>
   </div>
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -104,15 +105,17 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// Update relative times
+// Update timestamps and durations
 function refreshTimes() {
   document.querySelectorAll('[data-ts]').forEach(el => {
-    el.textContent = relTime(parseFloat(el.dataset.ts));
+    const v = parseFloat(el.dataset.ts);
+    if (v) el.textContent = localTs(v);
   });
   document.querySelectorAll('[data-start]').forEach(el => {
     const s = parseFloat(el.dataset.start);
@@ -123,7 +126,7 @@ function refreshTimes() {
     'Updated ' + relTime(Date.now()/1000 - 1);
 }
 refreshTimes();
-setInterval(refreshTimes, 5000);
+setInterval(refreshTimes, 30000);
 
 // Auto-reload if any running tasks
 const hasRunning = {{ 'true' if tasks | selectattr('status','eq','running') | list else 'false' }};

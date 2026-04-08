@@ -5,6 +5,7 @@ logs
 .DS_Store
 progress/
 .env
+*.sql
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

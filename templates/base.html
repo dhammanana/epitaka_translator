@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}AI Runner{% endblock %} — AI Runner</title>
+<title>{% block title %}Epitaka Translator{% endblock %} — Epitaka Translator</title>
 <style>
 :root {
   --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a;
@@ -102,6 +102,9 @@ textarea { font-family: var(--font); resize: vertical; min-height: 90px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 
+/* Responsive table wrapper */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
 /* Misc */
 .monospace { font-family: var(--font); }
 .text-muted { color: var(--muted); }
@@ -125,17 +128,35 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 @media(max-width: 768px) {
   .grid-2, .grid-3 { grid-template-columns: 1fr; }
   .stats { gap: 10px; }
+  .stat-card { min-width: calc(50% - 10px); padding: 12px 16px; }
+  .stat-value { font-size: 22px; }
+  main { padding: 16px 12px; }
+  .log-box { height: 300px; font-size: 11px; }
+  .page-title { font-size: 18px; }
+  /* Nav mobile */
+  nav { flex-wrap: wrap; height: auto; padding: 0 12px; gap: 0; }
+  .nav-brand { width: 100%; padding: 10px 0 6px; border-bottom: 1px solid var(--border); margin-right: 0; }
+  .nav-links { display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 0; flex: 1; }
+  .nav-right { padding: 6px 0 8px; width: 100%; border-top: 1px solid var(--border); }
+  nav a { padding: 4px 10px; font-size: 12px; }
+  /* Table on mobile */
+  table { font-size: 12px; }
+  th, td { padding: 7px 8px; }
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+  .flex.gap-8 { flex-wrap: wrap; }
 }
 </style>
 </head>
 <body>
 <nav>
-  <span class="nav-brand">⚡ AI Runner</span>
-  <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
-  <a href="{{ url_for('task_create') }}" class="{{ 'active' if request.endpoint == 'task_create' }}">+ New Task</a>
-  <a href="{{ url_for('keys_list') }}" class="{{ 'active' if request.endpoint == 'keys_list' }}">API Keys</a>
-  <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' }}">Settings</a>
-  <a href="{{ url_for('glossary_view') }}" class="{{ 'active' if request.endpoint == 'glossary_view' }}">Glossary</a>
+  <span class="nav-brand">⚡ Epitaka Translator</span>
+  <div class="nav-links">
+    <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Dashboard</a>
+    <a href="{{ url_for('task_create') }}" class="{{ 'active' if request.endpoint == 'task_create' }}">+ New Task</a>
+    <a href="{{ url_for('keys_list') }}" class="{{ 'active' if request.endpoint == 'keys_list' }}">API Keys</a>
+    <a href="{{ url_for('settings') }}" class="{{ 'active' if request.endpoint == 'settings' }}">Settings</a>
+    <a href="{{ url_for('glossary_view') }}" class="{{ 'active' if request.endpoint == 'glossary_view' }}">Glossary</a>
+  </div>
   <div class="nav-right">
     {% if session.get('user') %}
       <span style="font-size:12px; color:var(--muted)">{{ session['user'] }}</span>
@@ -155,7 +176,23 @@ hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 </main>
 
 <script>
-// Utility: relative time
+// Format Unix timestamp to local datetime string (viewer's timezone)
+function localTs(ts) {
+  if (!ts) return '—';
+  return new Date(ts * 1000).toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+}
+// Short date+time without seconds
+function localTsShort(ts) {
+  if (!ts) return '—';
+  return new Date(ts * 1000).toLocaleString(undefined, {
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+// Relative time (e.g. "3m ago")
 function relTime(ts) {
   if (!ts) return '—';
   const diff = Date.now()/1000 - ts;
@@ -164,12 +201,21 @@ function relTime(ts) {
   if (diff < 86400) return Math.round(diff/3600) + 'h ago';
   return Math.round(diff/86400) + 'd ago';
 }
+// Duration between two unix timestamps
 function dur(a, b) {
   if (!a || !b) return '—';
   const d = b - a;
   if (d < 60) return d.toFixed(1) + 's';
   return Math.round(d/60) + 'm ' + (d%60).toFixed(0) + 's';
 }
+// Render all [data-ts] elements as local timezone times
+function renderAllTimestamps() {
+  document.querySelectorAll('[data-ts]').forEach(el => {
+    const v = parseFloat(el.dataset.ts);
+    if (v) el.textContent = localTs(v);
+  });
+}
+document.addEventListener('DOMContentLoaded', renderAllTimestamps);
 </script>
 {% block scripts %}{% endblock %}
 </body>

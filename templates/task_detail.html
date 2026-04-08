@@ -15,6 +15,7 @@
   <!-- Meta -->
   <div class="card">
     <div class="card-title">Details</div>
+    <div class="table-wrap">
     <table style="font-size:13px">
       <tr><td class="text-muted" style="width:130px">Job Type</td><td>{{ task.job_type }}</td></tr>
       <tr><td class="text-muted">Status</td><td><span class="badge badge-{{ task.status }}">{{ task.status }}</span></td></tr>
@@ -29,13 +30,22 @@
       <tr><td class="text-muted">Error</td><td class="text-danger">{{ task.error_msg }}</td></tr>
       {% endif %}
     </table>
+    </div>
   </div>
 
   <!-- Params -->
   <div class="card">
     <div class="card-title">Job Params</div>
-    <pre class="monospace" style="font-size:12px;color:var(--muted);white-space:pre-wrap">{{ task.job_params | tojson(indent=2) if task.job_params else '{}' }}</pre>
+    <pre class="monospace" style="font-size:12px;color:var(--muted);white-space:pre-wrap">
+      {{ task.job_params | tojson(indent=2) if task.job_params else '{}' }}
+    </pre>
   </div>
+</div>
+<div class="card">
+  <div class="card-title">Job Params</div>
+  <pre class="monospace params-pre" style="font-size:13px; background:var(--bg-secondary); padding:12px; border-radius:6px; overflow:auto; max-height:300px;">
+    {{ task.job_params | tojson(indent=2) | safe if task.job_params else '{}' }}
+  </pre>
 </div>
 
 <!-- Actions -->
@@ -81,15 +91,21 @@
       <span class="monospace text-muted" style="font-size:11px" id="log-count">{{ logs | length }} lines</span>
     </div>
   </div>
-  <div class="log-box" id="log-box">
-    {% for log in logs %}
-    <div class="log-line">
-      <span class="log-ts">{{ log.ts | ctime }}</span>
-      <span class="log-level-{{ log.level }}">[{{ log.level[:4] }}]</span>
-      <span class="log-msg">{{ log.message }}</span>
-    </div>
-    {% endfor %}
+  <div class="log-box" id="log-box" style="font-size:13px; line-height:1.5; overflow-x:auto;">
+  {% for log in logs %}
+  <div class="log-line" style="display:flex; gap:12px; padding:2px 0; white-space:pre-wrap; word-break:break-all;">
+    <span class="log-ts text-muted" style="width:68px; flex-shrink:0; font-feature-settings: 'tnum';">
+      {{ log.ts | ctime | string | slice(-8) }}   <!-- Only show HH:MM:SS -->
+    </span>
+    <span class="log-level-{{ log.level }}" style="width:52px; flex-shrink:0; font-weight:600;">
+      [{{ log.level[:4] }}]
+    </span>
+    <span class="log-msg" style="flex:1; overflow-wrap:anywhere;">
+      {{ log.message }}
+    </span>
   </div>
+  {% endfor %}
+</div>
 </div>
 {% endblock %}
 
@@ -109,43 +125,42 @@ function clearLog() {
 }
 scrollLog();
 
-// Relative times
+// Timestamps in viewer's local timezone
 function refreshTimes() {
   document.querySelectorAll('[data-ts]').forEach(el => {
     const v = parseFloat(el.dataset.ts);
-    if (v) el.textContent = relTime(v);
+    if (v) el.textContent = localTs(v);
   });
   const dc = document.getElementById('dur-cell');
-  if (dc) dc.textContent = dur(parseFloat(dc.dataset.start), parseFloat(dc.dataset.end) || Date.now()/1000);
+  if (dc) {
+    const s = parseFloat(dc.dataset.start);
+    const e = parseFloat(dc.dataset.end) || Date.now()/1000;
+    if (s) dc.textContent = dur(s, e);
+  }
 }
 refreshTimes();
 setInterval(refreshTimes, 5000);
 
-// 1. Add this helper function to format the timestamp in JS
-function formatTs(ts) {
-  const d = new Date(ts * 1000); // convert seconds to ms
-  const pad = (n) => n.toString().padStart(2, '0');
-  
-  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  
-  return `${date} ${time}`;
-}
-
-// 2. Update appendLog to use the new formatter instead of Math.round
 function appendLog(entry) {
-  const dateStr = new Date(entry.ts * 1000).toLocaleString(); // Add this line
+  const timeStr = new Date(entry.ts * 1000).toLocaleTimeString([], {
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+
   const div = document.createElement('div');
   div.className = 'log-line';
-  div.innerHTML =
-    `<span class="log-ts">${dateStr}</span> ` + // Use dateStr here
-    `<span class="log-level-${entry.level}">[${entry.level.slice(0,4)}]</span> ` +
-    `<span class="log-msg">${escHtml(entry.message)}</span>`;
+  div.style.cssText = 'display:flex; gap:12px; padding:2px 0; white-space:pre-wrap; word-break:break-all;';
+
+  div.innerHTML = `
+    <span class="log-ts text-muted" style="width:68px; flex-shrink:0;">${timeStr}</span>
+    <span class="log-level-${entry.level}" style="width:52px; flex-shrink:0; font-weight:600;">[${entry.level.slice(0,4)}]</span>
+    <span class="log-msg" style="flex:1; overflow-wrap:anywhere;">${escHtml(entry.message)}</span>
+  `;
+
   logBox.appendChild(div);
   
   logCount++;
   document.getElementById('log-count').textContent = logCount + ' lines';
-  
+
   if (logBox.scrollHeight - logBox.scrollTop < logBox.clientHeight + 60) {
     scrollLog();
   }
@@ -159,7 +174,7 @@ function escHtml(s) {
 if (taskStatus === 'running' || taskStatus === 'pending') {
   let lastNewLogAt = Date.now();
   const staleWarning = document.getElementById('stale-warning');
-  const STALE_MS = 5 * 60 * 1000; // 5 min
+  const STALE_MS = 5 * 60 * 1000;
 
   function pollLogs() {
     fetch(`/api/tasks/${taskId}/logs?since_id=${lastLogId}`)
@@ -172,7 +187,6 @@ if (taskStatus === 'running' || taskStatus === 'pending') {
         } else if (staleWarning && (Date.now() - lastNewLogAt) >= STALE_MS) {
           staleWarning.style.display = '';
         }
-        // Check if task finished
         return fetch(`/api/tasks`);
       })
       .then(r => r.json())

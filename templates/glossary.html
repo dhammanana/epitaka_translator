@@ -33,6 +33,7 @@
 <!-- Table -->
 <div class="card">
   {% if rows %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -57,6 +58,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
   <div style="text-align:center;padding:48px;color:var(--muted)">
     No glossary entries found.
