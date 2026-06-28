@@ -240,7 +240,6 @@ def _fetch_next_pending() -> dict | None:
 def _active_thread_count() -> int:
     active_threads = [t.name for t in threading.enumerate() if t.is_alive()]
     # This will print ALL threads to your log so you can see if 'task-32' is still there
-    logger.debug(f"Current System Threads: {active_threads}")
     return sum(1 for name in active_threads if name.startswith("task-"))
 
 def run_worker(max_concurrent: int = 2):
@@ -266,8 +265,8 @@ def run_worker(max_concurrent: int = 2):
                         daemon=True,
                     )
                     t.start()
-                else:
-                    logger.debug("No pending tasks.")
+                # else:
+                #     logger.debug("No pending tasks.")
             else:
                 logger.debug("Max concurrent tasks reached (%d). Waiting…", active)
 

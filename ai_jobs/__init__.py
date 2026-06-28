@@ -10,11 +10,13 @@ from ai_jobs.base_job import BaseJob
 from ai_jobs.glossary_builder import GlossaryBuilderJob
 from ai_jobs.st_job import SentenceTranslatorJob
 from ai_jobs.ut_job import UnifiedTranslatorJob
+from ai_jobs.sinhala_job.si_job import SinhalaTranslatorJob
 
 JOB_REGISTRY: dict[str, type[BaseJob]] = {
     "glossary_builder": GlossaryBuilderJob,
     "translator":      SentenceTranslatorJob, 
     "translator_all": UnifiedTranslatorJob,
+    "sinhala_translator": SinhalaTranslatorJob,
 
 }
 

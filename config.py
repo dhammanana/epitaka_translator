@@ -32,7 +32,7 @@ MAX_CONCURRENT_TASKS = 5        # parallel workers (1 = sequential)
 
 # ── Default AI provider / model ──────────────────────────────────
 DEFAULT_PROVIDER = "gemini"
-DEFAULT_MODEL    = "gemini-2.5-flash"   # free-tier default
+DEFAULT_MODEL    = "gemini-3.5-flash"   # free-tier default
 
 AVAILABLE_MODELS = {
     "gemini": [

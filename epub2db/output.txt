@@ -1,0 +1,8 @@
+=== TRANSLATION RESPONSE: Ja-a-iii [350] 10. Devatāpañhajātakavaṇṇanā chunk 1/1 ===
+
+[
+  {"para_id": 1249, "line_id": 1, "english_translation": "10. Devatāpañhajātakavaṇṇanā"},
+  {"para_id": 1250, "line_id": 1, "english_translation": "This Question will be found in the Ummagga Jātaka."},
+  {"para_id": 1251, "line_id": 1, "english_translation": "Devatāpañhajātakavaṇṇanā"},
+  {"para_id": 1252, "line_id": 1, "english_translation": ""}
+]

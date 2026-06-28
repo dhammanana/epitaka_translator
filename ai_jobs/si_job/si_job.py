@@ -1,42 +1,47 @@
 """
-jobs/st_job.py  —  SentenceTranslatorJob orchestrator.
+ai_jobs/si_job/si_job.py  —  SinhalaTranslatorJob orchestrator.
 
-All DB I/O is in st_data.py (each function opens/closes its own connection).
-All prompt/AI logic is in st_prompt.py.
+All DB I/O is in si_data.py (each function opens/closes its own connection).
+All prompt/AI logic is in si_prompt.py (which uses PromptComposer base class).
 This file only contains the run() loop.
+
+The task is to generate Sinhala translations for sentences in the Tipiṭaka
+using the authentic Sinhala translation from sinhala.db as reference.
+Translated sentences are saved to epitaka_si.db and glossary terms to
+sinhala_glossary table in glossary.db.
 
 Params (job_params JSON)
 ------------------------
-  book_id       : str   — restrict to one book (e.g. "DN1")  — optional
-  sc_id         : str   — process a single heading sc_id     — optional
-  batch_size    : int   — headings per run                   (default 5)
-  max_ref_chars : int   — chars of SC reference sent to AI   (default 4000)
-  max_tokens    : int   — soft token cap per AI call         (default 5000)
-  overwrite     : bool  — re-translate existing translations (default false)
+  book_id       : str   — restrict to one book (e.g. "DN1")              — optional
+  sc_id         : str   — process a single heading sc_id (book.para)    — optional
+  batch_size    : int   — headings per run                              (default 5)
+  max_ref_chars : int   — chars of Sinhala reference sent to AI         (default 4000)
+  max_tokens    : int   — soft token cap per AI call                    (default 3000)
+  overwrite     : bool  — re-translate existing translations            (default false)
   key_ids       : str   — comma-sep API key IDs, blank = all
   log_dir       : str   — folder for prompt/response debug logs
-                          (default /tmp/st_logs)
+                          (default /tmp/si_logs)
 """
 
 import logging
 from typing import Any
 
 from ai_jobs.base_job import BaseJob
-import ai_jobs.st_data as data
-import ai_jobs.st_prompt as prompt_lib
+import ai_jobs.sinhala_job.si_data as data
+import ai_jobs.sinhala_job.si_prompt as prompt_lib
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LOG_DIR = "/tmp/st_logs"
+DEFAULT_LOG_DIR = "/tmp/si_logs"
 
 
-class SentenceTranslatorJob(BaseJob):
-    display_name = "Sentence Translator"
+class SinhalaTranslatorJob(BaseJob):
+    display_name = "Sinhala Translator"
     param_schema = {
         "book_id":       {"type": "string",  "label": "Book ID (e.g. DN1)",                        "default": ""},
         "sc_id":         {"type": "string",  "label": "Single heading SC-ID (optional)",            "default": ""},
         "batch_size":    {"type": "integer", "label": "Headings per run",                           "default": 500},
-        "max_ref_chars": {"type": "integer", "label": "Max chars of SC reference text sent to AI",  "default": -1},
+        "max_ref_chars": {"type": "integer", "label": "Max chars of Sinhala reference text sent to AI", "default": -1},
         "max_tokens":    {"type": "integer", "label": "Soft token cap per AI call",                 "default": 3000},
         "overwrite":     {"type": "boolean", "label": "Re-translate already-translated sentences",  "default": False},
         "key_ids":       {"type": "string",  "label": "API key IDs (comma-sep, blank = all)",       "default": ""},
@@ -50,7 +55,7 @@ class SentenceTranslatorJob(BaseJob):
         log_dir       = self.params.get("log_dir") or DEFAULT_LOG_DIR
 
         self.log_info("=" * 60)
-        self.log_info("SentenceTranslator — START")
+        self.log_info("SinhalaTranslator — START")
         self.log_info(f"Params: {self.params}")
         self.log_info(f"Debug logs → {log_dir}")
         self.log_info("=" * 60)
@@ -58,9 +63,17 @@ class SentenceTranslatorJob(BaseJob):
         # ── Validate DBs (quick open/close, no connection kept) ────
         try:
             data.validate_nissaya_db(self.params, self.log_info, self.log_warn)
-            data.validate_sc_db(self.params, self.log_info, self.log_warn)
+            data.validate_sinhala_db(self.params, self.log_info, self.log_warn)
         except RuntimeError as exc:
             self.log_error(f"DB config error: {exc}")
+            raise
+
+        # ── Ensure output DB and glossary table exist ───────────────
+        try:
+            data.ensure_output_db(self.params, self.log_info)
+            data.ensure_sinhala_glossary_table(self.log_info)
+        except Exception as exc:
+            self.log_error(f"Failed to prepare output tables: {exc}")
             raise
 
         # ── Fetch headings (open/close inside) ────────────────────
@@ -83,14 +96,14 @@ class SentenceTranslatorJob(BaseJob):
 
         # ── Per-heading loop ───────────────────────────────────────
         for h_idx, heading in enumerate(headings, 1):
-            sc_id  = heading["sc_id"]
-            title  = heading.get("title") or sc_id
+            book_id = heading["book_id"]
+            para_id = heading["para_id"]
+            title   = heading.get("title") or f"{book_id}.{para_id}"
 
             self.log_info("-" * 60)
             self.log_info(
-                f"[{h_idx}/{len(headings)}] sc_id={sc_id!r}  title={title!r}  "
-                f"book={heading['book_id']}  para={heading['para_id']}  "
-                f"chapter_len={heading.get('chapter_len') or 1}"
+                f"[{h_idx}/{len(headings)}] book={book_id!r}  para={para_id}  "
+                f"title={title!r}  chapter_len={heading.get('chapter_len') or 1}"
             )
             self.heartbeat()
 
@@ -113,13 +126,13 @@ class SentenceTranslatorJob(BaseJob):
             self.log_debug(f"  Found {total_pending} sentences to translate.")
 
 
-            # ── 2. SC reference text (open/close inside) ───────────
+            # ── 2. Sinhala reference text (from sinhala.db) ────────
             try:
-                ref = data.fetch_sc_reference(
-                    self.params, sc_id, self.log_info, self.log_warn
+                sinhala_ref = data.fetch_sinhala_reference(
+                    self.params, book_id, para_id, self.log_info, self.log_warn
                 )
             except Exception as exc:
-                self.log_error(f"fetch_sc_reference failed: {exc}. Skipping.")
+                self.log_error(f"fetch_sinhala_reference failed: {exc}. Skipping.")
                 continue
 
             # ── 3. Glossary block — phrase-aware ngram lookup ─────
@@ -128,13 +141,11 @@ class SentenceTranslatorJob(BaseJob):
                 for para in paragraphs 
                 for sent in para.get("pending", [])
             )
-            self.heartbeat()
             pali_ngrams = prompt_lib.extract_pali_ngrams(pali_text_for_glossary)
             
             glossary_block = data.fetch_glossary_block(
                 pali_ngrams, self.log_info, self.log_warn
             )
-            self.heartbeat()
 
             # ── 4. Nissaya maps for each para (open/close each) ────
             nissaya_blocks: dict[int, str] = {}
@@ -145,35 +156,14 @@ class SentenceTranslatorJob(BaseJob):
                 nissaya_blocks[para["para_id"]] = data.build_nissaya_block(
                     para["sentences"], niss_map
                 )
-            self.heartbeat()
 
-            # ── 5. Commentary & sub-commentary blocks (via book_links) ────
-            # Build the full composite key (book_id, para_id, line_id) for every
-            # sentence in this heading. line_id is only unique within a paragraph,
-            # so we must pass all three columns to avoid cross-paragraph false matches.
-            src_lines: list[tuple] = list(dict.fromkeys(
-                (para["book_id"], para["para_id"], sent["line_id"])
-                for para in paragraphs
-                for sent in para.get("sentences", [])
-                if sent.get("line_id") is not None
-            ))
-            self.heartbeat()
-            commentary_block = data.fetch_commentary_block(
-                self.params, src_lines,
-                max_chars=3000, log_info=self.log_info, log_warn=self.log_warn
-            )
-            self.heartbeat()
-
-            # ── 6. Pali definitions (dictionary lookup for difficult terms) ─
+            # ── 5. Pali definitions (dictionary lookup for difficult terms) ─
             pali_defs_block = data.fetch_pali_definitions_block(
                 pali_text_for_glossary, self.params,
                 self.log_info, self.log_warn
             )
-            self.heartbeat()
 
-            # ── 7. Split paragraphs into token-safe chunks ─────────
-            # NOTE: max_sentences parameter removed — we now chunk by paragraph
-            # to limit at paragraph level instead of sentence level
+            # ── 6. Split paragraphs into token-safe chunks ─────────
             chunks = prompt_lib.chunk_paragraphs(
                 paragraphs,
                 max_tokens = max_tokens,
@@ -183,9 +173,9 @@ class SentenceTranslatorJob(BaseJob):
                 f"{len(chunks)} chunk(s) (max_tokens={max_tokens})."
             )
 
-            # ── 8. Per-chunk: build prompt → call AI → save ────────
+            # ── 7. Per-chunk: build prompt → call AI → save ────────
             for c_idx, chunk in enumerate(chunks, 1):
-                n_sentences = sum(len(p["pending"]) for p in chunk)
+                n_sentences = sum(len(p.get("pending", [])) for p in chunk)
                 self.log_info(
                     f"  Chunk {c_idx}/{len(chunks)}: "
                     f"{n_sentences} sentence(s) across {len(chunk)} para(s)."
@@ -194,39 +184,36 @@ class SentenceTranslatorJob(BaseJob):
 
                 # ── Get previous translated paragraph for context ───
                 prev_para_translation = data.fetch_previous_paragraph_translation(
-                    self.params, heading["book_id"],
+                    self.params, book_id,
                     chunk[0]["para_id"],  # para_id of first para in chunk
                     self.log_info
                 )
-                self.heartbeat()
 
                 user_prompt, flat_sentences = prompt_lib.build_prompt(
-                    sc_id                = sc_id,
-                    sutta_name           = ref["sutta_name"],
+                    book_id              = book_id,
+                    para_id              = para_id,
                     paragraphs           = chunk,
-                    pali_text            = ref["pali_text"],
-                    en_text              = ref["en_text"],
+                    sinhala_ref_text     = sinhala_ref,
+                    pali_text            = sinhala_ref.get("pali_text", ""),
                     nissaya_blocks       = nissaya_blocks,
                     glossary_block       = glossary_block,
-                    commentary_block     = commentary_block,
                     pali_defs_block      = pali_defs_block,
                     prev_para_text       = prev_para_translation,
                     max_ref_chars        = max_ref_chars,
                 )
 
                 # AI call — prompt and response written to log_dir
-                self.heartbeat()
                 raw = prompt_lib.call_ai_with_logging(
                     ask_ai_fn = self.ask_ai,
                     prompt    = user_prompt,
-                    sc_id     = sc_id,
+                    book_id   = book_id,
+                    para_id   = para_id,
                     chunk_idx = c_idx,
                     log_dir   = log_dir,
                     log_info  = self.log_info,
                     log_sucess= self.log_sucess,
                     log_error = self.log_error,
                 )
-                self.heartbeat()
                 if raw is None:
                     self.log_warn(f"  Chunk {c_idx} timed out. Skipping.")
                     continue
@@ -263,26 +250,24 @@ class SentenceTranslatorJob(BaseJob):
                     else:
                         self.log_warn(f"  Cannot determine para_id for: {t}")
 
-                for para_id, para_translations in by_para.items():
-                    book_id = next(
-                        (p["book_id"] for p in chunk if p["para_id"] == para_id),
-                        heading["book_id"],
+                for para_id_out, para_translations in by_para.items():
+                    para_book_id = next(
+                        (p["book_id"] for p in chunk if p["para_id"] == para_id_out),
+                        book_id,
                     )
                     updated = data.save_translations(
-                        self.params, book_id, para_id, para_translations,
+                        self.params, para_book_id, para_id_out, para_translations,
                         self.log_info, self.log_warn, self.log_error,
                     )
                     total_updated += updated
-                    self.heartbeat()
 
                 # Upsert glossary — opens/closes glossary DB inside
                 if new_terms:
                     inserted = data.upsert_glossary(
-                        new_terms, sc_id,
+                        new_terms, f"{book_id}.{para_id}",
                         self.log_info, self.log_warn, self.log_error,
                     )
                     total_glossary += inserted
-                    self.heartbeat()
 
             self.log_info(
                 f"  Heading done. "
@@ -292,7 +277,7 @@ class SentenceTranslatorJob(BaseJob):
 
         self.log_info("=" * 60)
         self.log_info(
-            f"SentenceTranslator — DONE. "
+            f"SinhalaTranslator — DONE. "
             f"Sentences updated: {total_updated}. "
             f"Glossary terms added: {total_glossary}."
         )

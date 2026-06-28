@@ -1,0 +1,734 @@
+{
+  "anya-vm-12": {
+    "book_id": "Vism-ii",
+    "book_name": "Visuddhimaggo II",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.9
+  },
+  "anya-vm": {
+    "book_id": "Vism-i",
+    "book_name": "Visuddhimaggo I",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "ap-dhk": {
+    "book_id": "Dhatuk",
+    "book_name": "Dhātukathāpāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "ap-dhs": {
+    "book_id": "Dhs",
+    "book_name": "Dhammasaṅgaṇīpāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "ap-kvu": {
+    "book_id": "Kv",
+    "book_name": "Kathāvatthupāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "ap-pat": {
+    "book_id": "Paṭṭh-i",
+    "book_name": "Paṭṭhānapāḷi-1",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "ap-pug": {
+    "book_id": "Pp",
+    "book_name": "Puggalapaññattipāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "ap-vbh": {
+    "book_id": "Vibh",
+    "book_name": "Vibhaṅgapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "ap-yam": {
+    "book_id": "Yam-i",
+    "book_name": "Yamakapāḷi-1",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "atta-an-1": {
+    "book_id": "Mp-i",
+    "book_name": "Ekakanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-10": {
+    "book_id": "Mp-x",
+    "book_name": "Dasakanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-11": {
+    "book_id": "Mp-xi",
+    "book_name": "Ekādasakanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-2": {
+    "book_id": "Mp-ii",
+    "book_name": "Dukanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-3": {
+    "book_id": "Mp-iii",
+    "book_name": "Tikanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-4": {
+    "book_id": "Mp-iv",
+    "book_name": "Catukkanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-5": {
+    "book_id": "Mp-v",
+    "book_name": "Pañcakanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-6": {
+    "book_id": "Mp-vi",
+    "book_name": "Chakkanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-7": {
+    "book_id": "Mp-vii",
+    "book_name": "Sattakanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-8": {
+    "book_id": "Mp-viii",
+    "book_name": "Aṭṭhakanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-an-9": {
+    "book_id": "Mp-ix",
+    "book_name": "Navakanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-ap-dhk": {
+    "book_id": "Dhatuk-a",
+    "book_name": "Dhātukathā-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-ap-dhs": {
+    "book_id": "As",
+    "book_name": "Dhammasaṅgaṇī-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-ap-kvu": {
+    "book_id": "Kv-a",
+    "book_name": "Kathāvatthu-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-ap-pat": {
+    "book_id": "Paṭṭh-a",
+    "book_name": "Paṭṭhānappakaraṇa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-ap-pug": {
+    "book_id": "Pp-a",
+    "book_name": "Puggalapaññatti-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-ap-vbh": {
+    "book_id": "Vibh-a",
+    "book_name": "Vibhaṅga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-ap-yam": {
+    "book_id": "Yam-a",
+    "book_name": "Yamakappakaraṇa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-dn-1": {
+    "book_id": "Sv-i",
+    "book_name": "Sīlakkhandhavagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-dn-2": {
+    "book_id": "Sv-ii",
+    "book_name": "Mahāvagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-dn-3": {
+    "book_id": "Sv-iii",
+    "book_name": "Pāthikavagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-ap": {
+    "book_id": "Ap-a",
+    "book_name": "Apadāna-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-bv": {
+    "book_id": "Bv-a",
+    "book_name": "Buddhavaṃsa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-cp": {
+    "book_id": "Cp-a",
+    "book_name": "Cariyāpiṭaka-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-dhp": {
+    "book_id": "Dhp-a",
+    "book_name": "Dhammapada-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-iti": {
+    "book_id": "It-a",
+    "book_name": "Itivuttaka-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-jat": {
+    "book_id": "Ja-a-i",
+    "book_name": "Jātaka-aṭṭhakathā-1",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.9
+  },
+  "atta-kn-khp": {
+    "book_id": "Pj-i",
+    "book_name": "Khuddakapāṭha-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-mn": {
+    "book_id": "Nidd-a-i",
+    "book_name": "Mahāniddesa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-nc": {
+    "book_id": "Nidd-a-ii",
+    "book_name": "Cūḷaniddesa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-nett": {
+    "book_id": "Nett-a",
+    "book_name": "Nettippakaraṇa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-ps": {
+    "book_id": "Paṭis-a",
+    "book_name": "Paṭisambhidāmagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-pv": {
+    "book_id": "Pv-a",
+    "book_name": "Petavatthu-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-snp": {
+    "book_id": "Pj-ii",
+    "book_name": "Suttanipāta-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-thag": {
+    "book_id": "Th-a-i",
+    "book_name": "Theragāthā-1-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-thig": {
+    "book_id": "Thī-a",
+    "book_name": "Therīgāthā-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-ud": {
+    "book_id": "Ud-a",
+    "book_name": "Udāna-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-kn-vv": {
+    "book_id": "Vv-a",
+    "book_name": "Vimānavatthu-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-mn-1": {
+    "book_id": "Ps-i",
+    "book_name": "Mūlapaṇṇāsa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-mn-2": {
+    "book_id": "Ps-ii",
+    "book_name": "Majjhimapaṇṇāsa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-mn-3": {
+    "book_id": "Ps-iii",
+    "book_name": "Uparipaṇṇāsa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-sn-1": {
+    "book_id": "Spk-i",
+    "book_name": "Sagāthāvagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-sn-2": {
+    "book_id": "Spk-ii",
+    "book_name": "Nidānavagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-sn-3": {
+    "book_id": "Spk-iii",
+    "book_name": "Khandhavagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-sn-4": {
+    "book_id": "Spk-iv",
+    "book_name": "Saḷāyatanavagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-sn-5": {
+    "book_id": "Spk-v",
+    "book_name": "Mahāvagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-vp-cv": {
+    "book_id": "Sp-iv",
+    "book_name": "Cūḷavagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-vp-mv": {
+    "book_id": "Sp-iii",
+    "book_name": "Mahāvagga-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-vp-pct": {
+    "book_id": "Sp-ii",
+    "book_name": "Pācittiya-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-vp-prj": {
+    "book_id": "Sp-i",
+    "book_name": "Pārājikakaṇḍa-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "atta-vp-pv": {
+    "book_id": "Sp-v",
+    "book_name": "Parivāra-aṭṭhakathā",
+    "category": "Aṭṭhakathā",
+    "confidence": 0.95
+  },
+  "dn-1": {
+    "book_id": "D-i",
+    "book_name": "DN1-Sīlakkhandhavaggapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "dn-2": {
+    "book_id": "D-ii",
+    "book_name": "DN2-Mahāvaggapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "dn-3": {
+    "book_id": "D-iii",
+    "book_name": "DN3-Pāthikavaggapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-ap": {
+    "book_id": "Ap-i",
+    "book_name": "TherāpadānapāḷiPaṭhamo",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-bv": {
+    "book_id": "Bv",
+    "book_name": "Buddhavaṃsapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-cp": {
+    "book_id": "Cp",
+    "book_name": "Cariyāpiṭakapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-dhp": {
+    "book_id": "Dhp",
+    "book_name": "Dhammapadapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-iti": {
+    "book_id": "It",
+    "book_name": "Itivuttakapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-jat": {
+    "book_id": "Ja-i",
+    "book_name": "JātakapāḷiPaṭhamo",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-khp": {
+    "book_id": "Khp",
+    "book_name": "Khuddakapāṭhapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-mn": {
+    "book_id": "Nidd-i",
+    "book_name": "Mahāniddesapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-nc": {
+    "book_id": "Nidd-ii",
+    "book_name": "Cūḷaniddesapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-nett": {
+    "book_id": "Nett",
+    "book_name": "Nettippakaraṇapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-petk": {
+    "book_id": "Pet",
+    "book_name": "Peṭakopadesapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-ps": {
+    "book_id": "Paṭis",
+    "book_name": "Paṭisambhidāmaggapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-pv": {
+    "book_id": "Pv",
+    "book_name": "Petavatthupāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-snp": {
+    "book_id": "Sn",
+    "book_name": "Suttanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-thag": {
+    "book_id": "Th",
+    "book_name": "Theragāthāpāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-thig": {
+    "book_id": "Thī",
+    "book_name": "Therīgāthāpāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-ud": {
+    "book_id": "Ud",
+    "book_name": "Udānapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "kn-vv": {
+    "book_id": "Vv",
+    "book_name": "Vimānavatthupāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "mn-1": {
+    "book_id": "M-i",
+    "book_name": "MN1-Mūlapaṇṇāsapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "mn-2": {
+    "book_id": "M-ii",
+    "book_name": "MN2-Majjhimapaṇṇāsapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "mn-3": {
+    "book_id": "M-iii",
+    "book_name": "MN3-Uparipaṇṇāsapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "sn-1": {
+    "book_id": "S-i",
+    "book_name": "SN1-Sagāthāvaggo",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "sn-2": {
+    "book_id": "S-ii",
+    "book_name": "SN2-Nidānavaggo",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "sn-3": {
+    "book_id": "S-iii",
+    "book_name": "SN3-Khandhavaggo",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "sn-4": {
+    "book_id": "S-iv",
+    "book_name": "SN4-Saḷāyatanavaggo",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "sn-5": {
+    "book_id": "S-v",
+    "book_name": "SN5-Mahāvaggo",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "vp-cv": {
+    "book_id": "Vin-iv",
+    "book_name": "Cūḷavaggapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "vp-mv": {
+    "book_id": "Vin-iii",
+    "book_name": "Mahāvaggapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "vp-pct": {
+    "book_id": "Vin-ii",
+    "book_name": "Pācittiyapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "vp-prj": {
+    "book_id": "Vin-i",
+    "book_name": "Pārājikapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "vp-pv": {
+    "book_id": "Vin-v",
+    "book_name": "Parivārapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-1": {
+    "book_id": "A-i",
+    "book_name": "AN1-Ekakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-10-2": {
+    "book_id": "A-x",
+    "book_name": "AN10-Dasakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-10-3": {
+    "book_id": "A-x",
+    "book_name": "AN10-Dasakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-10-4": {
+    "book_id": "A-x",
+    "book_name": "AN10-Dasakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-10-5": {
+    "book_id": "A-x",
+    "book_name": "AN10-Dasakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-10": {
+    "book_id": "A-x",
+    "book_name": "AN10-Dasakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-11": {
+    "book_id": "A-xi",
+    "book_name": "AN11-Ekādasakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-2": {
+    "book_id": "A-ii",
+    "book_name": "AN2-Dukanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-3-2": {
+    "book_id": "A-iii",
+    "book_name": "AN3-Tikanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-3-3": {
+    "book_id": "A-iii",
+    "book_name": "AN3-Tikanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-3": {
+    "book_id": "A-iii",
+    "book_name": "AN3-Tikanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-4-2": {
+    "book_id": "A-iv",
+    "book_name": "AN4-Catukkanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-4-3": {
+    "book_id": "A-iv",
+    "book_name": "AN4-Catukkanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-4-4": {
+    "book_id": "A-iv",
+    "book_name": "AN4-Catukkanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-4-5": {
+    "book_id": "A-iv",
+    "book_name": "AN4-Catukkanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-4": {
+    "book_id": "A-iv",
+    "book_name": "AN4-Catukkanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-5-2": {
+    "book_id": "A-v",
+    "book_name": "AN5-Pañcakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-5-3": {
+    "book_id": "A-v",
+    "book_name": "AN5-Pañcakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-5-4": {
+    "book_id": "A-v",
+    "book_name": "AN5-Pañcakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-5-5": {
+    "book_id": "A-v",
+    "book_name": "AN5-Pañcakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-5": {
+    "book_id": "A-v",
+    "book_name": "AN5-Pañcakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-6-2": {
+    "book_id": "A-vi",
+    "book_name": "AN6-Chakkanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-6": {
+    "book_id": "A-vi",
+    "book_name": "AN6-Chakkanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-7-2": {
+    "book_id": "A-vii",
+    "book_name": "AN7-Sattakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-7": {
+    "book_id": "A-vii",
+    "book_name": "AN7-Sattakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-8-2": {
+    "book_id": "A-viii",
+    "book_name": "AN8-Aṭṭhakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.85
+  },
+  "an-8": {
+    "book_id": "A-viii",
+    "book_name": "AN8-Aṭṭhakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  },
+  "an-9": {
+    "book_id": "A-ix",
+    "book_name": "AN9-Navakanipātapāḷi",
+    "category": "Mūla",
+    "confidence": 0.95
+  }
+}

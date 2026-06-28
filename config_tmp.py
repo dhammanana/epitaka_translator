@@ -10,15 +10,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── Paths ──────────────────────────────────────────────────────────────────
-DB_PATH       = os.getenv("DB_PATH", "data/nissaya.db")
+DB_PATH       = os.getenv("DB_PATH", "data/epitaka.db")
 PROGRESS_DIR  = os.getenv("PROGRESS_DIR", "./progress")
 EMBEDDINGS_DIR = os.getenv("EMBEDDINGS_DIR", "./embeddings_cache")
 
-NISSAYA_DB_PATH = 'data/nissaya.db'
+NISSAYA_DB_PATH = 'data/epitaka.db'
 SC_DATA_DB_PATH = 'data/sc-data.db'
 
 # ── Gemini ─────────────────────────────────────────────────────────────────
-GEMINI_MODEL      = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
+GEMINI_MODEL      = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_MAX_TOKENS = int(os.getenv("GEMINI_MAX_TOKENS", "2048"))
 
 # Free-tier limits per key

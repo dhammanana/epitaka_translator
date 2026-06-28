@@ -344,7 +344,7 @@ def fetch_nissaya_map(
         ).fetchall()
 
     result = {r["line_id"]: (r["content"] or "") for r in rows}
-    log_info(f"[DB]   nissaya rows for para_id={para_id}: {len(result)}")
+    # log_info(f"[DB]   nissaya rows for para_id={para_id}: {len(result)}")
     return result
 
 

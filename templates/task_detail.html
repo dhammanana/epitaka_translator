@@ -95,7 +95,7 @@
   {% for log in logs %}
   <div class="log-line" style="display:flex; gap:12px; padding:2px 0; white-space:pre-wrap; word-break:break-all;">
     <span class="log-ts text-muted" style="width:68px; flex-shrink:0; font-feature-settings: 'tnum';">
-      {{ log.ts | ctime | string | slice(-8) }}   <!-- Only show HH:MM:SS -->
+      {{ log.ts }}   <!-- Only show HH:MM:SS -->
     </span>
     <span class="log-level-{{ log.level }}" style="width:52px; flex-shrink:0; font-weight:600;">
       [{{ log.level[:4] }}]

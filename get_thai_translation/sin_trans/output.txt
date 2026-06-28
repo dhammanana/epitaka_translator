@@ -1,0 +1,1008 @@
+You are an expert in Pali Buddhist texts and their canonical classification.
+You will be given two lists:
+  A) Sinhala edition filenames with their Pali Roman transliteration names
+  B) Nissaya database book IDs with their book names and categories
+
+Your task: produce a JSON array pairing each Sinhala filename to the correct Nissaya book_id.
+
+Pairing rules:
+- "mula" collection = root Pali texts (Tipiṭaka). Match to Mūla category books.
+- "atta-" prefix = Aṭṭhakathā (commentaries). Match to Aṭṭhakathā category books.
+- "tika-" prefix = Ṭīkā (sub-commentaries). Match to Ṭīkā category books.
+- Numeric suffixes indicate volume: "an-1" = AN vol 1, "Mp-i" = Manorathapūraṇī vol 1
+- Common mappings:
+    an-*      ↔  A-*    (Aṅguttara Nikāya root)
+    atta-an-* ↔  Mp-*   (Manorathapūraṇī = AN commentary)
+    dn-*      ↔  D-*    (Dīgha Nikāya root)
+    atta-dn-* ↔  Sv-*   (Sumaṅgalavilāsinī = DN commentary)
+    mn-*      ↔  M-*    (Majjhima Nikāya root)
+    atta-mn-* ↔  Ps-*   (Papañcasūdanī = MN commentary)
+    sn-*      ↔  S-*    (Saṃyutta Nikāya root)
+    atta-sn-* ↔  Spk-*  (Sāratthappakāsinī = SN commentary)
+    kn-dhp    ↔  Dhp    (Dhammapada root)
+    atta-kn-dhp ↔ Dhp-a (Dhammapada-aṭṭhakathā)
+    kn-thag   ↔  Th     (Theragāthā)
+    kn-thig   ↔  Thī    (Therīgāthā)
+    vp-*      ↔  Vin-*  (Vinaya Piṭaka root)
+- Only pair when confident. Omit doubtful pairs.
+- One sinhala filename → one nissaya book_id maximum.
+
+Return ONLY a JSON array, no explanation, no markdown fences:
+[
+  {
+    "sinhala_filename": "...",
+    "sinhala_pali_roman": "...",
+    "nissaya_book_id": "...",
+    "nissaya_book_name": "..."
+  }
+]
+
+
+
+=== SINHALA FILENAMES (with pali_roman) ===
+  an-1 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 1. ekaka nipāto
+  an-10 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 10. dasakanipāto
+  an-11 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 11. ekādasako nipāto
+  an-2 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 2. dukanipāto
+  an-3 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 3. tikanipāto
+  an-4 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 4. catukkanipāto
+  an-5 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 5. pañcakanipāto
+  an-6 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 6. chakkanipāto
+  an-7 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 7. sattakanipāto
+  an-8 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 8. aṭṭhakanipāto
+  an-9 | pali_roman=suttapiṭaka > aṅguttaranikāyo > 9. navakanipāto
+  anya-vm | pali_roman=anya > visuddhimaggo
+  anya-vm-12 | pali_roman=anya > visuddhimaggo > 12. iddhividhaniddeso
+  ap-dhk | pali_roman=abhidhammapiṭaka > dhātukathāppakaraṇaṃ
+  ap-dhs | pali_roman=abhidhammapiṭaka > dhammasaṅgaṇippakaraṇaṃ
+  ap-kvu | pali_roman=abhidhammapiṭaka > kathāvatthuppakaraṇaṃ
+  ap-pat | pali_roman=abhidhammapiṭaka > paṭṭhānappakaraṇaṃ
+  ap-pat-1 | pali_roman=abhidhammapiṭaka > paṭṭhānappakaraṇaṃ > 1. tikapaṭṭhānaṃ
+  ap-pat-2 | pali_roman=abhidhammapiṭaka > paṭṭhānappakaraṇaṃ > 2. dukapaṭṭhānaṃ
+  ap-pat-3 | pali_roman=abhidhammapiṭaka > paṭṭhānappakaraṇaṃ > 3. dukatika paṭṭhānaṃ
+  ap-pat-4 | pali_roman=abhidhammapiṭaka > paṭṭhānappakaraṇaṃ > 4. tikaduka paṭṭhānaṃ
+  ap-pug | pali_roman=abhidhammapiṭaka > puggalapaññattippakaraṇaṃ
+  ap-vbh | pali_roman=abhidhammapiṭaka > vibhaṅgappakaraṇaṃ
+  ap-yam | pali_roman=abhidhammapiṭaka > yamakappakaraṇaṃ
+  ap-yam-10 | pali_roman=abhidhammapiṭaka > yamakappakaraṇaṃ > 10. indriya yamakaṃ
+  ap-yam-3 | pali_roman=abhidhammapiṭaka > yamakappakaraṇaṃ > 3. āyatanayamakaṃ
+  ap-yam-4 | pali_roman=abhidhammapiṭaka > yamakappakaraṇaṃ > 4. dhātuyamakaṃ
+  ap-yam-6 | pali_roman=abhidhammapiṭaka > yamakappakaraṇaṃ > 6. saṅkhārayamakaṃ
+  ap-yam-7 | pali_roman=abhidhammapiṭaka > yamakappakaraṇaṃ > 7. anusayayamakaṃ
+  ap-yam-8 | pali_roman=abhidhammapiṭaka > yamakappakaraṇaṃ > 8. cittayamakaṃ
+  atta-an-1 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > ekakanipāta-aṭṭhakathā
+  atta-an-10 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > dasakanipāta-aṭṭhakathā
+  atta-an-11 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > ekādasakanipāta-aṭṭhakathā
+  atta-an-2 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > dukanipāta-aṭṭhakathā
+  atta-an-3 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > tikanipāta-aṭṭhakathā
+  atta-an-4 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > catukkanipāta-aṭṭhakathā
+  atta-an-5 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > pañcakanipāta-aṭṭhakathā
+  atta-an-6 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > chakkanipāta-aṭṭhakathā
+  atta-an-7 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > sattakanipāta-aṭṭhakathā
+  atta-an-8 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > aṭṭhakanipāta-aṭṭhakathā
+  atta-an-9 | pali_roman=sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > navakanipāta-aṭṭhakathā
+  atta-ap-dhk | pali_roman=abhidhamma aṭṭhakathā > dhātukathā-aṭṭhakathā
+  atta-ap-dhs | pali_roman=abhidhamma aṭṭhakathā > dhammasaṅgaṇī-aṭṭhakathā
+  atta-ap-dhs-3 | pali_roman=abhidhamma aṭṭhakathā > dhammasaṅgaṇī-aṭṭhakathā > 2. rūpakaṇḍo
+  atta-ap-kvu | pali_roman=abhidhamma aṭṭhakathā > kathāvatthu-aṭṭhakathā
+  atta-ap-pat | pali_roman=abhidhamma aṭṭhakathā > paṭṭhānappakaraṇa-aṭṭhakathā
+  atta-ap-pug | pali_roman=abhidhamma aṭṭhakathā > puggalapaññatti-aṭṭhakathā
+  atta-ap-vbh | pali_roman=abhidhamma aṭṭhakathā > vibhaṅga-aṭṭhakathā
+  atta-ap-yam | pali_roman=abhidhamma aṭṭhakathā > yamakappakaraṇa-aṭṭhakathā
+  atta-dn-1 | pali_roman=sutta aṭṭhakathā > dīghanikāya aṭṭhakathā > sīlakkhandhavaggaṭṭhakathā
+  atta-dn-2 | pali_roman=sutta aṭṭhakathā > dīghanikāya aṭṭhakathā > mahāvaggaṭṭhakathā
+  atta-dn-3 | pali_roman=sutta aṭṭhakathā > dīghanikāya aṭṭhakathā > pāthīkavaggo-aṭṭhakathā
+  atta-kn-ap | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > apadāna-aṭṭhakathā
+  atta-kn-bv | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > buddhavaṃsa-aṭṭhakathā
+  atta-kn-cp | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > cariyāpiṭaka-aṭṭhakathā
+  atta-kn-dhp | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > dhammapada-aṭṭhakathā
+  atta-kn-iti | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > itivuttaka-aṭṭhakathā
+  atta-kn-jat | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā
+  atta-kn-jat-1 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 1. ekakanipāto
+  atta-kn-jat-14 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 14. pakiṇṇakanipāto
+  atta-kn-jat-17 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 17. cattālīsanipāto
+  atta-kn-jat-2 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 2. dukanipāto
+  atta-kn-jat-21 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 21. asītinipāto
+  atta-kn-jat-22 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > mahānipāto
+  atta-kn-jat-3 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 3. tikanipāto
+  atta-kn-jat-4 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 4. catukkanipāto
+  atta-kn-jat-6 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 6. chakkanipāto
+  atta-kn-jat-9 | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > jātaka-aṭṭhakathā > 9. navakanipāto
+  atta-kn-khp | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > khuddakapāṭha-aṭṭhakathā
+  atta-kn-mn | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > mahāniddesa-aṭṭhakathā
+  atta-kn-nc | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > cūl̤aniddesa-aṭṭhakathā
+  atta-kn-nett | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > nettippakaraṇa-aṭṭhakathā
+  atta-kn-ps | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > paṭisambhidāmagga-aṭṭhakathā
+  atta-kn-pv | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > petavatthu-aṭṭhakathā
+  atta-kn-snp | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > suttanipāta-aṭṭhakathā
+  atta-kn-thag | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > theragāthā-aṭṭhakathā
+  atta-kn-thig | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > therīgāthā-aṭṭhakathā
+  atta-kn-ud | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > udāna-aṭṭhakathā
+  atta-kn-vv | pali_roman=sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > vimānavatthu-aṭṭhakathā
+  atta-mn-1 | pali_roman=sutta aṭṭhakathā > majjhimanikāya aṭṭhakathā > mūlapaṇṇāsa-aṭṭhakathā
+  atta-mn-2 | pali_roman=sutta aṭṭhakathā > majjhimanikāya aṭṭhakathā > majjhimapaṇṇāsa-aṭṭhakathā
+  atta-mn-3 | pali_roman=sutta aṭṭhakathā > majjhimanikāya aṭṭhakathā > uparipaṇṇāsa-aṭṭhakathā
+  atta-sn | pali_roman=sutta aṭṭhakathā > saṃyuttanikāyo aṭṭhakathā
+  atta-vp-cv | pali_roman=vinaya aṭṭhakathā > cūl̤avagga-aṭṭhakathā
+  atta-vp-mv | pali_roman=vinaya aṭṭhakathā > mahāvagga-aṭṭhakathā
+  atta-vp-pct | pali_roman=vinaya aṭṭhakathā > pācittiya-aṭṭhakathā
+  atta-vp-prj | pali_roman=vinaya aṭṭhakathā > pārājikakaṇḍa-aṭṭhakathā
+  atta-vp-pv | pali_roman=vinaya aṭṭhakathā > parivāra-aṭṭhakathā
+  dn-1 | pali_roman=suttapiṭaka > dīghanikāya > sīlakkhandhavaggo
+  dn-2 | pali_roman=suttapiṭaka > dīghanikāya > mahāvaggo
+  dn-3 | pali_roman=suttapiṭaka > dīghanikāya > pāthikavaggo
+  kn-ap | pali_roman=suttapiṭaka > khuddakanikāyo > apadānapāl̤i
+  kn-bv | pali_roman=suttapiṭaka > khuddakanikāyo > buddhavaṃsapāl̤i
+  kn-cp | pali_roman=suttapiṭaka > khuddakanikāyo > cariyāpiṭakapāl̤i
+  kn-dhp | pali_roman=suttapiṭaka > khuddakanikāyo > dhammapadapāl̤i
+  kn-iti | pali_roman=suttapiṭaka > khuddakanikāyo > itivuttakapāl̤i
+  kn-jat | pali_roman=suttapiṭaka > khuddakanikāyo > jātakapāl̤i
+  kn-jat-15 | pali_roman=suttapiṭaka > khuddakanikāyo > jātakapāl̤i > 15. vīsatinipāto
+  kn-jat-5 | pali_roman=suttapiṭaka > khuddakanikāyo > jātakapāl̤i > 5. pañcakanipāto
+  kn-khp | pali_roman=suttapiṭaka > khuddakanikāyo > khuddakapāṭhapāl̤i
+  kn-mn | pali_roman=suttapiṭaka > khuddakanikāyo > mahāniddesapāl̤i
+  kn-nc | pali_roman=suttapiṭaka > khuddakanikāyo > cullaniddesapāl̤i
+  kn-nett | pali_roman=suttapiṭaka > khuddakanikāyo > nettippakaraṇaṃ
+  kn-petk | pali_roman=suttapiṭaka > khuddakanikāyo > peṭakopadeso
+  kn-ps | pali_roman=suttapiṭaka > khuddakanikāyo > paṭisambhidāmaggo
+  kn-pv | pali_roman=suttapiṭaka > khuddakanikāyo > petavatthupāl̤i
+  kn-snp | pali_roman=suttapiṭaka > khuddakanikāyo > suttanipāto
+  kn-thag | pali_roman=suttapiṭaka > khuddakanikāyo > theragāthāpāl̤i
+  kn-thig | pali_roman=suttapiṭaka > khuddakanikāyo > therīgāthāpāl̤i
+  kn-ud | pali_roman=suttapiṭaka > khuddakanikāyo > udānapāl̤i
+  kn-vv | pali_roman=suttapiṭaka > khuddakanikāyo > vimānavatthupāl̤i
+  mn-1 | pali_roman=suttapiṭaka > majjhimanikāya > mūlapaṇṇāsako
+  mn-2 | pali_roman=suttapiṭaka > majjhimanikāya > majjhimapaṇṇāsako
+  mn-3 | pali_roman=suttapiṭaka > majjhimanikāya > uparipaṇṇāsako
+  sn-1 | pali_roman=suttapiṭaka > saṃyuttanikāyo > sagāthavaggo
+  sn-2 | pali_roman=suttapiṭaka > saṃyuttanikāyo > nidānavaggo
+  sn-3 | pali_roman=suttapiṭaka > saṃyuttanikāyo > khandhakavaggo
+  sn-4 | pali_roman=suttapiṭaka > saṃyuttanikāyo > sal̤āyatanavaggo
+  sn-5 | pali_roman=suttapiṭaka > saṃyuttanikāyo > mahāvaggo
+  vp-cv | pali_roman=vinayapiṭaka > cullavaggapāl̤i
+  vp-mv | pali_roman=vinayapiṭaka > mahāvaggapāl̤iyā
+  vp-pct | pali_roman=vinayapiṭaka > pācittiyapāl̤i
+  vp-prj | pali_roman=vinayapiṭaka > pārājikapāl̤i
+  vp-pv | pali_roman=vinayapiṭaka > parivārapāl̤i
+
+=== NISSAYA BOOK IDs (with book_name | category | nikaya) ===
+  A-i | AN1-Ekakanipātapāḷi | Mūla | Sutta Piṭaka
+  A-ii | AN2-Dukanipātapāḷi | Mūla | Sutta Piṭaka
+  A-iii | AN3-Tikanipātapāḷi | Mūla | Sutta Piṭaka
+  A-iv | AN4-Catukkanipātapāḷi | Mūla | Sutta Piṭaka
+  A-ix | AN9-Navakanipātapāḷi | Mūla | Sutta Piṭaka
+  A-v | AN5-Pañcakanipātapāḷi | Mūla | Sutta Piṭaka
+  A-vi | AN6-Chakkanipātapāḷi | Mūla | Sutta Piṭaka
+  A-vii | AN7-Sattakanipātapāḷi | Mūla | Sutta Piṭaka
+  A-viii | AN8-Aṭṭhakanipātapāḷi | Mūla | Sutta Piṭaka
+  A-x | AN10-Dasakanipātapāḷi | Mūla | Sutta Piṭaka
+  A-xi | AN11-Ekādasakanipātapāḷi | Mūla | Sutta Piṭaka
+  AN-pv | (saṅgayana-puccha vissajjanā) Aṅguttaranikāye | Añña | Saṃgāyana-pucchā Vissajjanā
+  Abh | Abhidhānappadīpikā | Añña | Byākaraṇa Gantha-saṅgaho
+  Abh-pv | (saṅgayana-puccha vissajjanā) Abhidhammapiṭaka | Añña | Saṃgāyana-pucchā Vissajjanā
+  Abh-ṭ | Abhidhānappadīpikāṭīkā | Añña | Byākaraṇa Gantha-saṅgaho
+  AbhMāt | Abhidhammamātikāpāḷi | Ṭīkā | Abhidhamma Piṭaka
+  Abhidh-av | Abhidhammāvatāro | Ṭīkā | Abhidhamma Piṭaka
+  Abhidh-av-nt | Abhidhammāvatāra-abhinavaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Abhidh-av-pt | Abhidhammāvatāra-purāṇaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Abhidh-av-sacc | Saccasaṅkhepo | Ṭīkā | Abhidhamma Piṭaka
+  Abhidh-av-vinich | Paramatthavinicchayo | Ṭīkā | Abhidhamma Piṭaka
+  Abhidh-s | Abhidhammatthasaṅgaho | Ṭīkā | Abhidhamma Piṭaka
+  Abhidh-s-t | Abhidhammatthavibhāvinīṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Anudīp | Anudīpanīpāṭha | Añña | Leḍī Sayāḍo Gantha-saṅgaho
+  Ap-a | Apadāna-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Ap-i | TherāpadānapāḷiPaṭhamo | Mūla | Sutta Piṭaka
+  Ap-ii | TherāpadānapāḷiDutiyo | Mūla | Sutta Piṭaka
+  Ap-iii | Therīapadānapāḷi | Mūla | Sutta Piṭaka
+  As | Dhammasaṅgaṇī-aṭṭhakathā | Aṭṭhakathā | Abhidhamma Piṭaka
+  As-mt | Dhammasaṅgaṇī-mūlaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Att-pv | (saṅgayana-puccha vissajjanā) Aṭṭhakathā | Añña | Saṃgāyana-pucchā Vissajjanā
+  Buddhaguṇ | Buddhaguṇagāthāvalī | Añña | Buddha-vandanā Gantha-saṅgaho
+  Bv | Buddhavaṃsapāḷi | Mūla | Sutta Piṭaka
+  Bv-a | Buddhavaṃsa-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Bālāv | Bālāvatāra | Añña | Byākaraṇa Gantha-saṅgaho
+  Catur | Caturārakkhadīpanī | Añña | Nīti-gantha-saṅgaho
+  Cp | Cariyāpiṭakapāḷi | Mūla | Sutta Piṭaka
+  Cp-a | Cariyāpiṭaka-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Cāṇn | Cāṇakyanītipāḷi | Añña | Nīti-gantha-saṅgaho
+  Cūḷgv | Cūḷaganthavaṃsapāḷi | Añña | Vaṃsa-gantha-saṅgaho
+  D-i | DN1-Sīlakkhandhavaggapāḷi | Mūla | Sutta Piṭaka
+  D-ii | DN2-Mahāvaggapāḷi | Mūla | Sutta Piṭaka
+  D-iii | DN3-Pāthikavaggapāḷi | Mūla | Sutta Piṭaka
+  DN-pv | (saṅgayana-puccha vissajjanā) Dīghanikāye | Añña | Saṃgāyana-pucchā Vissajjanā
+  Dat.h | Dāṭhāvaṃso | Añña | Sihaḷa-gantha-saṅgaho
+  Dhammn | Dhammanīti | Añña | Nīti-gantha-saṅgaho
+  Dhatuk | Dhātukathāpāḷi | Mūla | Abhidhamma Piṭaka
+  Dhatuk-a | Dhātukathā-aṭṭhakathā | Aṭṭhakathā | Abhidhamma Piṭaka
+  Dhatuk-anuṭ | Dhātukathāpakaraṇa-anuṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Dhatuk-mt | Dhātukathāpakaraṇa-mūlaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Dhatup | Kaccāyana dhātu mañjūsā | Añña | Sihaḷa-gantha-saṅgaho
+  Dhp | Dhammapadapāḷi | Mūla | Sutta Piṭaka
+  Dhp-a | Dhammapada-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Dhs | Dhammasaṅgaṇīpāḷi | Mūla | Abhidhamma Piṭaka
+  Dhs-anuṭ | Dhammasaṅgaṇī-anuṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Dhātpvil | Dhātupāṭha vilāsiniyā | Añña | Sihaḷa-gantha-saṅgaho
+  Dhātv | Dhātuvaṃso | Añña | Sihaḷa-gantha-saṅgaho
+  Dvem-bhk | Bhikkhupātimokkhapāḷi | Mūla | Vinaya Piṭaka
+  Dvem-bhni | Bhikkhunīpātimokkhapāḷi | Mūla | Vinaya Piṭaka
+  Hattv | Hatthavanagallavihāra vaṃso | Añña | Sihaḷa-gantha-saṅgaho
+  It | Itivuttakapāḷi | Mūla | Sutta Piṭaka
+  It-a | Itivuttaka-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-i | Jātaka-aṭṭhakathā-1 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-ii | Jātaka-aṭṭhakathā-2 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-iii | Jātaka-aṭṭhakathā-3 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-iv | Jātaka-aṭṭhakathā-4 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-v | Jātaka-aṭṭhakathā-6 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-vi | Jātaka-aṭṭhakathā-7 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-vi-b | Jātaka-aṭṭhakathā-5 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-a-vii | Jātaka-aṭṭhakathā-8 | Aṭṭhakathā | Sutta Piṭaka
+  Ja-i | JātakapāḷiPaṭhamo | Mūla | Sutta Piṭaka
+  Ja-ii | JātakapāḷiDutiyo | Mūla | Sutta Piṭaka
+  Jina-c | Jinacaritaya | Añña | Sihaḷa-gantha-saṅgaho
+  Jinal | Jinālaṅkāra | Añña | Buddha-vandanā Gantha-saṅgaho
+  Jinvdīp | Jinavaṃsadīpaṃ | Añña | Sihaḷa-gantha-saṅgaho
+  Kacc | Kaccāyanabyākaraṇaṃ | Añña | Byākaraṇa Gantha-saṅgaho
+  Kacc-sadd | Mahākaccāyanasaddāpāṭha | Añña | Byākaraṇa Gantha-saṅgaho
+  Kamal | Kamalāñjali | Añña | Buddha-vandanā Gantha-saṅgaho
+  Kavid | Kavidappaṇanīti | Añña | Nīti-gantha-saṅgaho
+  Khp | Khuddakapāṭhapāḷi | Mūla | Sutta Piṭaka
+  Khuddas | Khuddasikkhā | Ṭīkā | Vinaya Piṭaka
+  Khuddas-nt | Khuddasikkhā-abhinavaṭīkā | Ṭīkā | Vinaya Piṭaka
+  Khuddas-pt | Khuddasikkhā-purāṇaṭīkā | Ṭīkā | Vinaya Piṭaka
+  Kkh | Kaṅkhāvitaraṇī-aṭṭhakathā | Aṭṭhakathā | Vinaya Piṭaka
+  Kkh-nt | Kaṅkhāvitaraṇī-abhinavaṭīkā | Ṭīkā | Vinaya Piṭaka
+  Kkh-pt | Kaṅkhāvitaraṇīpurāṇa-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Kv | Kathāvatthupāḷi | Mūla | Abhidhamma Piṭaka
+  Kv-a | Kathāvatthu-aṭṭhakathā | Aṭṭhakathā | Abhidhamma Piṭaka
+  Kv-anuṭ | Kathāvatthupakaraṇa-anuṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Kv-mt | Kathāvatthupakaraṇa-mūlaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  LakkhBudth | Lakkhaṇāto | Añña | Buddha-vandanā Gantha-saṅgaho
+  Lokan | Lokanīti | Añña | Nīti-gantha-saṅgaho
+  M-i | MN1-Mūlapaṇṇāsapāḷi | Mūla | Sutta Piṭaka
+  M-ii | MN2-Majjhimapaṇṇāsapāḷi | Mūla | Sutta Piṭaka
+  M-iii | MN3-Uparipaṇṇāsapāḷi | Mūla | Sutta Piṭaka
+  MN-pv | (saṅgayana-puccha vissajjanā) Majjhimanikāya | Añña | Saṃgāyana-pucchā Vissajjanā
+  MhPaṇām | Mahāpaṇāmapāṭha | Añña | Buddha-vandanā Gantha-saṅgaho
+  Mhran | Mahārahanīti | Añña | Nīti-gantha-saṅgaho
+  Mhv | Mahāvaṃsapāḷi | Añña | Vaṃsa-gantha-saṅgaho
+  Mil | Milindapañhapāḷi | Mūla | Sutta Piṭaka
+  Mil-t | Milidaṭīkā | Añña | Sihaḷa-gantha-saṅgaho
+  Mogg | Moggallānasuttapāṭho | Añña | Byākaraṇa Gantha-saṅgaho
+  Mogg-byk | Moggallānabyākaraṇaṃ | Añña | Byākaraṇa Gantha-saṅgaho
+  MoggPañc | Moggallāna pañcikā ṭīkā | Añña | Byākaraṇa Gantha-saṅgaho
+  MoggVutt | Moggallāna vuttivivaraṇapañcikā. | Añña | Sihaḷa-gantha-saṅgaho
+  Moh | Mohavicchedanī | Ṭīkā | Abhidhamma Piṭaka
+  Mp-i | Ekakanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-ii | Dukanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-iii | Tikanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-iv | Catukkanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-ix | Navakanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-t-i | Ekakanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-ii | Dukanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-iii | Tikanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-iv | Catukkanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-ix | Navakanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-v | Pañcakanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-vi | Chakkanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-vii | Sattakanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-viii | Aṭṭhakanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-x | Dasakanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-t-xi | Ekādasakanipāta-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Mp-v | Pañcakanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-vi | Chakkanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-vii | Sattakanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-viii | Aṭṭhakanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-x | Dasakanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mp-xi | Ekādasakanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Mūlasikk | Mūlasikkhā | Ṭīkā | Vinaya Piṭaka
+  Mūlasikk-t | Mūlasikkhā-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Namar-p | Nāmarūpaparicchedo | Ṭīkā | Abhidhamma Piṭaka
+  Narad | Naradakkhadīpanī | Añña | Nīti-gantha-saṅgaho
+  Nett | Nettippakaraṇapāḷi | Mūla | Sutta Piṭaka
+  Nett-a | Nettippakaraṇa-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Nett-vbh | Nettivibhāvinī | Ṭīkā | Sutta Piṭaka
+  Nett-ṭ | Nettippakaraṇa-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Nidd-a-i | Mahāniddesa-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Nidd-a-ii | Cūḷaniddesa-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Nidd-i | Mahāniddesapāḷi | Mūla | Sutta Piṭaka
+  Nidd-ii | Cūḷaniddesapāḷi | Mūla | Sutta Piṭaka
+  Nirud | Niruttidīpanīpāṭha | Añña | Leḍī Sayāḍo Gantha-saṅgaho
+  Nāmakkp | Namakkārapāḷi | Añña | Buddha-vandanā Gantha-saṅgaho
+  Nāmakkṭ | Namakkāraṭīkā | Añña | Buddha-vandanā Gantha-saṅgaho
+  Nītim | Nītimañjarī | Añña | Nīti-gantha-saṅgaho
+  PadRūp | Padarūpasiddhi | Añña | Byākaraṇa Gantha-saṅgaho
+  Padamañj | Padamañjarī | Añña | Sihaḷa-gantha-saṅgaho
+  Padsādh | Padasādhanaṃ | Añña | Sihaḷa-gantha-saṅgaho
+  Pajjm | Pajjamadhu | Añña | Buddha-vandanā Gantha-saṅgaho
+  Payog | Payogasiddhipāḷi | Añña | Byākaraṇa Gantha-saṅgaho
+  Paṭis | Paṭisambhidāmaggapāḷi | Mūla | Sutta Piṭaka
+  Paṭis-a | Paṭisambhidāmagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Paṭṭh-a | Paṭṭhānappakaraṇa-aṭṭhakathā | Aṭṭhakathā | Abhidhamma Piṭaka
+  Paṭṭh-anuṭ | Paṭṭhānapakaraṇa-anuṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Paṭṭh-i | Paṭṭhānapāḷi-1 | Mūla | Abhidhamma Piṭaka
+  Paṭṭh-ii | Paṭṭhānapāḷi-2 | Mūla | Abhidhamma Piṭaka
+  Paṭṭh-iii | Paṭṭhānapāḷi-3 | Mūla | Abhidhamma Piṭaka
+  Paṭṭh-iv | Paṭṭhānapāḷi-4 | Mūla | Abhidhamma Piṭaka
+  Paṭṭh-mt | Paṭṭhānapakaraṇa-mūlaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Paṭṭh-v | Paṭṭhānapāḷi-5 | Mūla | Abhidhamma Piṭaka
+  Paṭṭhuddes | Paṭṭhānuddesa dīpanīpāṭha | Añña | Leḍī Sayāḍo Gantha-saṅgaho
+  Pet | Peṭakopadesapāḷi | Mūla | Sutta Piṭaka
+  Pj-i | Khuddakapāṭha-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Pj-ii | Suttanipāta-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  PmtDīp | Paramatthadīpanī | Añña | Leḍī Sayāḍo Gantha-saṅgaho
+  Pp | Puggalapaññattipāḷi | Mūla | Abhidhamma Piṭaka
+  Pp-a | Puggalapaññatti-aṭṭhakathā | Aṭṭhakathā | Abhidhamma Piṭaka
+  Pp-anuṭ | Puggalapaññattipakaraṇa-anuṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Pp-mt | Puggalapaññattipakaraṇa-mūlaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Ps-i | Mūlapaṇṇāsa-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Ps-ii | Majjhimapaṇṇāsa-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Ps-iii | Uparipaṇṇāsa-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Ps-t-i | Mūlapaṇṇāsa-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Ps-t-ii | Majjhimapaṇṇāsa-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Ps-t-iii | Uparipaṇṇāsa-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Pv | Petavatthupāḷi | Mūla | Sutta Piṭaka
+  Pv-a | Petavatthu-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Pācity-y | Pācityādiyojanā | Ṭīkā | Vinaya Piṭaka
+  Rasav | Rasavāhinī | Añña | Pakiṇṇaka-gantha-saṅgaho
+  S-i | SN1-Sagāthāvaggo | Mūla | Sutta Piṭaka
+  S-ii | SN2-Nidānavaggo | Mūla | Sutta Piṭaka
+  S-iii | SN3-Khandhavaggo | Mūla | Sutta Piṭaka
+  S-iv | SN4-Saḷāyatanavaggo | Mūla | Sutta Piṭaka
+  S-v | SN5-Mahāvaggo | Mūla | Sutta Piṭaka
+  SN-pv | (saṅgayana-puccha vissajjanā) Saṃyuttanikāye | Añña | Saṃgāyana-pucchā Vissajjanā
+  Sadd-dh | Saddanītippakaraṇaṃ dhātumālā) | Añña | Byākaraṇa Gantha-saṅgaho
+  Sadd-pad | Saddanītippakaraṇaṃ padamālā) | Añña | Byākaraṇa Gantha-saṅgaho
+  Saddbind | Saddabindu pakaraṇaṃ | Añña | Sihaḷa-gantha-saṅgaho
+  Samantak | Samantakūṭavaṇṇanā | Añña | Sihaḷa-gantha-saṅgaho
+  Sas | Sāsanavaṃsappadīpikā | Añña | Vaṃsa-gantha-saṅgaho
+  Sn | Suttanipātapāḷi | Mūla | Sutta Piṭaka
+  Sp-i | Pārājikakaṇḍa-aṭṭhakathā | Aṭṭhakathā | Vinaya Piṭaka
+  Sp-ii | Pācittiya-aṭṭhakathā | Aṭṭhakathā | Vinaya Piṭaka
+  Sp-ii-b | Bhikkhunīvibhaṅgavaṇṇanā | Aṭṭhakathā | Vinaya Piṭaka
+  Sp-iii | Mahāvagga-aṭṭhakathā | Aṭṭhakathā | Vinaya Piṭaka
+  Sp-iv | Cūḷavagga-aṭṭhakathā | Aṭṭhakathā | Vinaya Piṭaka
+  Sp-t-i-a | Sāratthadīpanī-Pārājika1-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Sp-t-i-b | Sāratthadīpanī-Pārājika2-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Sp-t-ii | Sāratthadīpanī-Pācittiya-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Sp-t-iii | Sāratthadīpanī-Mahāvagga-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Sp-t-iv | Sāratthadīpanī-Cūḷavagga-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Sp-t-v | Sāratthadīpanī-Parivāra-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Sp-v | Parivāra-aṭṭhakathā | Aṭṭhakathā | Vinaya Piṭaka
+  Spk-i | Sagāthāvagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Spk-ii | Nidānavagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Spk-iii | Khandhavagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Spk-iv | Saḷāyatanavagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Spk-t-i | Sagāthāvagga-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Spk-t-ii | Nidānavagga-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Spk-t-iii | Khandhavagga-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Spk-t-iv | Saḷāyatanavagga-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Spk-t-v | Mahāvagga-ṭīkā | Ṭīkā | Sutta Piṭaka
+  Spk-v | Mahāvagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Subodh | Subodhālaṅkāro | Añña | Byākaraṇa Gantha-saṅgaho
+  Subodh-t | Subodhālaṅkāraṭīkā | Añña | Byākaraṇa Gantha-saṅgaho
+  Suttn | Suttantanīti | Añña | Nīti-gantha-saṅgaho
+  Sutvan | Suttavandanā | Añña | Buddha-vandanā Gantha-saṅgaho
+  Sv-i | Sīlakkhandhavagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Sv-ii | Mahāvagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Sv-iii | Pāthikavagga-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Sv-nt-i | Sīlakkhandhavaggaabhinavaṭīkā | Ṭīkā | Sutta Piṭaka
+  Sv-nt-ii | Sīlakkhandhavaggaabhinavaṭīkā | Ṭīkā | Sutta Piṭaka
+  Sv-pt-i | Sīlakkhandhavaggaṭīkā | Ṭīkā | Sutta Piṭaka
+  Sv-pt-ii | Mahāvaggaṭīkā | Ṭīkā | Sutta Piṭaka
+  Sv-pt-iii | Pāthikavaggaṭīkā | Ṭīkā | Sutta Piṭaka
+  Sīmav | Sīmavisodhanī | Añña | Pakiṇṇaka-gantha-saṅgaho
+  Sūrn | Sūrassatīnīti | Añña | Nīti-gantha-saṅgaho
+  Tel | Telakaṭāhagāthā | Añña | Sihaḷa-gantha-saṅgaho
+  Th | Theragāthāpāḷi | Mūla | Sutta Piṭaka
+  Th-a-i | Theragāthā-1-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Th-a-ii | Theragāthā-1-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Thup | Thupavaṃso | Añña | Sihaḷa-gantha-saṅgaho
+  Thī | Therīgāthāpāḷi | Mūla | Sutta Piṭaka
+  Thī-a | Therīgāthā-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Tigumb | Tigumbacetiya thomanā | Añña | Buddha-vandanā Gantha-saṅgaho
+  Ud | Udānapāḷi | Mūla | Sutta Piṭaka
+  Ud-a | Udāna-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Utt-vn | Uttaravinicchayo | Ṭīkā | Vinaya Piṭaka
+  Utt-vn-t | Uttaravinicchaya-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Vasala | Vasalasutta | Añña | Nīti-gantha-saṅgaho
+  Vessg | Vessantarāgīti | Añña | Pakiṇṇaka-gantha-saṅgaho
+  Vibh | Vibhaṅgapāḷi | Mūla | Abhidhamma Piṭaka
+  Vibh-a | Vibhaṅga-aṭṭhakathā | Aṭṭhakathā | Abhidhamma Piṭaka
+  Vibh-anuṭ | Vibhaṅga-anuṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Vibh-mt | Vibhaṅga-mūlaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Vin-alaṅke | Vinayālaṅkāra-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  Vin-i | Pārājikapāḷi | Mūla | Vinaya Piṭaka
+  Vin-ii | Pācittiyapāḷi | Mūla | Vinaya Piṭaka
+  Vin-ii-b | Bhikkhunīvibhaṅgo | Mūla | Vinaya Piṭaka
+  Vin-iii | Mahāvaggapāḷi | Mūla | Vinaya Piṭaka
+  Vin-iv | Cūḷavaggapāḷi | Mūla | Vinaya Piṭaka
+  Vin-pv | (saṅgayana-puccha vissajjanā) Vinaya piṭaka | Añña | Saṃgāyana-pucchā Vissajjanā
+  Vin-v | Parivārapāḷi | Mūla | Vinaya Piṭaka
+  Vin-vn | Vinayavinicchayo | Ṭīkā | Vinaya Piṭaka
+  Vin-vn-t | Vinayavinicchaya-ṭīkā | Ṭīkā | Vinaya Piṭaka
+  VinSaṅg-a | Vinayasaṅgaha-aṭṭhakathā | Aṭṭhakathā | Vinaya Piṭaka
+  Vism-i | Visuddhimaggo I | Aṭṭhakathā | Abhidhamma Piṭaka
+  Vism-ii | Visuddhimaggo II | Aṭṭhakathā | Abhidhamma Piṭaka
+  Vism-mht-i | Visuddhimagga-mahāṭīkā I | Ṭīkā | Abhidhamma Piṭaka
+  Vism-mht-ii | Visuddhimagga-mahāṭīkā II | Ṭīkā | Abhidhamma Piṭaka
+  Vism-nid | Visuddhimagga nidānakathā | Ṭīkā | Abhidhamma Piṭaka
+  Vjb-bkn | Vajirabuddhi-Bhikkhunīvibhaṅgavaṇṇanā | Ṭīkā | Vinaya Piṭaka
+  Vjb-cv | Vajirabuddhi-Cūḷavaggavaṇṇanā | Ṭīkā | Vinaya Piṭaka
+  Vjb-mv | Vajirabuddhi-Mahāvaggavaṇṇanā | Ṭīkā | Vinaya Piṭaka
+  Vjb-pac | Vajirabuddhi-Pācittiyavaṇṇanā | Ṭīkā | Vinaya Piṭaka
+  Vjb-pr | Vajirabuddhi-Parivāravaṇṇanā | Ṭīkā | Vinaya Piṭaka
+  Vjb-prj | Vajirabuddhi-Pārājikavaṇṇanā | Ṭīkā | Vinaya Piṭaka
+  Vmv-i | Vimativinodnī-Pārājika | Ṭīkā | Vinaya Piṭaka
+  Vmv-ii | Vimativinodnī-Pācittiya | Ṭīkā | Vinaya Piṭaka
+  Vmv-iii | Vimativinodnī-Mahāvagga | Ṭīkā | Vinaya Piṭaka
+  Vmv-iv | Vimativinodnī-Cūḷavagga | Ṭīkā | Vinaya Piṭaka
+  Vmv-v | Vimativinodnī-Parivāra | Ṭīkā | Vinaya Piṭaka
+  Vutt | Vuttodayaṃ | Añña | Byākaraṇa Gantha-saṅgaho
+  Vv | Vimānavatthupāḷi | Mūla | Sutta Piṭaka
+  Vv-a | Vimānavatthu-aṭṭhakathā | Aṭṭhakathā | Sutta Piṭaka
+  Vāsamāl | Vāsamālinīkya | Añña | Buddha-vandanā Gantha-saṅgaho
+  Yam-a | Yamakappakaraṇa-aṭṭhakathā | Aṭṭhakathā | Abhidhamma Piṭaka
+  Yam-anuṭ | Yamakapakaraṇa-anuṭīkā | Ṭīkā | Abhidhamma Piṭaka
+  Yam-i | Yamakapāḷi-1 | Mūla | Abhidhamma Piṭaka
+  Yam-ii | Yamakapāḷi-2 | Mūla | Abhidhamma Piṭaka
+  Yam-iii | Yamakapāḷi-3 | Mūla | Abhidhamma Piṭaka
+  Yam-mt | Yamakapakaraṇa-mūlaṭīkā | Ṭīkā | Abhidhamma Piṭaka
+
+Produce the JSON pairing array now.
+
+=====
+
+[
+  {
+    "sinhala_filename": "an-1",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 1. ekaka nipāto",
+    "nissaya_book_id": "A-i",
+    "nissaya_book_name": "AN1-Ekakanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-2",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 2. dukanipāto",
+    "nissaya_book_id": "A-ii",
+    "nissaya_book_name": "AN2-Dukanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-3",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 3. tikanipāto",
+    "nissaya_book_id": "A-iii",
+    "nissaya_book_name": "AN3-Tikanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-4",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 4. catukkanipāto",
+    "nissaya_book_id": "A-iv",
+    "nissaya_book_name": "AN4-Catukkanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-5",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 5. pañcakanipāto",
+    "nissaya_book_id": "A-v",
+    "nissaya_book_name": "AN5-Pañcakanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-6",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 6. chakkanipāto",
+    "nissaya_book_id": "A-vi",
+    "nissaya_book_name": "AN6-Chakkanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-7",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 7. sattakanipāto",
+    "nissaya_book_id": "A-vii",
+    "nissaya_book_name": "AN7-Sattakanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-8",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 8. aṭṭhakanipāto",
+    "nissaya_book_id": "A-viii",
+    "nissaya_book_name": "AN8-Aṭṭhakanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-9",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 9. navakanipāto",
+    "nissaya_book_id": "A-ix",
+    "nissaya_book_name": "AN9-Navakanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-10",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 10. dasakanipāto",
+    "nissaya_book_id": "A-x",
+    "nissaya_book_name": "AN10-Dasakanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "an-11",
+    "sinhala_pali_roman": "suttapiṭaka > aṅguttaranikāyo > 11. ekādasako nipāto",
+    "nissaya_book_id": "A-xi",
+    "nissaya_book_name": "AN11-Ekādasakanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "ap-dhk",
+    "sinhala_pali_roman": "abhidhammapiṭaka > dhātukathāppakaraṇaṃ",
+    "nissaya_book_id": "Dhatuk",
+    "nissaya_book_name": "Dhātukathāpāḷi"
+  },
+  {
+    "sinhala_filename": "ap-dhs",
+    "sinhala_pali_roman": "abhidhammapiṭaka > dhammasaṅgaṇippakaraṇaṃ",
+    "nissaya_book_id": "Dhs",
+    "nissaya_book_name": "Dhammasaṅgaṇīpāḷi"
+  },
+  {
+    "sinhala_filename": "ap-kvu",
+    "sinhala_pali_roman": "abhidhammapiṭaka > kathāvatthuppakaraṇaṃ",
+    "nissaya_book_id": "Kv",
+    "nissaya_book_name": "Kathāvatthupāḷi"
+  },
+  {
+    "sinhala_filename": "ap-pug",
+    "sinhala_pali_roman": "abhidhammapiṭaka > puggalapaññattippakaraṇaṃ",
+    "nissaya_book_id": "Pp",
+    "nissaya_book_name": "Puggalapaññattipāḷi"
+  },
+  {
+    "sinhala_filename": "ap-vbh",
+    "sinhala_pali_roman": "abhidhammapiṭaka > vibhaṅgappakaraṇaṃ",
+    "nissaya_book_id": "Vibh",
+    "nissaya_book_name": "Vibhaṅgapāḷi"
+  },
+  {
+    "sinhala_filename": "atta-an-1",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > ekakanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-i",
+    "nissaya_book_name": "Ekakanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-2",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > dukanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-ii",
+    "nissaya_book_name": "Dukanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-3",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > tikanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-iii",
+    "nissaya_book_name": "Tikanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-4",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > catukkanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-iv",
+    "nissaya_book_name": "Catukkanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-5",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > pañcakanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-v",
+    "nissaya_book_name": "Pañcakanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-6",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > chakkanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-vi",
+    "nissaya_book_name": "Chakkanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-7",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > sattakanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-vii",
+    "nissaya_book_name": "Sattakanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-8",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > aṭṭhakanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-viii",
+    "nissaya_book_name": "Aṭṭhakanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-9",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > navakanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-ix",
+    "nissaya_book_name": "Navakanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-10",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > dasakanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-x",
+    "nissaya_book_name": "Dasakanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-an-11",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > aṅguttaranikāyo aṭṭhakathā > ekādasakanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Mp-xi",
+    "nissaya_book_name": "Ekādasakanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-ap-dhk",
+    "sinhala_pali_roman": "abhidhamma aṭṭhakathā > dhātukathā-aṭṭhakathā",
+    "nissaya_book_id": "Dhatuk-a",
+    "nissaya_book_name": "Dhātukathā-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-ap-dhs",
+    "sinhala_pali_roman": "abhidhamma aṭṭhakathā > dhammasaṅgaṇī-aṭṭhakathā",
+    "nissaya_book_id": "As",
+    "nissaya_book_name": "Dhammasaṅgaṇī-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-ap-kvu",
+    "sinhala_pali_roman": "abhidhamma aṭṭhakathā > kathāvatthu-aṭṭhakathā",
+    "nissaya_book_id": "Kv-a",
+    "nissaya_book_name": "Kathāvatthu-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-ap-pat",
+    "sinhala_pali_roman": "abhidhamma aṭṭhakathā > paṭṭhānappakaraṇa-aṭṭhakathā",
+    "nissaya_book_id": "Paṭṭh-a",
+    "nissaya_book_name": "Paṭṭhānappakaraṇa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-ap-pug",
+    "sinhala_pali_roman": "abhidhamma aṭṭhakathā > puggalapaññatti-aṭṭhakathā",
+    "nissaya_book_id": "Pp-a",
+    "nissaya_book_name": "Puggalapaññatti-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-ap-vbh",
+    "sinhala_pali_roman": "abhidhamma aṭṭhakathā > vibhaṅga-aṭṭhakathā",
+    "nissaya_book_id": "Vibh-a",
+    "nissaya_book_name": "Vibhaṅga-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-ap-yam",
+    "sinhala_pali_roman": "abhidhamma aṭṭhakathā > yamakappakaraṇa-aṭṭhakathā",
+    "nissaya_book_id": "Yam-a",
+    "nissaya_book_name": "Yamakappakaraṇa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-dn-1",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > dīghanikāya aṭṭhakathā > sīlakkhandhavaggaṭṭhakathā",
+    "nissaya_book_id": "Sv-i",
+    "nissaya_book_name": "Sīlakkhandhavagga-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-dn-2",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > dīghanikāya aṭṭhakathā > mahāvaggaṭṭhakathā",
+    "nissaya_book_id": "Sv-ii",
+    "nissaya_book_name": "Mahāvagga-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-dn-3",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > dīghanikāya aṭṭhakathā > pāthīkavaggo-aṭṭhakathā",
+    "nissaya_book_id": "Sv-iii",
+    "nissaya_book_name": "Pāthikavagga-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-ap",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > apadāna-aṭṭhakathā",
+    "nissaya_book_id": "Ap-a",
+    "nissaya_book_name": "Apadāna-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-bv",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > buddhavaṃsa-aṭṭhakathā",
+    "nissaya_book_id": "Bv-a",
+    "nissaya_book_name": "Buddhavaṃsa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-cp",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > cariyāpiṭaka-aṭṭhakathā",
+    "nissaya_book_id": "Cp-a",
+    "nissaya_book_name": "Cariyāpiṭaka-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-dhp",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > dhammapada-aṭṭhakathā",
+    "nissaya_book_id": "Dhp-a",
+    "nissaya_book_name": "Dhammapada-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-iti",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > itivuttaka-aṭṭhakathā",
+    "nissaya_book_id": "It-a",
+    "nissaya_book_name": "Itivuttaka-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-khp",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > khuddakapāṭha-aṭṭhakathā",
+    "nissaya_book_id": "Pj-i",
+    "nissaya_book_name": "Khuddakapāṭha-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-mn",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > mahāniddesa-aṭṭhakathā",
+    "nissaya_book_id": "Nidd-a-i",
+    "nissaya_book_name": "Mahāniddesa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-nc",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > cūl̤aniddesa-aṭṭhakathā",
+    "nissaya_book_id": "Nidd-a-ii",
+    "nissaya_book_name": "Cūḷaniddesa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-nett",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > nettippakaraṇa-aṭṭhakathā",
+    "nissaya_book_id": "Nett-a",
+    "nissaya_book_name": "Nettippakaraṇa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-ps",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > paṭisambhidāmagga-aṭṭhakathā",
+    "nissaya_book_id": "Paṭis-a",
+    "nissaya_book_name": "Paṭisambhidāmagga-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-pv",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > petavatthu-aṭṭhakathā",
+    "nissaya_book_id": "Pv-a",
+    "nissaya_book_name": "Petavatthu-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-snp",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > suttanipāta-aṭṭhakathā",
+    "nissaya_book_id": "Pj-ii",
+    "nissaya_book_name": "Suttanipāta-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-thig",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > therīgāthā-aṭṭhakathā",
+    "nissaya_book_id": "Thī-a",
+    "nissaya_book_name": "Therīgāthā-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-ud",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > udāna-aṭṭhakathā",
+    "nissaya_book_id": "Ud-a",
+    "nissaya_book_name": "Udāna-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-kn-vv",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > khuddakanikāyo aṭṭhakathā > vimānavatthu-aṭṭhakathā",
+    "nissaya_book_id": "Vv-a",
+    "nissaya_book_name": "Vimānavatthu-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-mn-1",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > majjhimanikāya aṭṭhakathā > mūlapaṇṇāsa-aṭṭhakathā",
+    "nissaya_book_id": "Ps-i",
+    "nissaya_book_name": "Mūlapaṇṇāsa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-mn-2",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > majjhimanikāya aṭṭhakathā > majjhimapaṇṇāsa-aṭṭhakathā",
+    "nissaya_book_id": "Ps-ii",
+    "nissaya_book_name": "Majjhimapaṇṇāsa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-mn-3",
+    "sinhala_pali_roman": "sutta aṭṭhakathā > majjhimanikāya aṭṭhakathā > uparipaṇṇāsa-aṭṭhakathā",
+    "nissaya_book_id": "Ps-iii",
+    "nissaya_book_name": "Uparipaṇṇāsa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-vp-prj",
+    "sinhala_pali_roman": "vinaya aṭṭhakathā > pārājikakaṇḍa-aṭṭhakathā",
+    "nissaya_book_id": "Sp-i",
+    "nissaya_book_name": "Pārājikakaṇḍa-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-vp-pct",
+    "sinhala_pali_roman": "vinaya aṭṭhakathā > pācittiya-aṭṭhakathā",
+    "nissaya_book_id": "Sp-ii",
+    "nissaya_book_name": "Pācittiya-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-vp-mv",
+    "sinhala_pali_roman": "vinaya aṭṭhakathā > mahāvagga-aṭṭhakathā",
+    "nissaya_book_id": "Sp-iii",
+    "nissaya_book_name": "Mahāvagga-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-vp-cv",
+    "sinhala_pali_roman": "vinaya aṭṭhakathā > cūl̤avagga-aṭṭhakathā",
+    "nissaya_book_id": "Sp-iv",
+    "nissaya_book_name": "Cūḷavagga-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "atta-vp-pv",
+    "sinhala_pali_roman": "vinaya aṭṭhakathā > parivāra-aṭṭhakathā",
+    "nissaya_book_id": "Sp-v",
+    "nissaya_book_name": "Parivāra-aṭṭhakathā"
+  },
+  {
+    "sinhala_filename": "dn-1",
+    "sinhala_pali_roman": "suttapiṭaka > dīghanikāya > sīlakkhandhavaggo",
+    "nissaya_book_id": "D-i",
+    "nissaya_book_name": "DN1-Sīlakkhandhavaggapāḷi"
+  },
+  {
+    "sinhala_filename": "dn-2",
+    "sinhala_pali_roman": "suttapiṭaka > dīghanikāya > mahāvaggo",
+    "nissaya_book_id": "D-ii",
+    "nissaya_book_name": "DN2-Mahāvaggapāḷi"
+  },
+  {
+    "sinhala_filename": "dn-3",
+    "sinhala_pali_roman": "suttapiṭaka > dīghanikāya > pāthikavaggo",
+    "nissaya_book_id": "D-iii",
+    "nissaya_book_name": "DN3-Pāthikavaggapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-bv",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > buddhavaṃsapāl̤i",
+    "nissaya_book_id": "Bv",
+    "nissaya_book_name": "Buddhavaṃsapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-cp",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > cariyāpiṭakapāl̤i",
+    "nissaya_book_id": "Cp",
+    "nissaya_book_name": "Cariyāpiṭakapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-dhp",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > dhammapadapāl̤i",
+    "nissaya_book_id": "Dhp",
+    "nissaya_book_name": "Dhammapadapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-iti",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > itivuttakapāl̤i",
+    "nissaya_book_id": "It",
+    "nissaya_book_name": "Itivuttakapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-khp",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > khuddakapāṭhapāl̤i",
+    "nissaya_book_id": "Khp",
+    "nissaya_book_name": "Khuddakapāṭhapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-mn",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > mahāniddesapāl̤i",
+    "nissaya_book_id": "Nidd-i",
+    "nissaya_book_name": "Mahāniddesapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-nc",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > cullaniddesapāl̤i",
+    "nissaya_book_id": "Nidd-ii",
+    "nissaya_book_name": "Cūḷaniddesapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-nett",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > nettippakaraṇaṃ",
+    "nissaya_book_id": "Nett",
+    "nissaya_book_name": "Nettippakaraṇapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-petk",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > peṭakopadeso",
+    "nissaya_book_id": "Pet",
+    "nissaya_book_name": "Peṭakopadesapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-ps",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > paṭisambhidāmaggo",
+    "nissaya_book_id": "Paṭis",
+    "nissaya_book_name": "Paṭisambhidāmaggapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-pv",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > petavatthupāl̤i",
+    "nissaya_book_id": "Pv",
+    "nissaya_book_name": "Petavatthupāḷi"
+  },
+  {
+    "sinhala_filename": "kn-snp",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > suttanipāto",
+    "nissaya_book_id": "Sn",
+    "nissaya_book_name": "Suttanipātapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-thag",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > theragāthāpāl̤i",
+    "nissaya_book_id": "Th",
+    "nissaya_book_name": "Theragāthāpāḷi"
+  },
+  {
+    "sinhala_filename": "kn-thig",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > therīgāthāpāl̤i",
+    "nissaya_book_id": "Thī",
+    "nissaya_book_name": "Therīgāthāpāḷi"
+  },
+  {
+    "sinhala_filename": "kn-ud",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > udānapāl̤i",
+    "nissaya_book_id": "Ud",
+    "nissaya_book_name": "Udānapāḷi"
+  },
+  {
+    "sinhala_filename": "kn-vv",
+    "sinhala_pali_roman": "suttapiṭaka > khuddakanikāyo > vimānavatthupāl̤i",
+    "nissaya_book_id": "Vv",
+    "nissaya_book_name": "Vimānavatthupāḷi"
+  },
+  {
+    "sinhala_filename": "mn-1",
+    "sinhala_pali_roman": "suttapiṭaka > majjhimanikāya > mūlapaṇṇāsako",
+    "nissaya_book_id": "M-i",
+    "nissaya_book_name": "MN1-Mūlapaṇṇāsapāḷi"
+  },
+  {
+    "sinhala_filename": "mn-2",
+    "sinhala_pali_roman": "suttapiṭaka > majjhimanikāya > majjhimapaṇṇāsako",
+    "nissaya_book_id": "M-ii",
+    "nissaya_book_name": "MN2-Majjhimapaṇṇāsapāḷi"
+  },
+  {
+    "sinhala_filename": "mn-3",
+    "sinhala_pali_roman": "suttapiṭaka > majjhimanikāya > uparipaṇṇāsako",
+    "nissaya_book_id": "M-iii",
+    "nissaya_book_name": "MN3-Uparipaṇṇāsapāḷi"
+  },
+  {
+    "sinhala_filename": "sn-1",
+    "sinhala_pali_roman": "suttapiṭaka > saṃyuttanikāyo > sagāthavaggo",
+    "nissaya_book_id": "S-i",
+    "nissaya_book_name": "SN1-Sagāthāvaggo"
+  },
+  {
+    "sinhala_filename": "sn-2",
+    "sinhala_pali_roman": "suttapiṭaka > saṃyuttanikāyo > nidānavaggo",
+    "nissaya_book_id": "S-ii",
+    "nissaya_book_name": "SN2-Nidānavaggo"
+  },
+  {
+    "sinhala_filename": "sn-3",
+    "sinhala_pali_roman": "suttapiṭaka > saṃyuttanikāyo > khandhakavaggo",
+    "nissaya_book_id": "S-iii",
+    "nissaya_book_name": "SN3-Khandhavaggo"
+  },
+  {
+    "sinhala_filename": "sn-4",
+    "sinhala_pali_roman": "suttapiṭaka > saṃyuttanikāyo > sal̤āyatanavaggo",
+    "nissaya_book_id": "S-iv",
+    "nissaya_book_name": "SN4-Saḷāyatanavaggo"
+  },
+  {
+    "sinhala_filename": "sn-5",
+    "sinhala_pali_roman": "suttapiṭaka > saṃyuttanikāyo > mahāvaggo",
+    "nissaya_book_id": "S-v",
+    "nissaya_book_name": "SN5-Mahāvaggo"
+  },
+  {
+    "sinhala_filename": "vp-prj",
+    "sinhala_pali_roman": "vinayapiṭaka > pārājikapāl̤i",
+    "nissaya_book_id": "Vin-i",
+    "nissaya_book_name": "Pārājikapāḷi"
+  },
+  {
+    "sinhala_filename": "vp-pct",
+    "sinhala_pali_roman": "vinayapiṭaka > pācittiyapāl̤i",
+    "nissaya_book_id": "Vin-ii",
+    "nissaya_book_name": "Pācittiyapāḷi"
+  },
+  {
+    "sinhala_filename": "vp-mv",
+    "sinhala_pali_roman": "vinayapiṭaka > mahāvaggapāl̤iyā",
+    "nissaya_book_id": "Vin-iii",
+    "nissaya_book_name": "Mahāvaggapāḷi"
+  },
+  {
+    "sinhala_filename": "vp-cv",
+    "sinhala_pali_roman": "vinayapiṭaka > cullavaggapāl̤i",
+    "nissaya_book_id": "Vin-iv",
+    "nissaya_book_name": "Cūḷavaggapāḷi"
+  },
+  {
+    "sinhala_filename": "vp-pv",
+    "sinhala_pali_roman": "vinayapiṭaka > parivārapāl̤i",
+    "nissaya_book_id": "Vin-v",
+    "nissaya_book_name": "Parivārapāḷi"
+  }
+]

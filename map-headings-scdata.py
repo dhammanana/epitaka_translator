@@ -445,7 +445,7 @@ def match_book(
         raw = "{}"
         for attempt in range(1, 4):
             try:
-                raw = gemini.generate(prompt, max_tokens=10000,  thinking=512)
+                raw = gemini.generate(prompt, system=SYSTEM_PROMPT, max_tokens=100000,  thinking=4096)
                 break
             except Exception as exc:
                 errors += 1

@@ -163,10 +163,6 @@ def _ensure_db():
         logger.info("Task watchdog started (stale threshold=%ds).", _STALE_THRESHOLD)
 
 
-@app.template_filter('ctime')
-def timectime(s):
-    return datetime.fromtimestamp(float(s)).strftime('%Y-%m-%d %H:%M:%S')
-
 # ─────────────────────────────────────────────────────────────────
 # Dashboard
 # ─────────────────────────────────────────────────────────────────

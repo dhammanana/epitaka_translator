@@ -1,0 +1,53 @@
+=== TRANSLATION CALL: Ja-a-iii [364] 4. Khajjopanakajātakavaṇṇanā chunk 1/1 ===
+
+You are an assistant specialized in aligning Pali sentences with their corresponding English translations.
+
+You will be provided with:
+1. ENGLISH PASSAGE: The published English translation of a text section.
+2. PALI SENTENCES: A JSON array of Pali sentences, each identified by a "para_id" and "line_id".
+
+Your Task:
+For each Pali sentence, locate the corresponding segment within the ENGLISH PASSAGE and extract that exact text as the "english_translation" value.
+
+Strict Rules:
+- Verbatim Extraction: Use only the text that is explicitly present in the provided ENGLISH PASSAGE. Do not translate the Pali independently, paraphrase the English, or infer meaning.
+- Handling Unmatched Sentences: If a Pali sentence has no clear corresponding translation in the English passage, assign an empty string ("") to the "english_translation" field.
+- Completeness: Process every input sentence. Every "para_id" and "line_id" from the input must be included in the output in the same order. Do not omit any entries.
+- Technical Terms: Retain any Pali technical terms exactly as they are written in the provided ENGLISH PASSAGE.
+
+Output Format:
+Return only a valid JSON array. Do not include any introductory text, explanatory remarks, or markdown code block formatting (such as ```json ... ```).
+
+[
+  {"para_id": 1, "line_id": 1, "english_translation": "..."},
+  ...
+]
+
+
+## Chapter
+[364] 4. Khajjopanakajātakavaṇṇanā
+
+## English Passage
+Jataka Vol. 3
+364.
+Khajjopanaka-Jātaka
+This Question about a fire-fly will be set forth in full in the Mahāummagga.
+
+## Pali Sentences (chunk 1/1)
+[
+  {
+    "para_id": 1681,
+    "line_id": 1,
+    "pali_sentence": "[364]4. Khajjopanakajātakavaṇṇanā"
+  },
+  {
+    "para_id": 1683,
+    "line_id": 1,
+    "pali_sentence": "75-79. Ko nu santamhi pajjoteti ayaṃ khajjopanakapañho mahāumaṅge vitthārato āvi bhavissati."
+  },
+  {
+    "para_id": 1684,
+    "line_id": 1,
+    "pali_sentence": "Khajjopanakajātakavaṇṇanā catutthā."
+  }
+]
