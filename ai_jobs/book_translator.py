@@ -1,16 +1,21 @@
 """
 book_translator.py — Standalone "translate a whole book, part by part" runner.
 
+    # Translate books:
     python book_translator.py --lang en --books Sp-i,Sp-ii --start 615 --end 700 \
         --part-size 4 --max-tokens 3000 --log-dir /tmp/book_logs
 
-    # Or use the preset book list:
+    # Use the preset book list:
     python book_translator.py --lang en --books preset
+
+    # Build glossary only from already-translated books (no new translations):
+    python book_translator.py --lang vi --books Sp-i,Sp-ii --glossary-only
 
 What it does
 ------------
-Accepts a --lang code (e.g. "en", "si", "th") and one or more book_ids.
+Accepts a --lang code (e.g. "en", "si", "th", "vi") and one or more book_ids.
 Translations are saved to epitaka_<lang>.db (same directory as epitaka.db).
+Glossary terms are saved to glossary_<lang>.db (same directory).
 Once saved there, the corresponding fields are cleared from epitaka.db.
 
 epitaka_<lang>.db/sentences schema:
@@ -18,6 +23,10 @@ epitaka_<lang>.db/sentences schema:
   translation                — the translated text
   translation_confidence     — "high" | "low"
   confidence_note            — reason when low
+
+glossary_<lang>.db/glossary schema:
+  pali (stem form), translation, domain, sub_domain, context, note,
+  source_id, para_id_start, para_id_end  — provenance range in the source book
 
 For each book it:
 
@@ -27,7 +36,8 @@ For each book it:
   3. For each section, splits into token-safe chunks and builds a prompt using
      context_builders.py:
 
-        - GlossaryContext
+        - GlossaryContext        (reads from glossary_<lang>.db)
+        - GlossaryContextStemmed
         - CommentaryContext
         - PaliDefsContext
         - PreviousTranslationContext
@@ -42,25 +52,45 @@ For each book it:
        "confidence": "high" | "low"
        "confidence_note": "<reason if low>"
 
+     Each glossary entry carries:
+       "pali": stem form of the Pāli word
+       "translation": translation in the target language
+       "domain", "sub_domain", "context", "note"
+
   5. Saves:
         - translations + confidence → epitaka_<lang>.db / sentences
         - remarks                   → epitaka_<lang>.db / translation_remarks
-        - glossary                  → GlossaryWriter (glossary.db)
-     Then clears english_translation / translation_confidence / confidence_note
+        - glossary                  → glossary_<lang>.db / glossary
+     Then clears translation / translation_confidence / confidence_note
      and removes matching translation_remarks rows from epitaka.db.
+
+  --glossary-only mode:
+     Reads existing pali + translations from epitaka_<lang>.db for the
+     given books and sends them to Gemini to extract glossary terms only.
+     No new translations are produced or saved.
+
+File layout
+-----------
+This script owns everything specific to "translate a book": heading-based
+sectioning, token-safe chunking, the translation prompt/schema, and saving
+translations/remarks. Infrastructure shared with glossary_builder.py (DB
+paths, schema, glossary upserts, Pāli stem lookup) lives in common_utils.py.
+Everything about *how* we talk to the AI (Gemini calls, key rotation,
+retries, response-JSON parsing) lives in ai_client.py — change that file,
+not this one, when the AI logic needs to change.
 """
 
 import argparse
 import json
 import os
-import re
-import sqlite3
 import sys
-import time
 import types
-from contextlib import contextmanager
+import sqlite3
 from pathlib import Path
 from dotenv import load_dotenv
+
+import common.common_utils as cu
+import common.ai_client as ai
 
 load_dotenv()
 
@@ -69,63 +99,111 @@ load_dotenv()
 # ══════════════════════════════════════════════════════════════════
 
 PRESET_BOOKS = (
-    # "Dhp-a,Ja-a-i,A-i,A-iii,A-iv,A-v,A-vii,A-x,Ap-a,Ap-i,D-i,D-ii,D-iii,Dhp,It,It-a,"
-    # "Ja-a-ii,Ja-a-iv,Ja-a-vi,Ja-a-vii,Ja-i,Ja-ii,Khp,M-i,M-ii,M-iii,Mp-i,Mp-iii,Mp-iv,"
-    # "Mp-v,Mp-vii,Mp-x,Nidd-a-i,Nidd-a-ii,Nidd-i,Nidd-ii,Paṭis,Paṭis-a,Pj-i,Pj-ii,Ps-i,"
-    # "Ps-ii,Ps-iii,Pv,Pv-a,S-i,S-ii,S-iii,S-iv,S-v,Sn,Sp-i,Sp-ii,Sp-iii,Sp-iv,Sp-v,"
-    # "Spk-i,Spk-ii,Spk-iii,Spk-iv,Spk-v,Sv-i,Sv-ii,Sv-iii,Th,Th-a-i,Thī,Thī-a,Ud,Ud-a,"
-    # "Vin-i,Vin-ii,Vin-ii-b,Vin-iii,Vin-iv,Vin-v,Vism-i,Vism-ii,Vv,Vv-a,A-ii,A-ix,A-vi,"
-    # "A-viii,A-xi,Abhidh-s,Abhidh-s-t,Ap-ii,Ap-iii,As,Bv,Bv-a,Cp,Cp-a,Dhammn,Dhatuk,"
-    # "Dhatuk-a,Dhs,Ja-a-iii,Ja-a-v,Ja-a-vi-b,Jina-c,Kv,Kv-a,Mp-ii,Mp-ix,Mp-vi,Mp-viii,"
-    # "Mp-xi,Nett,Nett-a,Paṭṭh-a,Paṭṭh-i,Pet,Pp,Pp-a,Sp-ii-b,Th-a-ii,Vibh,Vibh-a,Yam-a,Yam-i"
-    "Paṭṭh-ii,Paṭṭh-iii,Paṭṭh-iv,Paṭṭh-v,Kkh,VinSaṅg-a,Mp-t-i,Mp-t-ii,Mp-t-iii,Mp-t-iv,Mp-t-ix,"
-    "Mp-t-v,Mp-t-vi,Mp-t-vii,Mp-t-viii,Mp-t-x,Mp-t-xi,Nett-vbh,Nett-ṭ,Ps-t-i,Ps-t-ii,Ps-t-iii,Spk-t-i,"
-    "Spk-t-ii,Spk-t-iii,Spk-t-iv,Spk-t-v,Sv-nt-i,Sv-nt-ii,Sv-pt-i,Sv-pt-ii,Sv-pt-iii,Khuddas,Khuddas-nt,"
-    "Khuddas-pt,Kkh-nt,Kkh-pt,Mūlasikk,Mūlasikk-t,Pācity-y,Sp-t-i-a,Sp-t-i-b,Sp-t-ii,Sp-t-iii,Sp-t-iv,Sp-t-v,"
-    "Utt-vn,Utt-vn-t,Vin-alaṅke,Vin-vn,Vin-vn-t,Vjb-bkn,Vjb-cv,Vjb-mv,Vjb-pac,Vjb-pr,Vjb-prj,Vmv-i,Vmv-ii,"
-    "Vmv-iii,Vmv-iv,Vmv-v,AbhMāt,Abhidh-av,Abhidh-av-nt,Abhidh-av-pt,Abhidh-av-sacc,Abhidh-av-vinich,As-mt,"
-    "Dhatuk-anuṭ,Dhatuk-mt,Dhs-anuṭ,Kv-anuṭ,Kv-mt,Moh,Namar-p,Paṭṭh-anuṭ,Paṭṭh-mt,Pp-anuṭ,Pp-mt,Vibh-anuṭ,"
-    "Vibh-mt,Vism-mht-i,Vism-mht-ii,Vism-nid,Yam-anuṭ,Yam-mt,Buddhaguṇ,Jinal,Kamal,LakkhBudth,MhPaṇām,Nāmakkp,"
-    "Nāmakkṭ,Pajjm,Sutvan,Tigumb,Vāsamāl,Abh,Abh-ṭ,Bālāv,Kacc,Kacc-sadd,Mogg,Mogg-byk,MoggPañc,PadRūp,Payog,"
-    "Sadd-dh,Sadd-pad,Subodh,Subodh-t,Vutt,Anudīp,Nirud,Paṭṭhuddes,PmtDīp,Catur,Cāṇn,Kavid,Lokan,Mhran,Narad,"
-    "Nītim,Suttn,Sūrn,Vasala,Rasav,Sīmav,Vessg,AN-pv,Abh-pv,Att-pv,DN-pv,MN-pv,SN-pv,Vin-pv,Dat.h,Dhatup,"
-    "Dhātpvil,Dhātv,Hattv,Jinvdīp,Mil-t,MoggVutt,Padamañj,Padsādh,Saddbind,Samantak,Tel,Thup,Cūḷgv,Mhv,Sas"
+    "D-i,D-ii,D-iii,M-i,M-ii,M-iii,S-i,S-ii,S-iii,S-iv,S-v,A-i,A-ii,A-iii,A-iv,A-v,A-vi,A-vii,"
+    "A-viii,A-ix,A-x,A-xi,Khp,Dhp,Ud,It,Sn,Vv,Pv,Th,Thī,Ap-i,Ap-ii,Ap-iii,Bv,Cp,Ja-i,Ja-ii,Nidd-i,"
+    "Nidd-ii,Paṭis,Nett,Mil,Pet,Vin-i,Vin-ii,Vin-ii-b,Vin-iii,Vin-iv,Vin-v,Dvem-bhk,Dvem-bhni,Dhs,"
+    "Vibh,Dhatuk,Pp,Kv,Yam-i,Yam-ii,Yam-iii,Paṭṭh-i,Paṭṭh-ii,Paṭṭh-iii,Paṭṭh-iv,Paṭṭh-v,Sv-i,Sv-ii,"
+    "Sv-iii,Ps-i,Ps-ii,Ps-iii,Spk-i,Spk-ii,Spk-iii,Spk-iv,Spk-v,Mp-i,Mp-ii,Mp-v,Mp-viii,Mp-iii,Mp-iv,"
+    "Mp-vi,Mp-vii,Mp-ix,Mp-x,Mp-xi,Pj-i,Dhp-a,Ud-a,It-a,Pj-ii,Vv-a,Pv-a,Th-a-i,Th-a-ii,Thī-a,Ap-a,Bv-a,"
+    "Cp-a,Ja-a-i,Ja-a-ii,Ja-a-iii,Ja-a-iv,Ja-a-v,Ja-a-vi-b,Ja-a-vi,Ja-a-vii,Nidd-a-i,Nidd-a-ii,"
+    "Paṭis-a,Nett-a,Sp-i,Sp-ii,Sp-ii-b,Sp-iii,Sp-iv,Sp-v,Kkh,VinSaṅg-a,As,Vibh-a,Dhatuk-a,Pp-a,Kv-a,"
+    "Yam-a,Paṭṭh-a,Sv-pt-i,Sv-pt-ii,Sv-pt-iii,Sv-nt-i,Sv-nt-ii,Ps-t-i,Ps-t-ii,Ps-t-iii,Spk-t-i,"
+    "Spk-t-ii,Spk-t-iii,Spk-t-iv,Spk-t-v,Mp-t-i,Mp-t-ii,Mp-t-iii,Mp-t-iv,Mp-t-v,Mp-t-vi,Mp-t-vii,"
+    "Mp-t-viii,Mp-t-ix,Mp-t-x,Mp-t-xi,Nett-ṭ,Nett-vbh,Sp-t-i-a,Sp-t-i-b,Sp-t-ii,Sp-t-iii,Sp-t-iv,"
+    "Sp-t-v,Vjb-prj,Vjb-pac,Vjb-bkn,Vjb-mv,Vjb-cv,Vjb-pr,Kkh-pt,Vmv-i,Vmv-ii,Vmv-iii,Vmv-iv,Vmv-v,"
+    "Vin-vn,Vin-vn-t,Pācity-y,Khuddas,Utt-vn,Utt-vn-t,Khuddas-pt,Khuddas-nt,Mūlasikk,Mūlasikk-t,"
+    "Kkh-nt,As-mt,Vibh-mt,Dhatuk-mt,Dhs-anuṭ,Dhatuk-anuṭ,Abhidh-av,Abhidh-s,Abhidh-av-pt,AbhMāt,"
+    "Vibh-anuṭ,Pp-mt,Kv-mt,Yam-mt,Paṭṭh-mt,Pp-anuṭ,Kv-anuṭ,Yam-anuṭ,Paṭṭh-anuṭ,Namar-p,Abhidh-av-vinich,"
+    "Abhidh-av-sacc,Abhidh-s-t,Abhidh-av-nt,Moh,Vism-i,Vism-ii,Vism-mht-i,Vism-mht-ii,Vism-nid,DN-pv,"
+    "MN-pv,SN-pv,AN-pv,Vin-pv,Abh-pv,Att-pv,Nirud,PmtDīp,Anudīp,Paṭṭhuddes,Nāmakkp,MhPaṇām,LakkhBudth,"
+    "Sutvan,Jinal,Kamal,Pajjm,Buddhaguṇ,Cūḷgv,Sas,Mhv,Mogg,Kacc,Sadd-pad,Sadd-dh,PadRūp,MoggPañc,Payog,"
+    "Vutt,Abh,Abh-ṭ,Subodh,Subodh-t,Bālāv,Kavid,Nītim,Dhammn,Mhran,Lokan,Suttn,Sūrn,Cāṇn,Narad,Catur,"
+    "Rasav,Sīmav,Vessg,MoggVutt,Thup,Dat.h,Dhātpvil,Dhātv,Hattv,Jina-c,Jinvdīp,Tel,Mil-t,Padamañj,Padsādh,"
+    "Saddbind,Dhatup,Samantak,Nāmakkṭ,Tigumb,Vāsamāl,Mogg-byk,Kacc-sadd,Vasala,Vin-alaṅke,"
 )
 
 
 # ══════════════════════════════════════════════════════════════════
-# CONFIG
+# CONFIG (script-specific: shared paths/lang-names/glossary logic live in
+# common_utils.py; AI defaults live alongside the AI code in ai_client.py)
 # ══════════════════════════════════════════════════════════════════
 
-EPITAKA_DB  = os.environ.get("EPITAKA_DB",  "../data/epitaka.db")
-GLOSSARY_DB = os.environ.get("GLOSSARY_DB", "../data/glossary.db")
+EPITAKA_DB   = cu.EPITAKA_DB
+GLOSSARY_DB  = cu.GLOSSARY_DB
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
 DEFAULT_LOG_DIR = "/tmp/book_translator_logs"
 
+# Prompts above this size (system + user, UTF-8 bytes) trigger the
+# size-reduction cascade below. Below this size nothing is touched — full
+# commentary, full parallel-translation set, full chunk — so normal-sized
+# requests never lose any quality.
+PROMPT_SIZE_LIMIT_BYTES = int(os.environ.get("PROMPT_SIZE_LIMIT_BYTES", 1_000_000))
 
-def _lang_db_path(epitaka_db: str, lang: str) -> str:
-    """Derive the language-specific DB path, e.g. epitaka.db → epitaka_en.db."""
-    p = Path(epitaka_db)
-    return str(p.parent / f"{p.stem}_{lang}{p.suffix}")
+# Heading-based sections often end up with very little *pending* content each
+# (most of the section may already be translated), which used to mean one
+# tiny AI call per section. Adjacent sections are merged into one bigger
+# batch as long as the batch's pending content stays under these two caps.
+SECTION_MERGE_MAX_BYTES = int(os.environ.get("SECTION_MERGE_MAX_BYTES", 300_000))
+SECTION_MERGE_MAX_LINES = int(os.environ.get("SECTION_MERGE_MAX_LINES", 50))
 
 
 # ══════════════════════════════════════════════════════════════════
 # Stub modules
 # ══════════════════════════════════════════════════════════════════
+#
+# NOTE: context_builders.py may do `from database import get_glossary_conn`,
+# which binds the *current* function object at import time. If we set a
+# generic lambda here and only patch sys.modules["database"].get_glossary_conn
+# later (in main(), once --lang is parsed), any module that imported the name
+# directly will keep using this early lambda forever — i.e. it will keep
+# reading from the default glossary.db no matter what --lang is. So we must
+# resolve --lang / --epitaka-db / --glossary-db *before* importing
+# common.context_builders, and bake the correct lang-specific path into the
+# stub from the very first definition.
+
+def _early_arg(flag: str, default: str = "") -> str:
+    """Cheap pre-parse of a single --flag value/=value from argv, before argparse runs."""
+    argv = sys.argv[1:]
+    for i, tok in enumerate(argv):
+        if tok == flag and i + 1 < len(argv):
+            return argv[i + 1]
+        if tok.startswith(flag + "="):
+            return tok.split("=", 1)[1]
+    return default
+
+
+_early_lang        = _early_arg("--lang", "")
+_early_epitaka_db  = _early_arg("--epitaka-db", EPITAKA_DB)
+_early_glossary_db = _early_arg("--glossary-db", "")
+
+if _early_glossary_db:
+    _RESOLVED_GLOSSARY_DB = _early_glossary_db
+elif _early_lang:
+    _RESOLVED_GLOSSARY_DB = cu.glossary_db_path(_early_epitaka_db, _early_lang)
+else:
+    # No --lang available yet (e.g. introspection/help); fall back to default.
+    _RESOLVED_GLOSSARY_DB = GLOSSARY_DB
 
 if "database" not in sys.modules:
     _db_mod = types.ModuleType("database")
-    _db_mod.get_glossary_conn = lambda: sqlite3.connect(GLOSSARY_DB, timeout=30)
+    _db_mod.get_glossary_conn = lambda: sqlite3.connect(_RESOLVED_GLOSSARY_DB, timeout=30)
     sys.modules["database"] = _db_mod
+else:
+    # Module already present (e.g. re-imported) — still make sure it points
+    # at the language-specific glossary DB rather than whatever it had before.
+    sys.modules["database"].get_glossary_conn = lambda: sqlite3.connect(_RESOLVED_GLOSSARY_DB, timeout=30)
 
 if "config" not in sys.modules:
     _cfg_mod = types.ModuleType("config")
-    _cfg_mod.EPITAKA_DB  = EPITAKA_DB
+    _cfg_mod.EPITAKA_DB  = _early_epitaka_db
     _cfg_mod.SC_DATA_DB  = ""
     sys.modules["config"] = _cfg_mod
+else:
+    sys.modules["config"].EPITAKA_DB = _early_epitaka_db
 
 from common.context_builders import (  # noqa: E402
     GlossaryContext,
+    GlossaryContextStemmed,
     CommentaryContext,
     PaliDefsContext,
     PreviousTranslationContext,
@@ -139,34 +217,15 @@ from common.context_builders import (  # noqa: E402
 
 
 # ══════════════════════════════════════════════════════════════════
-# DB helpers
+# DB helpers (translation-specific; shared schema/connect helpers are in
+# common_utils.py)
 # ══════════════════════════════════════════════════════════════════
 
-@contextmanager
-def _connect(path: str):
-    conn = sqlite3.connect(str(path), timeout=30)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=10000")
-    try:
-        yield conn
-    finally:
-        conn.close()
-
-
-def ensure_confidence_column(epitaka_db: str):
-    """Add translation_confidence column to sentences if not present."""
-    with _connect(epitaka_db) as conn:
-        cols = [r[1] for r in conn.execute("PRAGMA table_info(sentences)").fetchall()]
-        if "translation_confidence" not in cols:
-            conn.execute(
-                "ALTER TABLE sentences ADD COLUMN translation_confidence TEXT"
-            )
-            conn.commit()
-            print("[DB] Added column: sentences.translation_confidence")
+_connect = cu.connect  # local alias, kept short since it's used throughout this file
 
 
 def fetch_headings(epitaka_db: str, book_id: str) -> list[dict]:
+    """All headings for a book, in document order — used to draw section boundaries."""
     with _connect(epitaka_db) as conn:
         rows = conn.execute(
             "SELECT para_id, level, title, chapter_len "
@@ -184,7 +243,19 @@ def fetch_paragraphs_range(
     overwrite:  bool,
     lang_db:    str | None = None,
 ) -> list[dict]:
-    # Collect already-translated (book_id, para_id, line_id) from lang_db, if supplied
+    """
+    Load every paragraph in [para_start, para_end] for `book_id`, each
+    annotated with which of its sentences are still "pending" translation.
+
+    A sentence counts as pending when:
+      - --overwrite was given (everything is pending, regardless of lang_db), or
+      - it has no non-empty translation yet in lang_db, AND its Pāli text is
+        at least 3 characters (skips bare punctuation/number placeholder lines).
+
+    Paragraphs with zero pending sentences are dropped entirely so downstream
+    sectioning/chunking never has to special-case "nothing to do here".
+    """
+    # Collect already-translated (para_id, line_id) pairs from lang_db, if supplied
     already_translated: set[tuple[int, int]] = set()
     if lang_db and not overwrite and Path(lang_db).exists():
         with _connect(lang_db) as lconn:
@@ -231,6 +302,7 @@ def fetch_paragraphs_range(
 
 
 def count_lines_range(epitaka_db: str, book_id: str, para_start: int, para_end: int) -> int:
+    """Total sentence count (translated or not) across a paragraph range — used for section sizing."""
     with _connect(epitaka_db) as conn:
         row = conn.execute(
             "SELECT COUNT(*) AS n FROM sentences "
@@ -249,6 +321,13 @@ def build_sections_from_headings(
     overwrite:    bool,
     lang_db:      str | None = None,
 ) -> list[list[dict]]:
+    """
+    Split [para_start, para_end] into sections aligned to heading boundaries,
+    merging consecutive headings together until each section has at least
+    `min_lines` total sentences (so we don't fire one AI call per tiny
+    sub-heading). Returns a list of sections, each a list of paragraph dicts
+    (as produced by fetch_paragraphs_range).
+    """
     headings = fetch_headings(epitaka_db, book_id)
 
     with _connect(epitaka_db) as conn:
@@ -295,22 +374,160 @@ def build_sections_from_headings(
     return sections
 
 
+def merge_small_sections(
+    sections: list[list[dict]],
+    max_bytes: int = SECTION_MERGE_MAX_BYTES,
+    max_lines: int = SECTION_MERGE_MAX_LINES,
+) -> list[list[dict]]:
+    """Merge consecutive heading-based sections together so one AI call can
+    cover more pending content, instead of firing a separate call per tiny
+    section (common when most of a section is already translated and only
+    a handful of new sentences remain).
+
+    Sections are appended to the current running batch as long as doing so
+    keeps the batch's pending content under BOTH `max_bytes` (UTF-8 bytes of
+    the pending Pāli text) and `max_lines` (pending sentence count). As soon
+    as adding the next section would exceed either cap, the current batch is
+    closed off and a new one starts. A single section that already exceeds
+    the caps by itself is kept as its own batch (chunk_paragraphs/_handle_chunk
+    further down still applies token-based and byte-based splitting on top
+    of this, so nothing overflows).
+    """
+    if not sections:
+        return sections
+
+    merged: list[list[dict]] = []
+    current: list[dict] = []
+    current_bytes = 0
+    current_lines = 0
+
+    for section in sections:
+        sec_bytes = sum(
+            len(s["pali_sentence"].encode("utf-8"))
+            for para in section
+            for s in para["pending"]
+        )
+        sec_lines = sum(len(para["pending"]) for para in section)
+
+        if current and (
+            current_bytes + sec_bytes > max_bytes
+            or current_lines + sec_lines > max_lines
+        ):
+            merged.append(current)
+            current = []
+            current_bytes = 0
+            current_lines = 0
+
+        current.extend(section)
+        current_bytes += sec_bytes
+        current_lines += sec_lines
+
+    if current:
+        merged.append(current)
+
+    return merged
+
+
 # ══════════════════════════════════════════════════════════════════
 # Token-safe chunking
 # ══════════════════════════════════════════════════════════════════
 
-def estimate_tokens(text: str) -> int:
-    return len(text) // 4
+def _prompt_bytes(system_prompt: str, user_prompt: str) -> int:
+    return len((system_prompt + user_prompt).encode("utf-8"))
+
+
+def _essential_parallel_langs(lang: str) -> list[str]:
+    """
+    Size-reduction only: restrict ParallelTranslationContext to English (the
+    baseline reference) plus the target language's own reference/output —
+    e.g. translating to Sinhala keeps epitaka_en_ref.db + epitaka_si_ref.db
+    and drops Thai, Vietnamese, etc. Only used once a prompt has already
+    measured over PROMPT_SIZE_LIMIT_BYTES; normal-sized prompts keep every
+    parallel translation available.
+    """
+    return list(dict.fromkeys([
+        "epitaka_en_ref.db",
+        f"epitaka_{lang}_ref.db",
+        f"epitaka_{lang}.db",
+    ]))
+
+
+def _split_chunk_in_half(chunk: list[dict]) -> tuple[list[dict], list[dict]] | None:
+    """
+    Split a chunk (list of paragraph dicts, each carrying a 'pending'
+    sentence list) into two smaller halves so a single API call has fewer
+    sentences to translate. Returns None when the chunk is already as small
+    as it can get (one paragraph, one pending sentence) — the caller should
+    stop trying to shrink the sentence count at that point.
+    """
+    if len(chunk) > 1:
+        mid = len(chunk) // 2
+        return chunk[:mid], chunk[mid:]
+
+    para = chunk[0]
+    sentences = para["pending"]
+    if len(sentences) <= 1:
+        return None
+    mid = len(sentences) // 2
+    left  = {**para, "pending": sentences[:mid]}
+    right = {**para, "pending": sentences[mid:]}
+    return [left], [right]
+
+
+def _para_tokens(para: dict) -> int:
+    text = "\n".join(s.get("pali_sentence", "") for s in para.get("pending", []))
+    return ai.estimate_tokens(text)
+
+
+def _split_oversized_para(para: dict, max_tokens: int) -> list[dict]:
+    """
+    A single paragraph whose pending sentences alone exceed max_tokens can't
+    be handled by para-level chunking (chunk_paragraphs only ever groups or
+    breaks *between* paragraphs). Split its sentences into sub-paragraph
+    pieces that each stay within budget, keeping the same book_id/para_id/
+    sentences metadata so downstream code (chunk[0]["para_id"], etc.) still
+    works.
+    """
+    pieces: list[dict] = []
+    piece_sentences: list[dict] = []
+    piece_tokens = 0
+
+    for s in para.get("pending", []):
+        s_tokens = ai.estimate_tokens(s.get("pali_sentence", ""))
+        if piece_sentences and (piece_tokens + s_tokens > max_tokens):
+            pieces.append({**para, "pending": piece_sentences})
+            piece_sentences = []
+            piece_tokens = 0
+        piece_sentences.append(s)
+        piece_tokens += s_tokens
+
+    if piece_sentences:
+        pieces.append({**para, "pending": piece_sentences})
+
+    return pieces
 
 
 def chunk_paragraphs(paragraphs: list[dict], max_tokens: int = 3000) -> list[list[dict]]:
+    """Group paragraphs into token-budgeted chunks, splitting any single oversized paragraph on its own."""
     chunks: list[list[dict]] = []
     current: list[dict] = []
     current_tokens = 0
 
     for para in paragraphs:
-        para_text = "\n".join(s.get("pali_sentence", "") for s in para.get("pending", []))
-        para_tokens = estimate_tokens(para_text)
+        para_tokens = _para_tokens(para)
+
+        if para_tokens > max_tokens:
+            # This single paragraph is already too long by itself (long
+            # comment/note, run-on line, etc.) — flush what's pending, then
+            # split it into its own token-safe piece(s) at the sentence level
+            # instead of letting it blow past max_tokens in one chunk.
+            if current:
+                chunks.append(current)
+                current = []
+                current_tokens = 0
+            for piece in _split_oversized_para(para, max_tokens):
+                chunks.append([piece])
+            continue
 
         if current and (current_tokens + para_tokens > max_tokens):
             chunks.append(current)
@@ -330,23 +547,37 @@ def chunk_paragraphs(paragraphs: list[dict], max_tokens: int = 3000) -> list[lis
 # Prompts
 # ══════════════════════════════════════════════════════════════════
 
-SYSTEM_PROMPT = """You are an expert scholar-translator of Pāli Buddhist literature
-(canonical texts, commentaries [aṭṭhakathā] and sub-commentaries [ṭīkā]),
-producing English translations that are both ACCURATE and READABLE for a
-general but serious audience.
+def _build_system_prompt(lang: str) -> str:
+    """Build the system prompt with the correct target language injected."""
+    lang_name = cu.lang_name(lang)
+    return f"""You are an expert scholar-translator of Pāli Buddhist literature
+(canonical texts, commentaries [aṭṭhakathā] and sub-commentaries [ṭīkā]).
+
+TARGET LANGUAGE: {lang_name}
+All "translations" output MUST be in {lang_name}. The Pāli source text is in Pāli;
+your job is to produce {lang_name} renderings that are both ACCURATE and READABLE
+for a GENERAL but serious audience. Try to minimize the use of pali term in translation 
+except commonly accepted terms like nibbāna, tathāgata, etc. 
+All glossary "translation" fields must also be in {lang_name}. Return '~' for lines that are
+number, signs, or things not to be translated.
 
 You will be given several reference blocks:
   1. ESTABLISHED GLOSSARY — accumulated translation memory containing
-   previously selected Pāli → English renderings. Maintain consistency with
-   these terms unless the context clearly requires a different meaning.
+   previously selected Pāli → {lang_name} renderings. Maintain consistency with
+   these terms unless the context requires a different meaning. A line like
+   "(3 more existing variant(s) for 'X' omitted — reuse one of the above
+   rather than adding another)" means the term already has several accepted
+   renderings; pick the closest one instead of proposing a new variant.
   2. PALI COMMENTARY & SUB-COMMENTARY — aṭṭhakathā / ṭīkā explaining these lines.
-  3. PALI WORD DEFINITIONS       — dictionary entries + example usages for hard words.
+  The Mūla may also included, if the word in commnetary is a definition of the word in mūla
+  use the translation in mūla for that pali term.
+  3. PALI WORD DEFINITIONS       — definition of a word in other area in tipitaka, 
+  it may not related to the term being translate.
   4. PREVIOUS PARAGRAPH          — the immediately preceding paragraph's translation,
                                     for tone/terminology continuity.
   5. TRANSLATED MŪLA / AṬṬHAKATHĀ / ṬĪKĀ REFERENCES — other already-translated
                                     paragraphs linked to this passage.
-  6. PARALLEL HUMAN TRANSLATIONS — existing Sinhala, Thai, and/or published
-                                    English (book) translations of THIS SAME passage.
+  6. PARALLEL HUMAN TRANSLATIONS — existing English, Sinhala, Thai translations of THIS SAME passage.
   7. MYANMAR NISSAYA              — word-by-word gloss (romanised) for each sentence.
   8. SENTENCES TO TRANSLATE      — JSON array of Pāli sentences (para_id + line_id).
 
@@ -356,13 +587,13 @@ and "remarks".
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 A. "translations" — array, ONE entry per input sentence, SAME ORDER
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  {
+  {{
     "para_id": <int>,
     "line_id": <int>,
-    "english_translation": "<text>",
+    "translation": "<text in {lang_name}>",
     "confidence": "high" | "low",
     "confidence_note": "<brief reason — ONLY when confidence is low, else omit>"
-  }
+  }}
 
 CONFIDENCE RULES — be honest, not conservative:
 
@@ -389,7 +620,7 @@ CONFIDENCE RULES — be honest, not conservative:
 
 Translation style — read carefully:
 
-  • Write natural, idiomatic, modern English that a literate non-specialist
+  • Write natural, idiomatic {lang_name} that a literate non-specialist
     can follow. Prefer clear prose over a word-for-word rendering, but never
     drift from the actual meaning of the Pāli.
   • Use the PALI COMMENTARY (and ṭīkā, if present) as the primary authority
@@ -397,31 +628,26 @@ Translation style — read carefully:
     ambiguous syntax. The nissaya and word definitions support the commentary.
   • When translating COMMENTARIES or SUB-COMMENTARIES:
       - If the commentary explains or comments on a word, phrase, or technical
-        term from the source text, use the established English translation of
+        term from the source text, use the established {lang_name} translation of
         that source term if it is provided inside the commentary translation
         references.
       - Preserve the terminology relationship between the commented word and
-        the explanation. The explanation should not introduce a different
-        English rendering for the same technical term unless there is a clear
-        reason.
+        the explanation.
       - The translation of the commentary should remain consistent with the
         translation of the original passage being explained.
   • If a PARALLEL HUMAN TRANSLATION (English book source) is supplied:
       use it as a reference for terminology and tone, but do not blindly copy.
-      Where it is unnecessarily literal, archaic, or unclear, rewrite it in
-      clearer modern English while preserving doctrinal precision.
+      Rewrite in clear, natural {lang_name} while preserving doctrinal precision.
   • Apply every ESTABLISHED GLOSSARY term/phrase exactly as given, including
     multi-word phrases.
   • Reference the PREVIOUS PARAGRAPH and TRANSLATED REFERENCES for consistency
-    of terminology, names, and register. Do not unnecessarily change the
-    translation of recurring Pāli terms.
+    of terminology, names, and register.
   • Preserve important doctrinal distinctions between related Pāli terms.
-    Do not merge different technical concepts merely because English words
-    overlap.
+    Do not merge different technical concepts merely because words overlap.
   • Keep the html tags like <b>, <i> in the translation same as original pali.
-  • For the definition of a word (word in <b> wrapped in pali), make a translation 
+  • For the definition of a word (word in <b> wrapped in pali), make a translation
     for that term based on translated text from "PALI COMMENTARY & SUB-COMMENTARY"
-    block if it has, or from glossary. The pali will be quoted in this style after 
+    block if it has, or from glossary. The pali will be quoted in this style after
     the translation (<i>pali term</i>)
   • No verse numbers, footnotes, sentence numbering, or meta-commentary —
     output only the translated text for each sentence.
@@ -430,28 +656,75 @@ Translation style — read carefully:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 B. "glossary" — NEW TRANSLATION TERMS FOR FUTURE CONSISTENCY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  { "pali": "…", "english": "…", "domain": "…",
-    "sub_domain": "…", "context": "…", "note": "…" }
+  {{ "pali": "…", "translation": "…", "domain": "…",
+    "sub_domain": "…", "context": "…", "note": "…" }}
 
-  domain ∈ {sutta, vinaya, abhidhamma, grammar, story}
+  domain ∈ {{sutta, vinaya, abhidhamma, grammar, story}}
 
-  (Full glossary rules as established in previous instructions apply.)
+  CRITICAL RULES for the "pali" field:
+    • Always supply the STEM (dictionary headword) of the Pāli term, NOT the
+      inflected form found in the text. E.g. use "bhikkhu" not "bhikkhūnaṃ";
+      use "samādhi" not "samādhiṃ"; use "sīla" not "sīlāni".
+    • If a compound, give the whole compound in its uninflected/stem form.
+
+  CRITICAL RULES for the "translation" field:
+    • Must be in {lang_name}.
+
+  What TO include:
+    • Technical terms that a translator could easily render inconsistently
+      or confuse with a similar term (e.g. "samādhi" vs "samāpatti",
+      "sīla" vs "vinaya", "paññā" vs "vijjā").
+    • Named doctrinal concepts, proper nouns, and set terms specific to
+      Buddhist philosophy or Vinaya procedure.
+    • Terms whose {lang_name} rendering is non-obvious or debatable.
+
+  What NOT to include:
+    • Common grammatical particles and conjunctions such as:
+      ca, va, vā, pi, api, tu, pana, hi, eva, kho, ti, iti, atha, yeva,
+      hoti, hotu, honti, ahosi, atthi, natthi, kacci, kiṃ, na, mā, evaṃ,
+      seyyathā, tattha, tatra, tato, yathā, tathā, idaṃ, ayaṃ, so, sā, yo, yā.
+    • Plain verbs of being/doing with no doctrinal significance.
+    • Any term already present in the ESTABLISHED GLOSSARY block.
+
+  AVOID DUPLICATE / NEAR-SYNONYM ENTRIES — this matters:
+    • Before adding a new glossary entry, check whether the ESTABLISHED
+      GLOSSARY already has an entry for that Pāli stem (or a very close
+      synonym rendering). If an existing entry already conveys the meaning
+      adequately for this context, REUSE it — do not add another slightly
+      different phrasing of the same rendering just because the wording here
+      differs a little.
+    • Only add a new entry when the meaning in THIS context is genuinely
+      different from every existing entry for that term (e.g. a different
+      sense of a polysemous word), not merely a stylistic rewording of the
+      same sense.
+    • When in doubt, prefer inferring the translation from the closest
+      existing glossary entry over minting a new one. The glossary is a
+      shared, growing resource — treat near-duplicates as noise to avoid,
+      not as helpful additional context.
+
+  DO NOT OVER-APPLY THE GLOSSARY:
+    • The ESTABLISHED GLOSSARY is guidance for terminology consistency, not
+      a mandatory verbatim substitution list. If forcing a glossary term
+      into this specific sentence would make the {lang_name} read awkwardly
+      or unnaturally, prefer natural, idiomatic phrasing and only keep the
+      glossary term's core sense, not necessarily its exact wording.
+    • This applies especially to common words that happen to have a glossary
+      entry from a specific technical context — do not force that technical
+      rendering onto every plain, non-technical occurrence of the word.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 C. "remarks" — ONLY for genuine, worth-noting CONFLICTS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  { "para_id": <int>, "line_id": <int>, "pali": "<short excerpt>",
-    "translation": "<the english_translation you chose>",
+  {{ "para_id": <int>, "line_id": <int>, "pali": "<short excerpt>",
+    "translation": "<the {lang_name} translation you chose>",
     "conflict": "<what the other source says, briefly>",
-    "note": "<why you went with your choice, 1 short sentence>" }
-
-  (Full remarks rules as established in previous instructions apply.)
+    "note": "<why you went with your choice, 1 short sentence>" }}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT — critical
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Return ONLY valid JSON. No markdown fences, no prose outside the JSON.
-{ "translations": [...], "glossary": [...], "remarks": [...] }
+{{ "translations": [...], "glossary": [...], "remarks": [...] }}
 """
 
 
@@ -491,6 +764,7 @@ def build_prompt(
     parallel_block:   str,
     nissaya_block:    str,
 ) -> tuple[str, list[dict]]:
+    """Fill in USER_TEMPLATE for one chunk. Returns (prompt_text, flat_sentence_list)."""
     flat_sentences = []
     for para in chunk:
         for s in para["pending"]:
@@ -517,226 +791,23 @@ def build_prompt(
 
 
 # ══════════════════════════════════════════════════════════════════
-# Response parser
-# ══════════════════════════════════════════════════════════════════
-
-def parse_response(raw: str) -> dict:
-    cleaned = raw.strip()
-    cleaned = re.sub(r"^\s*```[a-zA-Z]*\s*\n?", "", cleaned, flags=re.MULTILINE)
-    cleaned = re.sub(r"\n?\s*```\s*$",           "", cleaned, flags=re.MULTILINE)
-    cleaned = cleaned.strip()
-
-    start = cleaned.find("{")
-    end   = cleaned.rfind("}")
-    if start != -1 and end > start:
-        try:
-            obj = json.loads(cleaned[start:end + 1])
-            obj.setdefault("translations", [])
-            obj.setdefault("glossary",     [])
-            obj.setdefault("remarks",      [])
-            return obj
-        except json.JSONDecodeError:
-            pass
-
-    obj = {"translations": [], "glossary": [], "remarks": []}
-    for key in ("translations", "glossary", "remarks"):
-        m = re.search(rf'"{key}"\s*:\s*\[', cleaned)
-        if not m:
-            continue
-        array_start = m.end() - 1
-        depth = 0
-        obj_start = None
-        items = []
-        for i, ch in enumerate(cleaned[array_start:], start=array_start):
-            if ch == "{":
-                if depth == 0:
-                    obj_start = i
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0 and obj_start is not None:
-                    try:
-                        items.append(json.loads(cleaned[obj_start:i + 1]))
-                    except json.JSONDecodeError:
-                        pass
-                    obj_start = None
-            elif ch == "]" and depth == 0:
-                break
-        obj[key] = items
-
-    return obj
-
-
-# ══════════════════════════════════════════════════════════════════
-# Gemini client
-# ══════════════════════════════════════════════════════════════════
-
-import logging
-import threading
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logging.getLogger("google").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.WARNING)
-log = logging.getLogger(__name__)
-
-
-class KeyRotator:
-    def __init__(self, keys: list[str]):
-        self._lock = threading.Lock()
-        if not keys:
-            raise RuntimeError(
-                "No Gemini API keys configured. "
-                "Set GEMINI_KEY_<N> env vars or pass --api-keys."
-            )
-        self._keys  = list(keys)
-        self._index = 0
-        log.info(f"Loaded {len(self._keys)} Gemini key(s).")
-
-    def next(self) -> str:
-        with self._lock:
-            if not self._keys:
-                raise RuntimeError("All keys exhausted.")
-            k = self._keys[self._index % len(self._keys)]
-            self._index = (self._index + 1) % len(self._keys)
-            return k
-
-    def remove(self, key: str):
-        with self._lock:
-            if key in self._keys:
-                self._keys.remove(key)
-                log.warning(f"Key removed. {len(self._keys)} remaining.")
-
-
-def _make_rotator(api_keys: list[str]) -> KeyRotator:
-    if api_keys:
-        return KeyRotator(api_keys)
-    env_keys = [
-        v.strip()
-        for k, v in os.environ.items()
-        if re.match(r"^GEMINI_KEY_\d+$", k) and v.strip()
-    ]
-    return KeyRotator(env_keys)
-
-
-def call_gemini(
-    rotator: KeyRotator,
-    prompt: str,
-    system_prompt: str,
-    model: str = GEMINI_MODEL,
-    max_output_tokens: int = 65_000,
-    timeout: int = 300,
-) -> str | None:
-    from google import genai
-    from google.genai import types as genai_types
-
-    for attempt in range(10):
-        key = rotator.next()
-        result: dict = {"response": None, "error": None}
-
-        def _call():
-            try:
-                open('input.txt', 'wt').write(f"{system_prompt}\n---\n{prompt}")
-                client = genai.Client(api_key=key)
-                r = client.models.generate_content(
-                    model=model,
-                    contents=prompt,
-                    config=genai_types.GenerateContentConfig(
-                        system_instruction=system_prompt,
-                        max_output_tokens=max_output_tokens,
-                    ),
-                )
-                result["response"] = r.text
-                open('output.txt', 'wt').write(f"{r.text}")
-            except Exception as e:
-                result["error"] = e
-
-        t = threading.Thread(target=_call, daemon=True)
-        t.start()
-        t.join(timeout=timeout)
-
-        if t.is_alive():
-            log.error(f"[Gemini] Timeout on attempt {attempt + 1}")
-            continue
-
-        if result["error"]:
-            e = result["error"]
-            status = getattr(e, "status_code", None) or getattr(e, "code", None)
-            if status == 429:
-                rotator.remove(key)
-                time.sleep(20)
-                continue
-            if status in (401, 403):
-                time.sleep(20)
-                continue
-            log.warning(f"[Gemini] Error attempt {attempt + 1}: {e}")
-            time.sleep(20)
-            continue
-
-        if result["response"] is not None:
-            return result["response"]
-
-    log.error("[Gemini] All retry attempts exhausted.")
-    return None
-
-
-def call_ai_with_logging(
-    rotator:   KeyRotator,
-    prompt:    str,
-    book_id:   str,
-    chunk_id:  str,
-    log_dir:   str,
-    model:     str = GEMINI_MODEL,
-) -> str | None:
-    os.makedirs(log_dir, exist_ok=True)
-    timestamp  = time.strftime("%Y%m%d_%H%M%S")
-    safe_id    = re.sub(r"[^\w\-]", "_", f"{book_id}_{chunk_id}")
-    base_name  = f"{timestamp}_{safe_id}"
-
-    prompt_path = os.path.join(log_dir, f"{base_name}_prompt.txt")
-    try:
-        with open(prompt_path, "w", encoding="utf-8") as f:
-            f.write("=== SYSTEM ===\n")
-            f.write(SYSTEM_PROMPT)
-            f.write("\n\n=== USER ===\n")
-            f.write(prompt)
-    except OSError as exc:
-        print(f"[LOG] could not write prompt log: {exc}")
-
-    n_tokens = estimate_tokens(prompt)
-    print(f"[AI] calling: book={book_id} chunk={chunk_id} "
-          f"{len(prompt)} chars (~{n_tokens} tokens)")
-
-    raw = call_gemini(rotator, prompt, SYSTEM_PROMPT, model=model)
-    if raw is None:
-        return None
-
-    response_path = os.path.join(log_dir, f"{base_name}_response.txt")
-    try:
-        with open(response_path, "w", encoding="utf-8") as f:
-            f.write(raw)
-    except OSError as exc:
-        print(f"[LOG] could not write response log: {exc}")
-
-    print(f"[AI] response: {len(raw)} chars")
-    return raw
-
-
-# ══════════════════════════════════════════════════════════════════
 # Per-book processing
 # ══════════════════════════════════════════════════════════════════
 
 def process_book(
     book_id:        str,
     args,
-    rotator:        KeyRotator,
+    rotator:        ai.KeyRotator,
     epitaka_db:     str,
     lang_db:        str,
+    glossary_db:    str,
+    system_prompt:  str,
     translation_writer,
     glossary_writer,
     remark_writer,
 ) -> tuple[int, int, int]:
     """Translate one book. Returns (sentences_updated, glossary_added, remarks_saved)."""
-    params = {"epitaka_db": epitaka_db}
+    params = {"epitaka_db": epitaka_db, "lang_db": lang_db}
 
     print("=" * 60)
     print(f"BOOK: {book_id}  paras={args.start}..{'end' if args.end == -1 else args.end} "
@@ -752,7 +823,10 @@ def process_book(
         overwrite   = args.overwrite,
         lang_db     = lang_db,
     )
-    print(f"{len(sections)} section(s).")
+    print(f"{len(sections)} section(s) from headings.")
+
+    sections = merge_small_sections(sections)
+    print(f"{len(sections)} section(s) after merging small ones together.")
 
     if not sections:
         print("Nothing to do.")
@@ -775,65 +849,142 @@ def process_book(
         print(f"[Section {part_idx}/{len(sections)}] paras {pid_start}-{pid_end} "
               f"({n_pending} pending sentence(s))")
 
-        pali_text_for_glossary = "\n".join(
-            s["pali_sentence"]
-            for para in part
-            for s in para["pending"]
-        )
-
-        glossary_block   = GlossaryContext(params, pali_text_for_glossary).build()
-        commentary_block = CommentaryContext(params, book_id, pid_start, pid_end).build()
-        pali_defs_block  = PaliDefsContext(params, pali_text=pali_text_for_glossary).build()
-        prev_para_block  = PreviousTranslationContext(params, book_id, pid_start).build()
-        mula_block       = MulaAtthaContext(params, book_id, pid_start, pid_end).build()
-        parallel_block   = ParallelTranslationContext(params, book_id, pid_start, pid_end).build()
+        # NOTE: glossary_block / commentary_block / pali_defs_block used to be
+        # built once here for the *whole section* (pid_start..pid_end) and
+        # reused unchanged across every chunk. That meant when a chunk's
+        # prompt came out oversized, splitting it in half only shrank the
+        # blocks that are genuinely per-chunk (nissaya/mula/parallel/prev
+        # para) -- the section-wide commentary/pali-defs/glossary payload
+        # never got smaller, so oversized sections just kept recursively
+        # splitting down to single-sentence chunks instead of converging,
+        # burning far more API calls than before. They're now built
+        # per-chunk inside _handle_chunk instead, scoped to that chunk's
+        # own paragraph range, so splitting actually shrinks them too.
 
         chunks = chunk_paragraphs(part, max_tokens=args.max_tokens)
         print(f"  -> {len(chunks)} chunk(s)")
 
-        for c_idx, chunk in enumerate(chunks, 1):
-            n_sentences = sum(len(p["pending"]) for p in chunk)
-            print(f"  Chunk {c_idx}/{len(chunks)}: {n_sentences} sentence(s) "
-                  f"across {len(chunk)} para(s)")
+        def _handle_chunk(chunk: list[dict], depth: int = 0) -> tuple[int, int, int]:
+            """
+            Build the prompt for `chunk` and send it. If the assembled prompt
+            comes out over PROMPT_SIZE_LIMIT_BYTES, apply reductions in order
+            — each step only runs when the previous one wasn't enough, so a
+            normal-sized prompt is completely untouched:
 
-            nissaya_block = NissayaContext(params, chunk).build()
+              1. Restrict PARALLEL HUMAN TRANSLATIONS to English + the target
+                 language only (drop other languages' parallel blocks).
+              2. Split the chunk in half and recurse. Fewer sentences per
+                 call shrinks every context block (nissaya, previous
+                 paragraph, mūla, parallel, commentary, word-defs, glossary),
+                 since all of them are now scoped to the chunk's own
+                 paragraph range rather than the whole section.
+              3. Last resort — the chunk is already a single sentence and the
+                 commentary / word-def context for that one sentence alone
+                 is still oversized: hard-truncate those blocks for this
+                 call only and log it clearly so it can be reviewed later.
+            """
+            chunk_start = chunk[0]["para_id"]
+            chunk_end   = chunk[-1]["para_id"]
+            ctx_start   = max(1, chunk_start - 1)
+            ctx_end     = chunk_end + 1
 
-            prompt, flat_sentences = build_prompt(
-                book_id          = book_id,
-                para_start       = chunk[0]["para_id"],
-                para_end         = chunk[-1]["para_id"],
-                chunk            = chunk,
-                glossary_block   = glossary_block,
-                commentary_block = commentary_block,
-                pali_defs_block  = pali_defs_block,
-                prev_para_block  = prev_para_block,
-                mula_block       = mula_block,
-                parallel_block   = parallel_block,
-                nissaya_block    = nissaya_block,
+            prev_para_block = PreviousTranslationContext(
+                params, book_id, chunk_start,
+                min_length=600, max_lookback=1500,
+            ).build()
+            mula_block     = MulaAtthaContext(params, book_id, ctx_start, ctx_end).build()
+            parallel_block = ParallelTranslationContext(params, book_id, ctx_start, ctx_end).build()
+            nissaya_block  = NissayaContext(params, chunk).build()
+
+            # Scoped to this chunk's own pending sentences (not the whole
+            # section) so that splitting the chunk in half actually shrinks
+            # these blocks too, instead of leaving a fixed section-wide
+            # payload baked into every split.
+            pali_text_for_chunk = "\n".join(
+                s["pali_sentence"]
+                for para in chunk
+                for s in para["pending"]
             )
+            glossary_block = GlossaryContextStemmed(params, pali_text_for_chunk).build()
+            local_commentary_block = CommentaryContext(
+                params, book_id, ctx_start, ctx_end, log_info=print, log_warn=print,
+            ).build()
+            local_pali_defs_block = PaliDefsContext(
+                params, pali_text=pali_text_for_chunk, log_info=print, log_warn=print,
+            ).build()
+
+            def _build():
+                return build_prompt(
+                    book_id=book_id, para_start=chunk_start, para_end=chunk_end,
+                    chunk=chunk, glossary_block=glossary_block,
+                    commentary_block=local_commentary_block, pali_defs_block=local_pali_defs_block,
+                    prev_para_block=prev_para_block, mula_block=mula_block,
+                    parallel_block=parallel_block, nissaya_block=nissaya_block,
+                )
+
+            prompt, flat_sentences = _build()
+            size = _prompt_bytes(system_prompt, prompt)
+
+            if size > PROMPT_SIZE_LIMIT_BYTES:
+                print(f"  [size] p{chunk_start}-{chunk_end}: {size:,} bytes > "
+                      f"{PROMPT_SIZE_LIMIT_BYTES:,} — trimming parallel translations "
+                      f"to English + {args.lang} only")
+                parallel_block = ParallelTranslationContext(
+                    params, book_id, ctx_start, ctx_end,
+                    only_langs=_essential_parallel_langs(args.lang),
+                ).build()
+                prompt, flat_sentences = _build()
+                size = _prompt_bytes(system_prompt, prompt)
+
+            if size > PROMPT_SIZE_LIMIT_BYTES:
+                halves = _split_chunk_in_half(chunk)
+                if halves is not None and depth < 8:
+                    print(f"  [size] p{chunk_start}-{chunk_end}: still {size:,} bytes — "
+                          f"splitting into 2 smaller chunks (fewer sentences per call)")
+                    left, right = halves
+                    u1, g1, r1 = _handle_chunk(left, depth + 1)
+                    u2, g2, r2 = _handle_chunk(right, depth + 1)
+                    return u1 + u2, g1 + g2, r1 + r2
+                # Can't reduce sentence count any further (already one
+                # sentence) — the static context itself is the problem.
+                print(f"  [size] p{chunk_start}-{chunk_end}: {size:,} bytes with a single "
+                      f"pending sentence — truncating commentary/word-def context "
+                      f"as a last resort (translation quality may be affected here)")
+                cap = PROMPT_SIZE_LIMIT_BYTES // 3
+                local_commentary_block = local_commentary_block[:cap]
+                local_pali_defs_block  = local_pali_defs_block[:cap]
+                prompt, flat_sentences = _build()
+                size = _prompt_bytes(system_prompt, prompt)
+
+            n_sentences = len(flat_sentences)
+            line_ids = [s["line_id"] for s in flat_sentences]
+            chunk_label = f"p{chunk_start}-{chunk_end}_L{min(line_ids)}-{max(line_ids)}" if line_ids else f"p{chunk_start}-{chunk_end}"
+            print(f"  Chunk {chunk_label}: {n_sentences} sentence(s) "
+                  f"across {len(chunk)} para(s), {size:,} bytes")
 
             if args.dry_run:
                 print(prompt)
-                print(f"  [dry-run] {len(flat_sentences)} sentence(s) would be sent.")
-                continue
+                print(f"  [dry-run] {n_sentences} sentence(s) would be sent.")
+                return 0, 0, 0
 
-            raw = call_ai_with_logging(
-                rotator  = rotator,
-                prompt   = prompt,
-                book_id  = book_id,
-                chunk_id = f"p{chunk[0]['para_id']}-{chunk[-1]['para_id']}_c{c_idx}",
-                log_dir  = args.log_dir,
-                model    = args.model,
+            raw = ai.call_ai_with_logging(
+                rotator       = rotator,
+                prompt        = prompt,
+                book_id       = book_id,
+                chunk_id      = chunk_label,
+                log_dir       = args.log_dir,
+                model         = args.model,
+                system_prompt = system_prompt,
             )
             if raw is None:
-                print(f"  Chunk {c_idx} returned no response. Skipping.")
-                continue
+                print(f"  Chunk {chunk_label} returned no response. Skipping.")
+                return 0, 0, 0
 
             try:
-                result = parse_response(raw)
+                result = ai.parse_ai_json_response(raw, ("translations", "glossary", "remarks"))
             except Exception as exc:
-                print(f"  parse_response failed for chunk {c_idx}: {exc}. Skipping.")
-                continue
+                print(f"  parse_response failed for chunk {chunk_label}: {exc}. Skipping.")
+                return 0, 0, 0
 
             translations = result.get("translations", [])
             new_terms    = result.get("glossary",     [])
@@ -845,19 +996,27 @@ def process_book(
                   f"{len(new_terms)} glossary term(s), "
                   f"{len(remarks)} remark(s)")
 
-            # ── Save to language-specific DB ──────────────────────────
             saved_trans = save_translations_to_lang_db(lang_db, book_id, translations)
-            total_updated += saved_trans
+            saved_rem   = save_remarks_to_lang_db(lang_db, book_id, remarks)
 
-            saved_rem = save_remarks_to_lang_db(lang_db, book_id, remarks)
-            total_remarks += saved_rem
-
-            # ── Clear corresponding fields from epitaka.db ────────────
-            clear_from_epitaka_db(epitaka_db, book_id, translations, remarks)
-
+            saved_gloss = 0
             if new_terms:
-                inserted = glossary_writer.upsert(new_terms, sc_id=book_id)
-                total_glossary += inserted
+                saved_gloss = cu.save_glossary_terms(
+                    glossary_db   = glossary_db,
+                    new_terms     = new_terms,
+                    source_id     = book_id,
+                    para_id_start = chunk_start,
+                    para_id_end   = chunk_end,
+                    epitaka_db    = epitaka_db,
+                )
+
+            return saved_trans, saved_gloss, saved_rem
+
+        for c_idx, chunk in enumerate(chunks, 1):
+            u, g, r = _handle_chunk(chunk)
+            total_updated  += u
+            total_glossary += g
+            total_remarks  += r
 
         print(f"  Section done. Running: sentences={total_updated}, "
               f"glossary={total_glossary}, remarks={total_remarks}.")
@@ -865,38 +1024,13 @@ def process_book(
     return total_updated, total_glossary, total_remarks
 
 
-def ensure_lang_db(lang_db: str):
-    """Create epitaka_<lang>.db with the required tables if they don't exist."""
-    with _connect(lang_db) as conn:
-        conn.executescript("""
-            CREATE TABLE IF NOT EXISTS sentences (
-                book_id                TEXT NOT NULL,
-                para_id                INTEGER NOT NULL,
-                line_id                INTEGER NOT NULL,
-                translation            TEXT,
-                translation_confidence TEXT,
-                confidence_note        TEXT,
-                PRIMARY KEY (book_id, para_id, line_id)
-            );
-            CREATE TABLE IF NOT EXISTS translation_remarks (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                book_id    TEXT NOT NULL,
-                para_id    INTEGER NOT NULL,
-                line_id    INTEGER NOT NULL,
-                pali       TEXT,
-                translation TEXT,
-                conflict   TEXT,
-                note       TEXT,
-                source_id  TEXT,
-                created_at TEXT DEFAULT (datetime('now'))
-            );
-        """)
-        conn.commit()
-    print(f"[lang_db] Ready: {lang_db}")
+# ══════════════════════════════════════════════════════════════════
+# Saving results (translation-specific; glossary saving is shared —
+# see common_utils.save_glossary_terms)
+# ══════════════════════════════════════════════════════════════════
 
-
-def save_translations_to_lang_db(lang_db: str, book_id: str, translations: list[dict]):
-    """Upsert translated sentences into the lang-specific DB."""
+def save_translations_to_lang_db(lang_db: str, book_id: str, translations: list[dict]) -> int:
+    """Upsert translated sentences (+ confidence/confidence_note) into the lang-specific DB."""
     if not translations:
         return 0
     rows = [
@@ -904,7 +1038,7 @@ def save_translations_to_lang_db(lang_db: str, book_id: str, translations: list[
             book_id,
             t["para_id"],
             t["line_id"],
-            t.get("english_translation") or t.get("translation") or "",
+            t.get("translation") or "",
             t.get("confidence", "high"),
             t.get("confidence_note") or None,
         )
@@ -928,8 +1062,8 @@ def save_translations_to_lang_db(lang_db: str, book_id: str, translations: list[
     return len(rows)
 
 
-def save_remarks_to_lang_db(lang_db: str, book_id: str, remarks: list[dict]):
-    """Insert remarks into the lang-specific DB."""
+def save_remarks_to_lang_db(lang_db: str, book_id: str, remarks: list[dict]) -> int:
+    """Insert conflict remarks (produced alongside translations) into the lang-specific DB."""
     if not remarks:
         return 0
     rows = [
@@ -957,7 +1091,7 @@ def save_remarks_to_lang_db(lang_db: str, book_id: str, remarks: list[dict]):
 
 
 def clear_from_epitaka_db(epitaka_db: str, book_id: str, translations: list[dict], remarks: list[dict]):
-    """Nullify translation fields in epitaka.db for rows now saved in lang_db."""
+    """Nullify translation fields in epitaka.db for rows now saved in lang_db (frees up epitaka.db)."""
     if not translations:
         return
 
@@ -975,7 +1109,7 @@ def clear_from_epitaka_db(epitaka_db: str, book_id: str, translations: list[dict
     with _connect(epitaka_db) as conn:
         conn.executemany(
             """UPDATE sentences
-               SET english_translation    = NULL,
+               SET translation    = NULL,
                    translation_confidence = NULL,
                    confidence_note        = NULL
                WHERE book_id=? AND para_id=? AND line_id=?""",
@@ -990,34 +1124,8 @@ def clear_from_epitaka_db(epitaka_db: str, book_id: str, translations: list[dict
         conn.commit()
 
 
-
-    """Write confidence + confidence_note back to sentences table."""
-    if not translations:
-        return
-    rows = [
-        (
-            t.get("confidence", "high"),
-            t.get("confidence_note") or None,
-            book_id,
-            t["para_id"],
-            t["line_id"],
-        )
-        for t in translations
-        if "para_id" in t and "line_id" in t
-    ]
-    if not rows:
-        return
-    with _connect(epitaka_db) as conn:
-        conn.executemany(
-            "UPDATE sentences SET translation_confidence=?, confidence_note=? "
-            "WHERE book_id=? AND para_id=? AND line_id=?",
-            rows,
-        )
-        conn.commit()
-
-
 def ensure_confidence_columns(epitaka_db: str):
-    """Add translation_confidence and confidence_note columns if absent."""
+    """Add translation_confidence and confidence_note columns to epitaka.db/sentences if absent."""
     with _connect(epitaka_db) as conn:
         cols = [r[1] for r in conn.execute("PRAGMA table_info(sentences)").fetchall()]
         added = []
@@ -1041,8 +1149,8 @@ def main() -> int:
     parser.add_argument(
         "--lang", required=True,
         help=(
-            'Target language code, e.g. "en", "si", "th". '
-            'Translations are saved to epitaka_<lang>.db next to epitaka.db.'
+            'Target language code, e.g. "en", "si", "th", "vi". '
+            'Translations are saved to epitaka_<lang>.db; glossary to glossary_<lang>.db.'
         ),
     )
     parser.add_argument(
@@ -1052,28 +1160,47 @@ def main() -> int:
             'Use "preset" to run the full preset list.'
         ),
     )
-    parser.add_argument("--start",      type=int, default=1,   help="first para_id (applies to every book, default 1)")
-    parser.add_argument("--end",        type=int, default=-1,  help="last para_id, -1 = end of book (applies to every book)")
-    parser.add_argument("--min-lines",  type=int, default=50)
-    parser.add_argument("--max-tokens", type=int, default=3000)
-    parser.add_argument("--overwrite",  action="store_true")
-    parser.add_argument("--epitaka-db", default=EPITAKA_DB)
-    parser.add_argument("--glossary-db", default=GLOSSARY_DB)
-    parser.add_argument("--model",      default=GEMINI_MODEL)
-    parser.add_argument("--api-keys",   default="")
-    parser.add_argument("--log-dir",    default=DEFAULT_LOG_DIR)
-    parser.add_argument("--max-parts",  type=int, default=-1,  help="stop after N parts per book (for testing)")
-    parser.add_argument("--dry-run",    action="store_true")
+    parser.add_argument("--start",          type=int, default=1,   help="first para_id (applies to every book, default 1)")
+    parser.add_argument("--end",            type=int, default=-1,  help="last para_id, -1 = end of book")
+    parser.add_argument("--min-lines",      type=int, default=50)
+    parser.add_argument("--max-tokens",     type=int, default=3000)
+    parser.add_argument("--overwrite",      action="store_true")
+    parser.add_argument("--epitaka-db",     default=EPITAKA_DB)
+    parser.add_argument("--glossary-db",    default="",
+                        help="Override path to glossary_<lang>.db (default: auto-derived next to epitaka.db).")
+    parser.add_argument("--model",          default=GEMINI_MODEL)
+    parser.add_argument("--api-keys",       default="")
+    parser.add_argument("--log-dir",        default=DEFAULT_LOG_DIR)
+    parser.add_argument("--max-parts",      type=int, default=-1,  help="stop after N parts per book (for testing)")
+    parser.add_argument("--dry-run",        action="store_true")
     args = parser.parse_args()
 
-    epitaka_db = args.epitaka_db
-    lang_db    = _lang_db_path(epitaka_db, args.lang)
-    sys.modules["config"].EPITAKA_DB = epitaka_db
-    sys.modules["database"].get_glossary_conn = lambda: sqlite3.connect(args.glossary_db, timeout=30)
+    epitaka_db  = args.epitaka_db
+    lang_db     = cu.lang_db_path(epitaka_db, args.lang)
+    glossary_db = args.glossary_db or cu.glossary_db_path(epitaka_db, args.lang)
 
-    print(f"[lang] Language  : {args.lang}")
-    print(f"[lang] Source DB : {epitaka_db}")
-    print(f"[lang] Target DB : {lang_db}")
+    global _RESOLVED_GLOSSARY_DB
+    if glossary_db != _RESOLVED_GLOSSARY_DB:
+        # Argparse saw something the early pre-parse didn't catch (e.g. --lang
+        # given via a different form). Re-resolve so every consumer agrees.
+        print(f"[lang] Re-resolving glossary DB: {_RESOLVED_GLOSSARY_DB} -> {glossary_db}")
+    _RESOLVED_GLOSSARY_DB = glossary_db
+
+    # Point the glossary connector stub at the language-specific DB. (This is
+    # belt-and-suspenders: _RESOLVED_GLOSSARY_DB above is what the lambda
+    # actually reads, but we also keep this attribute override for any code
+    # that calls database.get_glossary_conn() via module-attribute lookup.)
+    sys.modules["config"].EPITAKA_DB = epitaka_db
+    sys.modules["database"].get_glossary_conn = lambda: sqlite3.connect(glossary_db, timeout=30)
+
+    lang_name = cu.lang_name(args.lang)
+    print(f"[lang] Language   : {args.lang}  ({lang_name})")
+    print(f"[lang] Source DB  : {epitaka_db}")
+    print(f"[lang] Target DB  : {lang_db}")
+    print(f"[lang] Glossary DB: {glossary_db}")
+
+    # Build system prompts
+    system_prompt = _build_system_prompt(args.lang)
 
     # Resolve book list
     if args.books.strip().lower() == "preset":
@@ -1086,15 +1213,15 @@ def main() -> int:
         print("No books specified.")
         return 1
 
-    # Ensure DB columns exist before processing
+    # Ensure DB structures exist
     if not args.dry_run:
-        ensure_confidence_columns(epitaka_db)
-        ensure_lang_db(lang_db)
+        cu.ensure_lang_db(lang_db)
+        cu.ensure_glossary_db(glossary_db)
 
     explicit_keys = [k.strip() for k in args.api_keys.split(",") if k.strip()]
-    rotator = _make_rotator(explicit_keys)
+    rotator = ai.make_rotator(explicit_keys)
 
-    params = {"epitaka_db": epitaka_db}
+    params = {"epitaka_db": epitaka_db, "lang_db": lang_db}
     translation_writer = TranslationWriter(params, log_info=print, log_warn=print, log_error=print)
     glossary_writer    = GlossaryWriter(log_info=print, log_warn=print, log_error=print)
     remark_writer      = RemarkWriter(params, log_info=print, log_warn=print, log_error=print)
@@ -1115,6 +1242,8 @@ def main() -> int:
                 rotator            = rotator,
                 epitaka_db         = epitaka_db,
                 lang_db            = lang_db,
+                glossary_db        = glossary_db,
+                system_prompt      = system_prompt,
                 translation_writer = translation_writer,
                 glossary_writer    = glossary_writer,
                 remark_writer      = remark_writer,
@@ -1135,6 +1264,15 @@ def main() -> int:
     print(f"  Total glossary terms    : {grand_glossary}")
     print(f"  Total remarks saved     : {grand_remarks}")
     print("=" * 60)
+
+    ai.send_telegram(
+        f"<b>book_translator finished</b>\n"
+        f"Lang: {args.lang}\n"
+        f"Books: {len(book_list)}\n"
+        f"Sentences: {grand_sentences}\n"
+        f"Glossary: {grand_glossary}\n"
+        f"Remarks: {grand_remarks}"
+    )
     return 0
 
 

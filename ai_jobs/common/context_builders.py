@@ -2,6 +2,8 @@
 ai_jobs/context_builders.py  —  Modular prompt-context builders.
 """
 
+import builtins
+import os
 import re
 import sqlite3
 import logging
@@ -15,6 +17,18 @@ logger = logging.getLogger(__name__)
 
 _Log = Callable[[str], None]
 _noop: _Log = lambda _: None
+
+# Every unqualified print(...) in this module is a "[DEBUG ...]" timing line
+# (33 of them, fired repeatedly per chunk across the various context
+# builders). They're off by default so a normal run only shows the concise
+# per-chunk summary from book_translator.py (prompt size + parsed result).
+# Set BT_DEBUG=1 to get the full per-query timing breakdown back.
+_DEBUG = os.environ.get("BT_DEBUG", "0") == "1"
+
+
+def print(*args, **kwargs):  # noqa: A001 — intentionally shadows builtins.print for this module only
+    if _DEBUG:
+        builtins.print(*args, **kwargs)
 
 
 def _epitaka_path(params: dict) -> str:
@@ -39,6 +53,166 @@ def _connect(path: str):
 def _para_range(para_start: int, para_end: int) -> range:
     end = para_start if para_end == -1 else para_end
     return range(para_start, end + 1)
+
+
+def _lang_db_path(params: dict) -> str:
+    """Path to the language-specific translations DB (epitaka_<lang>.db), if configured."""
+    return str(params.get("lang_db") or "")
+
+
+def _fetch_lang_translations(params: dict, triples: list[tuple[str, int, int]]) -> dict[tuple[str, int, int], str]:
+    """
+    Look up translations for specific (book_id, para_id, line_id) triples from the
+    language-specific DB (params['lang_db']). Translations now live there instead of
+    in epitaka.db's `sentences.translation` column, so every context builder that needs
+    rendered English text must overlay results from here.
+
+    Returns {} silently if no lang_db is configured or the table doesn't exist yet,
+    so callers can fall back to whatever (likely empty) value epitaka.db has.
+    """
+    lang_db = _lang_db_path(params)
+    if not lang_db or not triples:
+        return {}
+    try:
+        with _connect(lang_db) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sentences'"
+            ).fetchone():
+                return {}
+            conn.execute("DROP TABLE IF EXISTS _lt_targets")
+            conn.execute("CREATE TEMP TABLE _lt_targets (book_id TEXT, para_id INTEGER, line_id INTEGER)")
+            conn.executemany("INSERT INTO _lt_targets VALUES (?,?,?)", triples)
+            rows = conn.execute(
+                "SELECT s.book_id, s.para_id, s.line_id, s.translation "
+                "FROM sentences s JOIN _lt_targets t "
+                "ON s.book_id=t.book_id AND s.para_id=t.para_id AND s.line_id=t.line_id"
+            ).fetchall()
+            conn.execute("DROP TABLE IF EXISTS _lt_targets")
+        return {(r["book_id"], r["para_id"], r["line_id"]): (r["translation"] or "") for r in rows}
+    except Exception as exc:
+        logger.warning(f"[_fetch_lang_translations] Failed reading {lang_db}: {exc}")
+        return {}
+
+
+def _fetch_lang_translations_range(params: dict, book_id: str, para_lo: int, para_hi: int) -> dict[tuple[int, int], str]:
+    """Same as _fetch_lang_translations but for a whole (book_id, para range), keyed by (para_id, line_id)."""
+    lang_db = _lang_db_path(params)
+    if not lang_db:
+        return {}
+    try:
+        with _connect(lang_db) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sentences'"
+            ).fetchone():
+                return {}
+            rows = conn.execute(
+                "SELECT para_id, line_id, translation FROM sentences "
+                "WHERE book_id=? AND para_id BETWEEN ? AND ?",
+                (book_id, para_lo, para_hi),
+            ).fetchall()
+        return {(r["para_id"], r["line_id"]): (r["translation"] or "") for r in rows}
+    except Exception as exc:
+        logger.warning(f"[_fetch_lang_translations_range] Failed reading {lang_db}: {exc}")
+        return {}
+
+
+# ── English reference DB fallback ────────────────────────────────────────
+#
+# epitaka_en_ref.db holds an established human English reference translation
+# and lives next to epitaka.db (same folder as epitaka_<lang>.db). When the
+# target-language DB (epitaka_<lang>.db) has no translation yet for a given
+# (book_id, para_id, line_id), context builders fall back to this reference
+# DB so the prompt still gets useful English context instead of nothing.
+
+_REF_DB_FILENAME = "epitaka_en_ref.db"
+
+
+def _ref_db_path(params: dict) -> str:
+    """Path to the English reference translations DB, sitting next to epitaka.db."""
+    from pathlib import Path
+    return str(Path(_epitaka_path(params)).parent / _REF_DB_FILENAME)
+
+
+def _fetch_ref_translations(params: dict, triples: list[tuple[str, int, int]]) -> dict[tuple[str, int, int], str]:
+    """Same as _fetch_lang_translations but reads from epitaka_en_ref.db instead of epitaka_<lang>.db."""
+    from pathlib import Path
+    ref_db = _ref_db_path(params)
+    if not ref_db or not triples or not Path(ref_db).exists():
+        return {}
+    try:
+        with _connect(ref_db) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sentences'"
+            ).fetchone():
+                return {}
+            conn.execute("DROP TABLE IF EXISTS _rt_targets")
+            conn.execute("CREATE TEMP TABLE _rt_targets (book_id TEXT, para_id INTEGER, line_id INTEGER)")
+            conn.executemany("INSERT INTO _rt_targets VALUES (?,?,?)", triples)
+            rows = conn.execute(
+                "SELECT s.book_id, s.para_id, s.line_id, s.translation "
+                "FROM sentences s JOIN _rt_targets t "
+                "ON s.book_id=t.book_id AND s.para_id=t.para_id AND s.line_id=t.line_id"
+            ).fetchall()
+            conn.execute("DROP TABLE IF EXISTS _rt_targets")
+        return {(r["book_id"], r["para_id"], r["line_id"]): (r["translation"] or "") for r in rows}
+    except Exception as exc:
+        logger.warning(f"[_fetch_ref_translations] Failed reading {ref_db}: {exc}")
+        return {}
+
+
+def _fetch_ref_translations_range(params: dict, book_id: str, para_lo: int, para_hi: int) -> dict[tuple[int, int], str]:
+    """Same as _fetch_lang_translations_range but reads from epitaka_en_ref.db."""
+    from pathlib import Path
+    ref_db = _ref_db_path(params)
+    if not ref_db or not Path(ref_db).exists():
+        return {}
+    try:
+        with _connect(ref_db) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sentences'"
+            ).fetchone():
+                return {}
+            rows = conn.execute(
+                "SELECT para_id, line_id, translation FROM sentences "
+                "WHERE book_id=? AND para_id BETWEEN ? AND ?",
+                (book_id, para_lo, para_hi),
+            ).fetchall()
+        return {(r["para_id"], r["line_id"]): (r["translation"] or "") for r in rows}
+    except Exception as exc:
+        logger.warning(f"[_fetch_ref_translations_range] Failed reading {ref_db}: {exc}")
+        return {}
+
+
+def _fetch_lang_translations_with_fallback(
+    params: dict, triples: list[tuple[str, int, int]]
+) -> dict[tuple[str, int, int], str]:
+    """
+    Look up translations in epitaka_<lang>.db, then fill in any triple that
+    came back missing/blank using epitaka_en_ref.db.
+    """
+    lang_map = _fetch_lang_translations(params, triples)
+    missing = [t for t in triples if not (lang_map.get(t) or "").strip()]
+    if missing:
+        ref_map = _fetch_ref_translations(params, missing)
+        for k, v in ref_map.items():
+            if (v or "").strip():
+                lang_map[k] = v
+    return lang_map
+
+
+def _fetch_lang_translations_range_with_fallback(
+    params: dict, book_id: str, para_lo: int, para_hi: int
+) -> dict[tuple[int, int], str]:
+    """
+    Look up translations in epitaka_<lang>.db for a para range, then fill in
+    any (para_id, line_id) that came back missing/blank using epitaka_en_ref.db.
+    """
+    lang_map = _fetch_lang_translations_range(params, book_id, para_lo, para_hi)
+    ref_map = _fetch_ref_translations_range(params, book_id, para_lo, para_hi)
+    for k, v in ref_map.items():
+        if not (lang_map.get(k) or "").strip() and (v or "").strip():
+            lang_map[k] = v
+    return lang_map
 
 
 class ContextBlock(ABC):
@@ -84,13 +258,13 @@ class NissayaContext(ContextBlock):
             self._paragraphs = []
 
     def _fetch_sentences(self, book_id: str, para_start: int, para_end: int) -> list[dict]:
-        """Fetch sentences (including english_translation) for all paragraphs in range."""
+        """Fetch sentences (including translation) for all paragraphs in range."""
         result = []
         path = _epitaka_path(self.params)
         with _connect(path) as conn:
             for pid in _para_range(para_start, para_end):
                 rows = conn.execute(
-                    "SELECT line_id, pali_sentence, english_translation FROM sentences "
+                    "SELECT line_id, pali_sentence, translation FROM sentences "
                     "WHERE book_id=? AND para_id=? ORDER BY line_id",
                     (book_id, pid),
                 ).fetchall()
@@ -179,7 +353,7 @@ class NissayaContext(ContextBlock):
                     lid      = s["line_id"]
                     raw_niss = niss_map.get(lid, "")
                     niss_fmt = self._format_nissaya_json(raw_niss)
-                    en       = (s.get("english_translation") or "").strip()
+                    en       = (s.get("translation") or "").strip()
 
                     # Skip lines with no nissaya content
                     if niss_fmt == "(none)":
@@ -239,8 +413,10 @@ class GlossaryContext(ContextBlock):
             try:
                 t2 = time.perf_counter()
                 placeholders = ",".join("?" * len(ngrams))
+                # Support both old schema (english) and new schema (translation)
+                cols = [r[1] for r in conn.execute("PRAGMA table_info(glossary)").fetchall()]
                 rows = conn.execute(
-                    f"SELECT pali, english, context FROM glossary "
+                    f"SELECT pali, translation AS translation, context FROM glossary "
                     f"WHERE pali IN ({placeholders})",
                     ngrams,
                 ).fetchall()
@@ -256,14 +432,211 @@ class GlossaryContext(ContextBlock):
             return self._wrap("(no matching glossary entries yet)")
 
         self.log_info(f"[GlossaryContext] {len(rows)} term(s) found.")
-        lines = []
-        for r in rows:
-            line = f"  {r['pali']} → {r['english']}"
-            if r["context"]:
-                line += f"  [{r['context']}]"
-            lines.append(line)
+        lines = GlossaryContextStemmed._format_grouped(rows)
         return self._wrap("\n".join(lines))
 
+# ══════════════════════════════════════════════════════════════════
+# 2b. GlossaryContextStemmed
+# ══════════════════════════════════════════════════════════════════
+class GlossaryContextStemmed(ContextBlock):
+    """
+    Like GlossaryContext, but resolves each token in the source text to its
+    Pāli stem (via dpd_inflections_to_headwords / pali_definition / dpr_stem,
+    same logic as dictionary.py / _resolve_pali_stem) before looking the term
+    up in the glossary. This catches inflected forms ("buddhena", "buddhassa",
+    ...) that a plain n-gram lookup misses, since the glossary stores stems
+    ("buddha"), not surface forms.
+
+    Speed notes:
+      - All distinct tokens are stemmed with 3 *batched* SQL queries total
+        (one IN(...) query per lookup table), instead of 3 queries per token.
+      - A class-level cache memoizes word -> stem across calls/instances,
+        since the same inflected forms recur constantly within a book.
+      - Multi-word phrases (n >= 2) are kept as raw n-grams (stemming a
+        whole phrase isn't meaningful) and merged with the stem set into a
+        single final IN(...) query against the glossary.
+    """
+    label = "ESTABLISHED GLOSSARY (apply exactly, including multi-word phrases)"
+
+    _stem_cache: dict[str, str] = {}   # word -> stem, shared across instances/calls
+
+    def __init__(self, params: dict, pali_text: str, *, max_n: int = 5,
+                 log_info: _Log = _noop, log_warn: _Log = _noop):
+        super().__init__(params, log_info, log_warn)
+        self._pali_text  = pali_text
+        self._pali_text = self._pali_text.replace(' ’’ ti', 'ti').replace('‘‘ ', '')
+        self._max_n      = max_n
+        self._epitaka_db = params.get("epitaka_db", "")
+
+    @staticmethod
+    def _tokenize(text: str) -> list[str]:
+        return [t.lower() for t in re.split(r"[\s,;.\u2018\u2019\"'()\[\]]+", text)
+                if len(t) > 1]
+
+    @staticmethod
+    def _extract_phrase_ngrams(tokens: list[str], max_n: int) -> set[str]:
+        """Multi-word phrases only (n >= 2) — stemming doesn't apply to these."""
+        ngrams: set[str] = set()
+        for n in range(2, max_n + 1):
+            for i in range(len(tokens) - n + 1):
+                ngrams.add(" ".join(tokens[i:i + n]))
+        return ngrams
+
+    def _resolve_stems_batch(self, words: list[str]) -> dict[str, str]:
+        """Resolve many words to stems using 3 batched queries total (plus cache)."""
+        result: dict[str, str] = {}
+        remaining: set[str] = set()
+        for w in words:
+            cached = self._stem_cache.get(w)
+            if cached is not None:
+                result[w] = cached
+            else:
+                remaining.add(w)
+
+        if not remaining or not self._epitaka_db:
+            for w in remaining:
+                result[w] = w  # no DB available — fall back to surface form
+            return result
+
+        try:
+            conn = sqlite3.connect(self._epitaka_db, timeout=30)
+            conn.row_factory = sqlite3.Row
+            try:
+                # 1) dpd_inflections_to_headwords
+                placeholders = ",".join("?" * len(remaining))
+                rows = conn.execute(
+                    f"SELECT inflection, headwords FROM dpd_inflections_to_headwords "
+                    f"WHERE inflection IN ({placeholders})",
+                    list(remaining),
+                ).fetchall()
+                for r in rows:
+                    if r["headwords"]:
+                        dpd_word = re.sub(r"['\[\]\d\s]", "", r["headwords"].split(",")[0])
+                        if dpd_word:
+                            result[r["inflection"]] = dpd_word
+                            self._stem_cache[r["inflection"]] = dpd_word
+                            remaining.discard(r["inflection"])
+
+                # 2) pali_definition (plain or word -> stem)
+                if remaining:
+                    placeholders = ",".join("?" * len(remaining))
+                    rows = conn.execute(
+                        f"SELECT plain, word, stem FROM pali_definition "
+                        f"WHERE plain IN ({placeholders}) OR word IN ({placeholders})",
+                        list(remaining) + list(remaining),
+                    ).fetchall()
+                    for r in rows:
+                        if not r["stem"]:
+                            continue
+                        for key in (r["plain"], r["word"]):
+                            if key in remaining:
+                                result[key] = r["stem"]
+                                self._stem_cache[key] = r["stem"]
+                                remaining.discard(key)
+
+                # 3) dpr_stem
+                if remaining:
+                    placeholders = ",".join("?" * len(remaining))
+                    rows = conn.execute(
+                        f"SELECT word, stem FROM dpr_stem WHERE word IN ({placeholders})",
+                        list(remaining),
+                    ).fetchall()
+                    for r in rows:
+                        if r["stem"] and r["word"] in remaining:
+                            result[r["word"]] = r["stem"]
+                            self._stem_cache[r["word"]] = r["stem"]
+                            remaining.discard(r["word"])
+
+                # Anything still unresolved: fall back to itself, but don't
+                # cache it permanently in case dictionary tables get backfilled.
+                for w in remaining:
+                    result[w] = w
+            finally:
+                conn.close()
+        except Exception as exc:
+            self.log_warn(f"[GlossaryContextStemmed] stem batch lookup failed: {exc}")
+            for w in remaining:
+                result.setdefault(w, w)
+
+        return result
+
+    def build(self) -> str:
+        import time
+        t0 = time.perf_counter()
+
+        tokens = self._tokenize(self._pali_text)
+        if not tokens:
+            return self._wrap("(no existing glossary entries)")
+
+        distinct_tokens = list(set(tokens))
+        word_to_stem = self._resolve_stems_batch(distinct_tokens)
+        print(f"[DEBUG GlossaryContextStemmed] stemmed {len(distinct_tokens)} "
+              f"distinct token(s): {time.perf_counter()-t0:.3f}s")
+
+        stems   = set(word_to_stem.values())
+        phrases = self._extract_phrase_ngrams(tokens, self._max_n)
+        lookup_terms = stems | phrases
+        if not lookup_terms:
+            return self._wrap("(no existing glossary entries)")
+
+        try:
+            t1 = time.perf_counter()
+            conn = get_glossary_conn()
+            conn.row_factory = sqlite3.Row
+            try:
+                placeholders = ",".join("?" * len(lookup_terms))
+                rows = conn.execute(
+                    f"SELECT pali, translation AS translation, context FROM glossary "
+                    f"WHERE pali IN ({placeholders})",
+                    list(lookup_terms),
+                ).fetchall()
+                print(f"[DEBUG GlossaryContextStemmed] glossary query "
+                      f"({len(rows)} hits over {len(lookup_terms)} term(s)): "
+                      f"{time.perf_counter()-t1:.3f}s")
+            finally:
+                conn.close()
+        except Exception as exc:
+            self.log_warn(f"[GlossaryContextStemmed] Lookup failed: {exc}")
+            return self._wrap("(glossary unavailable)")
+
+        print(f"[DEBUG GlossaryContextStemmed] total build: {time.perf_counter()-t0:.3f}s")
+        if not rows:
+            return self._wrap("(no matching glossary entries yet)")
+
+        self.log_info(f"[GlossaryContextStemmed] {len(rows)} term(s) found.")
+        lines = self._format_grouped(rows)
+        return self._wrap("\n".join(lines))
+
+    @staticmethod
+    def _format_grouped(rows, max_variants_per_term: int = 3) -> list[str]:
+        """
+        Group hits by pali headword and cap the number of distinct-translation
+        variants shown per word. Established glossaries accumulate many
+        near-synonymous entries for the same term over time (e.g. 15 slightly
+        different renderings of "sannipāta"); dumping all of them into every
+        prompt bloats the request and actively encourages the model to keep
+        minting yet another variant instead of reusing one. Showing at most a
+        few representative variants keeps the signal ("here's how this word
+        has been rendered before") without the noise.
+        """
+        from collections import OrderedDict
+        grouped: "OrderedDict[str, list]" = OrderedDict()
+        for r in rows:
+            grouped.setdefault(r["pali"], []).append(r)
+
+        lines = []
+        for pali, entries in grouped.items():
+            shown = entries[:max_variants_per_term]
+            extra = len(entries) - len(shown)
+            for r in shown:
+                line = f"  {pali} → {r['translation']}"
+                if r["context"]:
+                    line += f"  [{r['context']}]"
+                lines.append(line)
+            if extra > 0:
+                lines.append(f"  ({extra} more existing variant(s) for '{pali}' omitted — "
+                              f"reuse one of the above rather than adding another)")
+        return lines
 
 # ══════════════════════════════════════════════════════════════════
 # 3. CommentaryContext
@@ -297,7 +670,7 @@ class CommentaryContext(ContextBlock):
         conn.execute("CREATE TEMP TABLE _cb_targets (book_id TEXT, para_id INTEGER, line_id INTEGER)")
         conn.executemany("INSERT INTO _cb_targets VALUES (?,?,?)", triples)
         rows = conn.execute(
-            "SELECT s.book_id, s.para_id, s.line_id, s.pali_sentence, s.english_translation "
+            "SELECT s.book_id, s.para_id, s.line_id, s.pali_sentence "
             "FROM sentences s JOIN _cb_targets t "
             "ON s.book_id=t.book_id AND s.para_id=t.para_id AND s.line_id=t.line_id "
             "ORDER BY s.book_id, s.para_id, s.line_id"
@@ -312,7 +685,7 @@ class CommentaryContext(ContextBlock):
         conn.execute("CREATE TEMP TABLE _cb_paras (book_id TEXT, para_id INTEGER)")
         conn.executemany("INSERT INTO _cb_paras VALUES (?,?)", pairs)
         rows = conn.execute(
-            "SELECT s.book_id, s.para_id, s.line_id, s.pali_sentence, s.english_translation "
+            "SELECT s.book_id, s.para_id, s.line_id, s.pali_sentence "
             "FROM sentences s JOIN _cb_paras t "
             "ON s.book_id=t.book_id AND s.para_id=t.para_id "
             "ORDER BY s.book_id, s.para_id, s.line_id"
@@ -320,14 +693,26 @@ class CommentaryContext(ContextBlock):
         conn.execute("DROP TABLE IF EXISTS _cb_paras")
         return rows
 
-    @staticmethod
-    def _render(rows, label):
+    def _truncate(self, text: str, budget: int) -> str:
+        """Hard cap for a rendered section that has no cheaper fallback tier
+        (mūla / sibling only have 'full paragraphs', unlike forward which has
+        window/exact-line fallbacks). Cuts on a line boundary where possible."""
+        if budget <= 0 or len(text) <= budget:
+            return text
+        cut = text.rfind("\n", 0, budget)
+        if cut < budget * 0.5:  # avoid cutting away almost everything
+            cut = budget
+        return text[:cut] + "\n[... truncated for length ...]"
+
+    def _render(self, rows, label):
         if not rows:
             return ""
+        triples = [(r["book_id"], r["para_id"], r["line_id"]) for r in rows]
+        lang_map = _fetch_lang_translations_with_fallback(self.params, triples)
         sections: dict[tuple, list[str]] = {}
         for r in rows:
             pali = r["pali_sentence"] or ""
-            en   = (r["english_translation"] or "").strip() if "english_translation" in r.keys() else ""
+            en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
             line = f"  [{r['line_id']}] {pali}"
             if en:
                 line += f"\n          EN: {en}"
@@ -438,6 +823,8 @@ class CommentaryContext(ContextBlock):
                         mula_rows,
                         "[Mūla / Source Text (for translation consistency)]",
                     )
+                    if self._max_chars > 0 and len(mula_result) > self._max_chars:
+                        mula_result = self._truncate(mula_result, self._max_chars)
                     print(f"[DEBUG CommentaryContext] reverse fetch+render ({len(mula_result)} chars): {time.perf_counter()-t7s:.3f}s")
 
                 # ── C. Sibling lookup: forward-links from the same mūla src paragraphs ──
@@ -472,6 +859,11 @@ class CommentaryContext(ContextBlock):
                             sib_rows,
                             "[Sibling Commentary (shares same mūla source)]",
                         )
+                        # Sibling commentary is the least essential of the three
+                        # sections (forward > mūla > sibling), so it gets the
+                        # tightest budget — half of max_chars.
+                        if self._max_chars > 0 and len(sibling_result) > self._max_chars // 2:
+                            sibling_result = self._truncate(sibling_result, self._max_chars // 2)
                         print(f"[DEBUG CommentaryContext] sibling fetch+render ({len(sibling_result)} chars): {time.perf_counter()-t9s:.3f}s")
 
             # ── Assemble final output ─────────────────────────────────────────────────
@@ -539,16 +931,18 @@ class PaliDefsContext(ContextBlock):
         if not row:
             return []
         ctx = conn.execute(
-            "SELECT pali_sentence, english_translation FROM sentences "
+            "SELECT book_id, para_id, line_id, pali_sentence FROM sentences "
             "WHERE book_id=? AND para_id=? AND line_id BETWEEN ? AND ? "
             "ORDER BY line_id",
             (row["book_id"], row["para_id"], row["line_id"] - 1, row["line_id"] + 1),
         ).fetchall()
+        triples = [(r["book_id"], r["para_id"], r["line_id"]) for r in ctx]
+        lang_map = _fetch_lang_translations_with_fallback(self.params, triples)
         results = []
         for r in ctx:
             if not r["pali_sentence"]:
                 continue
-            en = (r["english_translation"] or "").strip()
+            en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
             entry = r["pali_sentence"]
             if en:
                 entry += f" [{en}]"
@@ -625,7 +1019,7 @@ class PaliDefsContext(ContextBlock):
                     ],
                 )
                 ctx_rows = conn.execute(
-                    "SELECT l.stem, s.pali_sentence, s.english_translation "
+                    "SELECT l.stem, s.book_id, s.para_id, s.line_id, s.pali_sentence "
                     "FROM sentences s "
                     "JOIN _pd_locs l "
                     "ON s.book_id=l.book_id AND s.para_id=l.para_id "
@@ -635,10 +1029,15 @@ class PaliDefsContext(ContextBlock):
                 ).fetchall()
                 conn.execute("DROP TABLE IF EXISTS _pd_locs")
 
+                # Translations now live in the language-specific DB — overlay them,
+                # falling back to epitaka_en_ref.db for lines not yet translated.
+                triples = [(r["book_id"], r["para_id"], r["line_id"]) for r in ctx_rows]
+                lang_map = _fetch_lang_translations_with_fallback(self.params, triples)
+
                 from collections import defaultdict
                 stem_ctx: dict[str, list[str]] = defaultdict(list)
                 for r in ctx_rows:
-                    en    = (r["english_translation"] or "").strip()
+                    en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
                     entry = r["pali_sentence"]
                     if en:
                         entry += f" [{en}]"
@@ -721,7 +1120,7 @@ class PreviousTranslationContext(ContextBlock):
                 # para_start, newest-first so we can stop collecting early.
                 t1 = time.perf_counter()
                 candidate_rows = conn.execute(
-                    "SELECT para_id, line_id, pali_sentence, english_translation "
+                    "SELECT para_id, line_id, pali_sentence "
                     "FROM sentences "
                     "WHERE book_id = ? AND para_id < ? "
                     "ORDER BY para_id DESC, line_id DESC "
@@ -731,10 +1130,19 @@ class PreviousTranslationContext(ContextBlock):
                 print(f"[DEBUG PreviousTranslationContext] batch fetch "
                       f"({len(candidate_rows)} rows): {time.perf_counter()-t1:.3f}s")
 
+            # Translations now live in the language-specific DB, not epitaka.db's
+            # `sentences.translation` column — overlay them here.
+            lang_map = _fetch_lang_translations_range(
+                self.params, self._book_id,
+                max(0, self._para_start - self._max_lookback), self._para_start - 1,
+            )
+
             # Group rows by para_id; restore ascending line order inside each para.
             para_map: dict[int, list[dict]] = {}
             for r in candidate_rows:
-                para_map.setdefault(r["para_id"], []).append(dict(r))
+                row = dict(r)
+                row["translation"] = lang_map.get((row["para_id"], row["line_id"])) or ""
+                para_map.setdefault(row["para_id"], []).append(row)
             for rows in para_map.values():
                 rows.sort(key=lambda x: x["line_id"])
 
@@ -746,7 +1154,7 @@ class PreviousTranslationContext(ContextBlock):
             for pid in sorted(para_map.keys(), reverse=True):
                 rows = para_map[pid]
                 para_en_chars = sum(
-                    len((r["english_translation"] or "").strip())
+                    len((r["translation"] or "").strip())
                     for r in rows
                 )
                 # Skip paragraphs with no translation at all.
@@ -778,7 +1186,7 @@ class PreviousTranslationContext(ContextBlock):
                 lines = [f"[Para {pid}]"]
                 for s in sentences:
                     pali = (s.get("pali_sentence") or "").strip()
-                    en   = (s.get("english_translation") or "").strip()
+                    en   = (s.get("translation") or "").strip()
                     line = f"  [line_id={s['line_id']}] Pali: {pali}"
                     if en:
                         line += f"\n                   EN:   {en}"
@@ -853,11 +1261,9 @@ class MulaAtthaContext(ContextBlock):
                     dst_book = r["dst_book"]
                     dst_para = r["dst_para"]
                     sent_rows = conn.execute(
-                        "SELECT line_id, pali_sentence, english_translation "
+                        "SELECT line_id, pali_sentence "
                         "FROM sentences "
                         "WHERE book_id=? AND para_id=? "
-                        "AND english_translation IS NOT NULL "
-                        "AND english_translation != '' "
                         "ORDER BY line_id",
                         (dst_book, dst_para),
                     ).fetchall()
@@ -865,12 +1271,29 @@ class MulaAtthaContext(ContextBlock):
                     if not sent_rows:
                         continue
 
+                    # Translations now live in the language-specific DB, not epitaka.db's
+                    # `sentences.translation` column — overlay them, falling back to
+                    # epitaka_en_ref.db when a line has no lang-db translation yet, then
+                    # drop any line that still has no translation either way.
+                    lang_map = _fetch_lang_translations_range_with_fallback(self.params, dst_book, dst_para, dst_para)
+
                     lines = [f"[{dst_book} §{dst_para}]"]
+                    any_translated = False
                     for sr in sent_rows:
+                        en = lang_map.get((dst_para, sr["line_id"]))
+                        if en is None:
+                            en = (sr["translation"] or "")
+                        en = en.strip()
+                        if not en:
+                            continue
+                        any_translated = True
                         lines.append(
                             f"  [{sr['line_id']}] Pāli: {sr['pali_sentence'] or ''}\n"
-                            f"          EN:   {sr['english_translation']}"
+                            f"          EN:   {en}"
                         )
+
+                    if not any_translated:
+                        continue
                     blocks.append("\n".join(lines))
 
                 if not blocks:
@@ -891,9 +1314,9 @@ class MulaAtthaContext(ContextBlock):
 # Human-readable labels for each known epitaka_*.db file.
 # Add new languages here as more databases become available.
 _EPITAKA_LABELS: dict[str, str] = {
-    "epitaka_si.db":      "Sinhala translation",
-    "epitaka_th.db":      "Thai translation",
-    "epitaka_en-book.db": "English translation (human, book sources)",
+    "epitaka_en_ref.db":      "English translation",
+    "epitaka_si_ref.db":      "Sinhala translation",
+    "epitaka_th_ref.db":      "Thai translation",
 }
 
 
@@ -1073,13 +1496,13 @@ class TranslationWriter:
         with _connect(_epitaka_path(self.params)) as conn:
             for entry in translations:
                 line_id = entry.get("line_id")
-                text    = str(entry.get("english_translation") or "").strip()
+                text    = str(entry.get("translation") or "").strip()
                 if line_id is None or not text:
                     self.log_warn(f"[TranslationWriter] Skipping bad entry: {entry}")
                     continue
                 try:
                     conn.execute(
-                        "UPDATE sentences SET english_translation=? "
+                        "UPDATE sentences SET translation=? "
                         "WHERE book_id=? AND para_id=? AND line_id=?",
                         (text, book_id, para_id, line_id),
                     )
@@ -1103,7 +1526,7 @@ class GlossaryWriter:
         self.log_error = log_error
 
     def upsert(self, terms: list[dict], sc_id: str = "") -> int:
-        required = {"pali", "english"}
+        required = {"pali", "translation"}
         inserted = 0
 
         try:
@@ -1118,17 +1541,17 @@ class GlossaryWriter:
                     self.log_warn(f"[GlossaryWriter] Skipping bad entry: {term}")
                     continue
                 pali    = str(term.get("pali",    "")).strip()
-                english = str(term.get("english", "")).strip()
-                if not pali or not english:
+                translation = str(term.get("translation", "")).strip()
+                if not pali or not translation:
                     continue
                 try:
                     conn.execute(
                         "INSERT INTO glossary "
-                        "(pali, english, domain, sub_domain, context, note, source_id) "
+                        "(pali, translation, domain, sub_domain, context, note, source_id) "
                         "VALUES (?,?,?,?,?,?,?) "
-                        "ON CONFLICT(pali, english) DO NOTHING",
+                        "ON CONFLICT(pali, translation) DO NOTHING",
                         (
-                            pali, english,
+                            pali, translation,
                             str(term.get("domain",     "") or ""),
                             str(term.get("sub_domain", "") or ""),
                             str(term.get("context",    "") or ""),
