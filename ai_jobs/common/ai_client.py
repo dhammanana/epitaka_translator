@@ -133,10 +133,20 @@ DEFAULT_TPM_LIMIT    = int(os.environ.get("AI_TPM_LIMIT", "250000"))
 # under the system temp dir so independent sessions find the same file
 # without any extra configuration; override with AI_KEY_STATE_FILE if you
 # want per-project isolation.
-KEY_STATE_FILE = os.environ.get(
-    "AI_KEY_STATE_FILE",
-    os.path.join(tempfile.gettempdir(), "gemini_key_rate_state.json"),
-)
+def _key_state_file(model: str) -> str:
+    """
+    Per-model key-state JSON path, e.g. gemini_key_rate_state_gemini-2.5-pro.json.
+    Keeps rpm/tpm/dead-key tracking separate per model (each model has its
+    own quota). Override the base path with AI_KEY_STATE_FILE if needed.
+    """
+    safe_model = re.sub(r"[^\w\-.]", "_", model or "default")
+    base = os.environ.get("AI_KEY_STATE_FILE")
+    if base:
+        root, ext = os.path.splitext(base)
+        return f"{root}_{safe_model}{ext or '.json'}"
+    return os.path.join(
+        tempfile.gettempdir(), f"gemini_key_rate_state_{safe_model}.json"
+    )
 
 
 def _key_id(key: str) -> str:
@@ -169,6 +179,7 @@ class KeyRotator:
         keys:      list[str],
         rpm_limit: int = DEFAULT_RPM_LIMIT,
         tpm_limit: int = DEFAULT_TPM_LIMIT,
+        labels:    dict[str, str] | None = None,
     ):
         self._lock = threading.Lock()
         if not keys:
@@ -180,10 +191,21 @@ class KeyRotator:
         self._index     = 0
         self._rpm_limit = rpm_limit
         self._tpm_limit = tpm_limit
+        # key -> human-readable label (e.g. "GEMINI_KEY_23"), so log lines
+        # and the state file can say *which* configured key something is
+        # about, instead of only an opaque hash. Falls back to a 1-based
+        # position label when no explicit labels are given (e.g. --api-keys).
+        self._labels = dict(labels) if labels else {
+            k: f"key#{i+1}" for i, k in enumerate(self._keys)
+        }
         log.info(
-            f"Loaded {len(self._keys)} Gemini key(s). "
+            f"Loaded {len(self._keys)} Gemini key(s): "
+            f"{', '.join(self._labels.get(k, '?') for k in self._keys)}. "
             f"Budget: {rpm_limit} rpm / {tpm_limit} tpm per key."
         )
+
+    def _label(self, key: str) -> str:
+        return self._labels.get(key, _key_id(key))
 
     def next(self) -> str:
         """
@@ -198,14 +220,20 @@ class KeyRotator:
             self._index = (self._index + 1) % len(self._keys)
             return k
 
-    def acquire(self, estimated_tokens: int = 0) -> str:
+    def acquire(self, estimated_tokens: int = 0, model: str = "default") -> str:
         """
         Block until some key in the pool has rpm/tpm budget for one more
         request of `estimated_tokens`, reserve that budget, and return the
         key. Loops trying every key (round-robin) before sleeping, so it
         picks up whichever key frees up soonest rather than always waiting
         on the same one.
+
+        Before trying, syncs against any keys that OTHER processes have
+        marked permanently dead (see `remove()` / `_sync_dead_keys`), so
+        several scripts sharing one key pool don't keep hammering a key
+        that's already known to be exhausted/invalid elsewhere.
         """
+        self._sync_dead_keys(model)
         while True:
             with self._lock:
                 if not self._keys:
@@ -213,7 +241,7 @@ class KeyRotator:
                 keys_snapshot = list(self._keys)
                 start_index   = self._index
 
-            key, wait_seconds = self._try_reserve(keys_snapshot, start_index, estimated_tokens)
+            key, wait_seconds = self._try_reserve(keys_snapshot, start_index, estimated_tokens, model)
             if key is not None:
                 with self._lock:
                     if key in self._keys:
@@ -226,12 +254,14 @@ class KeyRotator:
                 f"waiting {wait_seconds:.0f}s."
             )
             time.sleep(wait_seconds)
+            self._sync_dead_keys(model)
 
     def _try_reserve(
         self,
         keys:              list[str],
         start_index:       int,
         estimated_tokens:  int,
+        model:             str = "default",
     ) -> tuple[str | None, float]:
         """
         Try to reserve budget for one request on the first key (starting at
@@ -246,7 +276,7 @@ class KeyRotator:
         soonest_wait = None
         n = len(keys)
 
-        with open(KEY_STATE_FILE, "a+") as fh:
+        with open(_key_state_file(model), "a+") as fh:
             fcntl.flock(fh, fcntl.LOCK_EX)
             try:
                 state = self._read_state(fh)
@@ -295,31 +325,155 @@ class KeyRotator:
     def _write_state(fh, state: dict) -> None:
         fh.seek(0)
         fh.truncate()
-        json.dump(state, fh)
+        json.dump(state, fh, indent=2, sort_keys=True)
         fh.flush()
         os.fsync(fh.fileno())
 
-    def remove(self, key: str):
-        """Permanently drop a key (e.g. after a persistent 429/401/403) so it's never handed out again."""
+    def remove(self, key: str, reason: str | None = None, model: str = "default"):
+        """
+        Permanently drop a key (e.g. after a persistent 429/401/403) so it's
+        never handed out again — both from this process's own pool AND from
+        KEY_STATE_FILE's shared "_dead_keys" list, so every other process
+        sharing this key pool (e.g. a second script running at the same
+        time) finds out and stops trying that key too, instead of each
+        process independently re-discovering the same dead key the hard way.
+
+        Full identifying info (label, the key itself, why, and when) is
+        written to KEY_STATE_FILE["_dead_keys_info"] so you can later answer
+        "which of my configured keys got removed, and why" just by reading
+        the state file — not just an opaque hash with no history attached.
+        """
+        kid   = _key_id(key)
+        label = self._label(key)
+        now   = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+
         with self._lock:
             if key in self._keys:
                 self._keys.remove(key)
-                log.warning(f"Key removed. {len(self._keys)} remaining.")
+                log.warning(
+                    f"Key removed: {label} (id={kid}) — reason: {reason}. "
+                    f"{len(self._keys)} remaining."
+                )
+
+        with open(_key_state_file(model), "a+") as fh:
+            fcntl.flock(fh, fcntl.LOCK_EX)
+            try:
+                state = self._read_state(fh)
+                dead = set(state.get("_dead_keys", []))
+                dead.add(kid)
+                state["_dead_keys"] = sorted(dead)
+
+                dead_info = state.setdefault("_dead_keys_info", {})
+                dead_info[kid] = {
+                    "label":      label,
+                    "key":        key,
+                    "reason":     reason,
+                    "removed_at": now,
+                }
+                self._write_state(fh, state)
+            finally:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+
+    def _sync_dead_keys(self, model: str = "default") -> None:
+        """
+        Pull the shared "_dead_keys" list from that model's key-state file
+        and drop any matching keys from this process's own pool. Cheap (one
+        locked read), called at the start of every `acquire()` wait-loop so
+        a key another process just had rejected doesn't keep getting tried
+        here too.
+        """
+        with open(_key_state_file(model), "a+") as fh:
+            fcntl.flock(fh, fcntl.LOCK_EX)
+            try:
+                state = self._read_state(fh)
+            finally:
+                fcntl.flock(fh, fcntl.LOCK_UN)
+
+        dead = set(state.get("_dead_keys", []))
+        if not dead:
+            return
+        with self._lock:
+            still_alive = [k for k in self._keys if _key_id(k) not in dead]
+            n_dropped = len(self._keys) - len(still_alive)
+            if n_dropped:
+                log.warning(
+                    f"[Gemini] Dropping {n_dropped} key(s) marked dead by "
+                    f"another process. {len(still_alive)} remaining."
+                )
+            self._keys = still_alive
+
+    def record_result(self, key: str, success: bool, error: str | None = None, model: str = "default") -> None:
+        """
+        Record a completed call's outcome (success/failure) for `key` into
+        KEY_STATE_FILE, under a "_stats" section separate from the rpm/tpm
+        rolling-window events, plus a "_totals" section across all keys.
+        This is purely informational (for humans reading the state file /
+        debugging which keys are healthy) and does not affect throttling.
+        """
+        kid   = _key_id(key)
+        label = self._label(key)
+        now   = time.time()
+        with open(_key_state_file(model), "a+") as fh:
+            fcntl.flock(fh, fcntl.LOCK_EX)
+            try:
+                state = self._read_state(fh)
+                stats = state.setdefault("_stats", {})
+                entry = stats.setdefault(kid, {
+                    "label":           label,
+                    "key":             key,
+                    "success_count":   0,
+                    "failure_count":   0,
+                    "last_success_at": None,
+                    "last_failure_at": None,
+                    "last_error":      None,
+                })
+                entry["label"] = label  # keep in sync if labels change across runs
+                if success:
+                    entry["success_count"] += 1
+                    entry["last_success_at"] = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(now)
+                    )
+                else:
+                    entry["failure_count"] += 1
+                    entry["last_failure_at"] = time.strftime(
+                        "%Y-%m-%d %H:%M:%S", time.localtime(now)
+                    )
+                    if error:
+                        entry["last_error"] = error[:300]
+
+                totals = state.setdefault(
+                    "_totals", {"success_count": 0, "failure_count": 0}
+                )
+                totals["success_count" if success else "failure_count"] += 1
+
+                self._write_state(fh, state)
+            finally:
+                fcntl.flock(fh, fcntl.LOCK_UN)
 
 
 def make_rotator(api_keys: list[str]) -> KeyRotator:
     """
     Build a KeyRotator from an explicit --api-keys list, or, if that's empty,
     from every GEMINI_KEY_<N> environment variable that's set.
+
+    When loading from env vars, each key is labeled with its env var name
+    (e.g. "GEMINI_KEY_23"), so later logs/state ("Key removed: GEMINI_KEY_23
+    ...") tell you exactly which of your configured keys it was, instead of
+    just an opaque hash.
     """
     if api_keys:
         return KeyRotator(api_keys)
-    env_keys = [
-        v.strip()
+    env_items = [
+        (k, v.strip())
         for k, v in os.environ.items()
         if re.match(r"^GEMINI_KEY_\d+$", k) and v.strip()
     ]
-    return KeyRotator(env_keys)
+    # Sort by the numeric suffix so labels/logs come out in a sane order
+    # (GEMINI_KEY_2 before GEMINI_KEY_10), not alphabetical/env-dict order.
+    env_items.sort(key=lambda kv: int(kv[0].rsplit("_", 1)[1]))
+    env_keys = [v for _, v in env_items]
+    labels   = {v: k for k, v in env_items}
+    return KeyRotator(env_keys, labels=labels)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -359,7 +513,7 @@ def call_gemini(
 
     for attempt in range(10):
         try:
-            key = rotator.acquire(estimated_tokens)
+            key = rotator.acquire(estimated_tokens, model=model)
         except AllKeysExhaustedError:
             log.error("[Gemini] All API keys exhausted (rate-limited/invalid). Exiting.")
             send_telegram(
@@ -392,13 +546,16 @@ def call_gemini(
 
         if t.is_alive():
             log.error(f"[Gemini] Timeout on attempt {attempt + 1}")
+            rotator.record_result(key, success=False, error="timeout", model=model)
             continue
 
         if result["error"]:
             e = result["error"]
             status = getattr(e, "status_code", None) or getattr(e, "code", None)
+            err_msg = f"HTTP {status}: {e}"
+            rotator.record_result(key, success=False, error=err_msg, model=model)
             if status == 429:
-                rotator.remove(key)
+                rotator.remove(key, reason=err_msg, model=model)
                 time.sleep(20)
                 continue
             if status in (401, 403):
@@ -409,6 +566,7 @@ def call_gemini(
             continue
 
         if result["response"] is not None:
+            rotator.record_result(key, success=True, model=model)
             return result["response"]
 
     log.error("[Gemini] All retry attempts exhausted.")

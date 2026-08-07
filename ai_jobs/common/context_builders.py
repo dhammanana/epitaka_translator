@@ -8,10 +8,10 @@ import re
 import sqlite3
 import logging
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
 from typing import Callable
 
 from database import get_glossary_conn
+from .common_utils import connect as _connect
 
 logger = logging.getLogger(__name__)
 
@@ -36,18 +36,6 @@ def _epitaka_path(params: dict) -> str:
     if not path:
         raise RuntimeError("epitaka_db not configured (check EPITAKA_DB in config.py).")
     return str(path)
-
-
-@contextmanager
-def _connect(path: str):
-    conn = sqlite3.connect(str(path), timeout=30)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=10000")
-    try:
-        yield conn
-    finally:
-        conn.close()
 
 
 def _para_range(para_start: int, para_end: int) -> range:
@@ -264,7 +252,7 @@ class NissayaContext(ContextBlock):
         with _connect(path) as conn:
             for pid in _para_range(para_start, para_end):
                 rows = conn.execute(
-                    "SELECT line_id, pali_sentence, translation FROM sentences "
+                    "SELECT line_id, pali, translation FROM sentences "
                     "WHERE book_id=? AND para_id=? ORDER BY line_id",
                     (book_id, pid),
                 ).fetchall()
@@ -381,27 +369,89 @@ class NissayaContext(ContextBlock):
 class GlossaryContext(ContextBlock):
     label = "ESTABLISHED GLOSSARY (apply exactly, including multi-word phrases)"
 
-    def __init__(self, params: dict, pali_text: str, *, max_n: int = 5,
+    _stem_cache: dict[str, str] = {}   # word -> stem, shared across instances/calls
+
+    def __init__(self, params: dict, pali_text: str, *, max_n: int = 3,
                  log_info: _Log = _noop, log_warn: _Log = _noop):
         super().__init__(params, log_info, log_warn)
-        self._pali_text = pali_text
-        self._max_n     = max_n
+        self._pali_text  = pali_text
+        self._max_n      = max_n
+        self._epitaka_db = params.get("epitaka_db", "")
 
     @staticmethod
-    def extract_ngrams(text: str, max_n: int = 5) -> list[str]:
-        tokens = [t.lower() for t in re.split(r"[\s,;.\u2018\u2019\"'()\[\]]+", text)
-                  if len(t) > 1]
-        ngrams: set[str] = set(tokens)
+    def _tokenize(text: str) -> list[str]:
+        return [t.lower() for t in re.split(r"[\s,;.\u2018\u2019\"'()\[\]]+", text)
+                if len(t) > 1]
+
+    @staticmethod
+    def _extract_phrase_ngrams(tokens: list[str], max_n: int) -> set[str]:
+        """Multi-word phrases only (n >= 2) — kept as raw surface n-grams."""
+        ngrams: set[str] = set()
         for n in range(2, max_n + 1):
             for i in range(len(tokens) - n + 1):
                 ngrams.add(" ".join(tokens[i:i + n]))
-        return list(ngrams)
+        return ngrams
+
+    def _resolve_stems_batch(self, words: list[str]) -> dict[str, str]:
+        """Resolve unigrams to their dpr_stem stem via one batched query (plus cache)."""
+        result: dict[str, str] = {}
+        remaining: set[str] = set()
+        for w in words:
+            cached = self._stem_cache.get(w)
+            if cached is not None:
+                result[w] = cached
+            else:
+                remaining.add(w)
+
+        if not remaining or not self._epitaka_db:
+            for w in remaining:
+                result[w] = w  # no DB available — fall back to surface form
+            return result
+
+        try:
+            conn = sqlite3.connect(self._epitaka_db, timeout=30)
+            conn.row_factory = sqlite3.Row
+            try:
+                placeholders = ",".join("?" * len(remaining))
+                rows = conn.execute(
+                    f"SELECT word, stem FROM dpr_stem WHERE word IN ({placeholders})",
+                    list(remaining),
+                ).fetchall()
+                for r in rows:
+                    if r["stem"] and r["word"] in remaining:
+                        result[r["word"]] = r["stem"]
+                        self._stem_cache[r["word"]] = r["stem"]
+                        remaining.discard(r["word"])
+                # Anything unresolved falls back to itself (not cached, in
+                # case dpr_stem gets backfilled later).
+                for w in remaining:
+                    result[w] = w
+            finally:
+                conn.close()
+        except Exception as exc:
+            self.log_warn(f"[GlossaryContext] dpr_stem lookup failed: {exc}")
+            for w in remaining:
+                result.setdefault(w, w)
+
+        return result
 
     def build(self) -> str:
         import time
         t0 = time.perf_counter()
-        ngrams = self.extract_ngrams(self._pali_text, self._max_n)
-        print(f"[DEBUG GlossaryContext] extract_ngrams ({len(ngrams)} ngrams): {time.perf_counter()-t0:.3f}s")
+
+        tokens = self._tokenize(self._pali_text)
+        if not tokens:
+            return self._wrap("(no existing glossary entries)")
+
+        distinct_tokens = list(set(tokens))
+        word_to_stem = self._resolve_stems_batch(distinct_tokens)
+        print(f"[DEBUG GlossaryContext] stemmed {len(distinct_tokens)} "
+              f"distinct token(s): {time.perf_counter()-t0:.3f}s")
+
+        stems   = set(word_to_stem.values())
+        phrases = self._extract_phrase_ngrams(tokens, self._max_n)
+        ngrams  = stems | phrases
+        print(f"[DEBUG GlossaryContext] lookup terms ({len(ngrams)}): {time.perf_counter()-t0:.3f}s")
         if not ngrams:
             return self._wrap("(no existing glossary entries)")
 
@@ -418,7 +468,7 @@ class GlossaryContext(ContextBlock):
                 rows = conn.execute(
                     f"SELECT pali, translation AS translation, context FROM glossary "
                     f"WHERE pali IN ({placeholders})",
-                    ngrams,
+                    list(ngrams),
                 ).fetchall()
                 print(f"[DEBUG GlossaryContext] glossary query ({len(rows)} hits): {time.perf_counter()-t2:.3f}s")
             finally:
@@ -441,8 +491,9 @@ class GlossaryContext(ContextBlock):
 class GlossaryContextStemmed(ContextBlock):
     """
     Like GlossaryContext, but resolves each token in the source text to its
-    Pāli stem (via dpd_inflections_to_headwords / pali_definition / dpr_stem,
-    same logic as dictionary.py / _resolve_pali_stem) before looking the term
+    Pāli stem (via dpd_inflections_to_headwords / pali_definition's `word`
+    field / dpr_stem, same logic as dictionary.py / _resolve_pali_stem) before
+    looking the term
     up in the glossary. This catches inflected forms ("buddhena", "buddhassa",
     ...) that a plain n-gram lookup misses, since the glossary stores stems
     ("buddha"), not surface forms.
@@ -517,21 +568,23 @@ class GlossaryContextStemmed(ContextBlock):
                             self._stem_cache[r["inflection"]] = dpd_word
                             remaining.discard(r["inflection"])
 
-                # 2) pali_definition (plain or word -> stem)
+                # 2) pali_definition (plain or word -> canonical word;
+                #    pali_definition has no separate `stem` column, so the
+                #    `word` field itself is the canonical headword)
                 if remaining:
                     placeholders = ",".join("?" * len(remaining))
                     rows = conn.execute(
-                        f"SELECT plain, word, stem FROM pali_definition "
+                        f"SELECT plain, word FROM pali_definition "
                         f"WHERE plain IN ({placeholders}) OR word IN ({placeholders})",
                         list(remaining) + list(remaining),
                     ).fetchall()
                     for r in rows:
-                        if not r["stem"]:
+                        if not r["word"]:
                             continue
                         for key in (r["plain"], r["word"]):
                             if key in remaining:
-                                result[key] = r["stem"]
-                                self._stem_cache[key] = r["stem"]
+                                result[key] = r["word"]
+                                self._stem_cache[key] = r["word"]
                                 remaining.discard(key)
 
                 # 3) dpr_stem
@@ -670,7 +723,7 @@ class CommentaryContext(ContextBlock):
         conn.execute("CREATE TEMP TABLE _cb_targets (book_id TEXT, para_id INTEGER, line_id INTEGER)")
         conn.executemany("INSERT INTO _cb_targets VALUES (?,?,?)", triples)
         rows = conn.execute(
-            "SELECT s.book_id, s.para_id, s.line_id, s.pali_sentence "
+            "SELECT s.book_id, s.para_id, s.line_id, s.pali "
             "FROM sentences s JOIN _cb_targets t "
             "ON s.book_id=t.book_id AND s.para_id=t.para_id AND s.line_id=t.line_id "
             "ORDER BY s.book_id, s.para_id, s.line_id"
@@ -685,7 +738,7 @@ class CommentaryContext(ContextBlock):
         conn.execute("CREATE TEMP TABLE _cb_paras (book_id TEXT, para_id INTEGER)")
         conn.executemany("INSERT INTO _cb_paras VALUES (?,?)", pairs)
         rows = conn.execute(
-            "SELECT s.book_id, s.para_id, s.line_id, s.pali_sentence "
+            "SELECT s.book_id, s.para_id, s.line_id, s.pali "
             "FROM sentences s JOIN _cb_paras t "
             "ON s.book_id=t.book_id AND s.para_id=t.para_id "
             "ORDER BY s.book_id, s.para_id, s.line_id"
@@ -711,7 +764,7 @@ class CommentaryContext(ContextBlock):
         lang_map = _fetch_lang_translations_with_fallback(self.params, triples)
         sections: dict[tuple, list[str]] = {}
         for r in rows:
-            pali = r["pali_sentence"] or ""
+            pali = r["pali"] or ""
             en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
             line = f"  [{r['line_id']}] {pali}"
             if en:
@@ -915,23 +968,23 @@ class PaliDefsContext(ContextBlock):
             return ""
         para_end = self._para_start if self._para_end == -1 else self._para_end
         rows = conn.execute(
-            "SELECT pali_sentence FROM sentences "
+            "SELECT pali FROM sentences "
             "WHERE book_id=? AND para_id BETWEEN ? AND ? "
             "ORDER BY para_id, line_id",
             (self._book_id, self._para_start, para_end),
         ).fetchall()
-        return "\n".join(r["pali_sentence"] or "" for r in rows)
+        return "\n".join(r["pali"] or "" for r in rows)
 
     # _get_usages kept for external callers; not used by build() any more
-    def _get_usages(self, conn, stem):
+    def _get_usages(self, conn, word):
         row = conn.execute(
-            "SELECT book_id, para_id, line_id FROM pali_definition WHERE stem=? LIMIT 1",
-            (stem,),
+            "SELECT book_id, para_id, line_id FROM pali_definition WHERE word=? LIMIT 1",
+            (word,),
         ).fetchone()
         if not row:
             return []
         ctx = conn.execute(
-            "SELECT book_id, para_id, line_id, pali_sentence FROM sentences "
+            "SELECT book_id, para_id, line_id, pali FROM sentences "
             "WHERE book_id=? AND para_id=? AND line_id BETWEEN ? AND ? "
             "ORDER BY line_id",
             (row["book_id"], row["para_id"], row["line_id"] - 1, row["line_id"] + 1),
@@ -940,10 +993,10 @@ class PaliDefsContext(ContextBlock):
         lang_map = _fetch_lang_translations_with_fallback(self.params, triples)
         results = []
         for r in ctx:
-            if not r["pali_sentence"]:
+            if not r["pali"]:
                 continue
             en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
-            entry = r["pali_sentence"]
+            entry = r["pali"]
             if en:
                 entry += f" [{en}]"
             results.append(entry)
@@ -971,31 +1024,33 @@ class PaliDefsContext(ContextBlock):
                 capped = words[:self._max_words]
                 print(f"[DEBUG PaliDefsContext] {len(words)} candidate words (using {len(capped)})")
 
-                # ── Batch query 1: resolve word/plain → (word, stem) in one shot ──
+                # ── Batch query 1: resolve plain/word → canonical word in one
+                # shot (pali_definition has no separate `stem` column; the
+                # `word` field is itself the canonical headword) ──
                 t1 = time.perf_counter()
                 ph = ",".join("?" * len(capped))
                 stem_rows = conn.execute(
-                    f"SELECT plain AS matched, stem FROM pali_definition WHERE plain IN ({ph}) "
-                    f"UNION SELECT word  AS matched, stem FROM pali_definition WHERE word  IN ({ph})",
+                    f"SELECT plain AS matched, word FROM pali_definition WHERE plain IN ({ph}) "
+                    f"UNION SELECT word  AS matched, word FROM pali_definition WHERE word  IN ({ph})",
                     capped + capped,
                 ).fetchall()
                 word_to_stem: dict[str, str] = {}
                 for r in stem_rows:
-                    word_to_stem.setdefault(r["matched"], r["stem"])
+                    word_to_stem.setdefault(r["matched"], r["word"])
                 print(f"[DEBUG PaliDefsContext] batch stem lookup ({len(word_to_stem)} matches): {time.perf_counter()-t1:.3f}s")
 
                 if not word_to_stem:
                     print(f"[DEBUG PaliDefsContext] total build: {time.perf_counter()-t0:.3f}s")
                     return self._wrap("(no word definitions found)")
 
-                # ── Batch query 2: one location row per stem ──
+                # ── Batch query 2: one location row per canonical word ──
                 t2 = time.perf_counter()
                 stems = list(set(word_to_stem.values()))
                 ph2 = ",".join("?" * len(stems))
                 loc_rows = conn.execute(
-                    f"SELECT stem, book_id, para_id, line_id "
-                    f"FROM pali_definition WHERE stem IN ({ph2}) "
-                    f"GROUP BY stem",
+                    f"SELECT word AS stem, book_id, para_id, line_id "
+                    f"FROM pali_definition WHERE word IN ({ph2}) "
+                    f"GROUP BY word",
                     stems,
                 ).fetchall()
                 stem_to_loc: dict[str, tuple] = {
@@ -1019,12 +1074,12 @@ class PaliDefsContext(ContextBlock):
                     ],
                 )
                 ctx_rows = conn.execute(
-                    "SELECT l.stem, s.book_id, s.para_id, s.line_id, s.pali_sentence "
+                    "SELECT l.stem, s.book_id, s.para_id, s.line_id, s.pali "
                     "FROM sentences s "
                     "JOIN _pd_locs l "
                     "ON s.book_id=l.book_id AND s.para_id=l.para_id "
                     "AND s.line_id BETWEEN l.lo AND l.hi "
-                    "WHERE s.pali_sentence IS NOT NULL AND s.pali_sentence != \'\' "
+                    "WHERE s.pali IS NOT NULL AND s.pali != \'\' "
                     "ORDER BY l.stem, s.line_id"
                 ).fetchall()
                 conn.execute("DROP TABLE IF EXISTS _pd_locs")
@@ -1038,7 +1093,7 @@ class PaliDefsContext(ContextBlock):
                 stem_ctx: dict[str, list[str]] = defaultdict(list)
                 for r in ctx_rows:
                     en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
-                    entry = r["pali_sentence"]
+                    entry = r["pali"]
                     if en:
                         entry += f" [{en}]"
                     stem_ctx[r["stem"]].append(entry)
@@ -1120,7 +1175,7 @@ class PreviousTranslationContext(ContextBlock):
                 # para_start, newest-first so we can stop collecting early.
                 t1 = time.perf_counter()
                 candidate_rows = conn.execute(
-                    "SELECT para_id, line_id, pali_sentence "
+                    "SELECT para_id, line_id, pali "
                     "FROM sentences "
                     "WHERE book_id = ? AND para_id < ? "
                     "ORDER BY para_id DESC, line_id DESC "
@@ -1185,7 +1240,7 @@ class PreviousTranslationContext(ContextBlock):
             for pid, sentences in collected:
                 lines = [f"[Para {pid}]"]
                 for s in sentences:
-                    pali = (s.get("pali_sentence") or "").strip()
+                    pali = (s.get("pali") or "").strip()
                     en   = (s.get("translation") or "").strip()
                     line = f"  [line_id={s['line_id']}] Pali: {pali}"
                     if en:
@@ -1261,7 +1316,7 @@ class MulaAtthaContext(ContextBlock):
                     dst_book = r["dst_book"]
                     dst_para = r["dst_para"]
                     sent_rows = conn.execute(
-                        "SELECT line_id, pali_sentence "
+                        "SELECT line_id, pali "
                         "FROM sentences "
                         "WHERE book_id=? AND para_id=? "
                         "ORDER BY line_id",
@@ -1288,7 +1343,7 @@ class MulaAtthaContext(ContextBlock):
                             continue
                         any_translated = True
                         lines.append(
-                            f"  [{sr['line_id']}] Pāli: {sr['pali_sentence'] or ''}\n"
+                            f"  [{sr['line_id']}] Pāli: {sr['pali'] or ''}\n"
                             f"          EN:   {en}"
                         )
 

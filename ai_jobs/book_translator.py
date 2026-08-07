@@ -42,7 +42,6 @@ For each book it:
         - PaliDefsContext
         - PreviousTranslationContext
         - MulaAtthaContext
-        - ParallelTranslationContext
         - NissayaContext
 
   4. Calls Gemini, parses the JSON response:
@@ -208,7 +207,6 @@ from common.context_builders import (  # noqa: E402
     PaliDefsContext,
     PreviousTranslationContext,
     MulaAtthaContext,
-    ParallelTranslationContext,
     NissayaContext,
     TranslationWriter,
     GlossaryWriter,
@@ -278,7 +276,7 @@ def fetch_paragraphs_range(
         result = []
         for pid in para_ids:
             srows = conn.execute(
-                "SELECT line_id, pali_sentence "
+                "SELECT line_id, pali "
                 "FROM sentences WHERE book_id=? AND para_id=? ORDER BY line_id",
                 (book_id, pid),
             ).fetchall()
@@ -289,7 +287,7 @@ def fetch_paragraphs_range(
                 pending = [
                     s for s in sentences
                     if (pid, s["line_id"]) not in already_translated
-                    and len((s["pali_sentence"] or "").strip()) >= 3
+                    and len((s["pali"] or "").strip()) >= 3
                 ]
             if pending:
                 result.append({
@@ -403,7 +401,7 @@ def merge_small_sections(
 
     for section in sections:
         sec_bytes = sum(
-            len(s["pali_sentence"].encode("utf-8"))
+            len(s["pali"].encode("utf-8"))
             for para in section
             for s in para["pending"]
         )
@@ -436,20 +434,73 @@ def _prompt_bytes(system_prompt: str, user_prompt: str) -> int:
     return len((system_prompt + user_prompt).encode("utf-8"))
 
 
-def _essential_parallel_langs(lang: str) -> list[str]:
+# ══════════════════════════════════════════════════════════════════
+# Script-bleed guard
+# ══════════════════════════════════════════════════════════════════
+
+# Unicode block ranges for target-language scripts we've seen the model
+# confuse with a closely-related neighbour (Lao <-> Thai being the main
+# offender: same family, Thai is far better-resourced in the model).
+_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
+    "lo": [(0x0E80, 0x0EFF)],   # Lao
+    "th": [(0x0E00, 0x0E7F)],   # Thai
+    "km": [(0x1780, 0x17FF)],   # Khmer
+    "my": [(0x1000, 0x109F)],   # Myanmar
+    "si": [(0x0D80, 0x0DFF)],   # Sinhala
+}
+# For each of the above, the "confusable" script(s) that must NOT dominate.
+_CONFUSABLE_WITH: dict[str, list[str]] = {
+    "lo": ["th"],
+    "th": ["lo"],
+}
+
+
+def _script_mismatch(lang: str, text: str) -> str | None:
     """
-    Size-reduction only: restrict ParallelTranslationContext to English (the
-    baseline reference) plus the target language's own reference/output —
-    e.g. translating to Sinhala keeps epitaka_en_ref.db + epitaka_si_ref.db
-    and drops Thai, Vietnamese, etc. Only used once a prompt has already
-    measured over PROMPT_SIZE_LIMIT_BYTES; normal-sized prompts keep every
-    parallel translation available.
+    Returns a short warning string if `text` looks like it was written in a
+    confusable neighbour script instead of `lang`'s own script. Returns None
+    if the text looks fine (including for languages we don't check, or
+    lines too short/symbol-only to judge).
     """
-    return list(dict.fromkeys([
-        "epitaka_en_ref.db",
-        f"epitaka_{lang}_ref.db",
-        f"epitaka_{lang}.db",
-    ]))
+    own_ranges = _SCRIPT_RANGES.get(lang)
+    confusables = _CONFUSABLE_WITH.get(lang)
+    if not own_ranges or not confusables or not text:
+        return None
+
+    def _count_in_ranges(s: str, ranges: list[tuple[int, int]]) -> int:
+        return sum(1 for ch in s if any(lo <= ord(ch) <= hi for lo, hi in ranges))
+
+    own_count = _count_in_ranges(text, own_ranges)
+    for other_lang in confusables:
+        other_ranges = _SCRIPT_RANGES.get(other_lang, [])
+        other_count = _count_in_ranges(text, other_ranges)
+        # Only fire if there's a meaningful amount of "other" script and it
+        # dominates (or entirely replaces) the target script.
+        if other_count >= 5 and other_count > own_count:
+            return f"looks like {other_lang!r} script, not {lang!r}"
+    return None
+
+
+def check_translations_for_script_bleed(lang: str, translations: list[dict]) -> list[dict]:
+    """
+    Scan a parsed 'translations' list for entries whose script doesn't match
+    the target language (e.g. Lao target coming back in Thai script). Any
+    flagged entries are forced to confidence='low' with a confidence_note,
+    and returned separately so the caller can log/retry them.
+    """
+    flagged = []
+    for t in translations:
+        text = t.get("translation", "")
+        if text in ("", "~"):
+            continue
+        reason = _script_mismatch(lang, text)
+        if reason:
+            t["confidence"] = "low"
+            note = f"[SCRIPT-BLEED] {reason}"
+            existing_note = t.get("confidence_note")
+            t["confidence_note"] = f"{note}; {existing_note}" if existing_note else note
+            flagged.append(t)
+    return flagged
 
 
 def _split_chunk_in_half(chunk: list[dict]) -> tuple[list[dict], list[dict]] | None:
@@ -475,7 +526,7 @@ def _split_chunk_in_half(chunk: list[dict]) -> tuple[list[dict], list[dict]] | N
 
 
 def _para_tokens(para: dict) -> int:
-    text = "\n".join(s.get("pali_sentence", "") for s in para.get("pending", []))
+    text = "\n".join(s.get("pali", "") for s in para.get("pending", []))
     return ai.estimate_tokens(text)
 
 
@@ -493,7 +544,7 @@ def _split_oversized_para(para: dict, max_tokens: int) -> list[dict]:
     piece_tokens = 0
 
     for s in para.get("pending", []):
-        s_tokens = ai.estimate_tokens(s.get("pali_sentence", ""))
+        s_tokens = ai.estimate_tokens(s.get("pali", ""))
         if piece_sentences and (piece_tokens + s_tokens > max_tokens):
             pieces.append({**para, "pending": piece_sentences})
             piece_sentences = []
@@ -554,12 +605,22 @@ def _build_system_prompt(lang: str) -> str:
 (canonical texts, commentaries [aṭṭhakathā] and sub-commentaries [ṭīkā]).
 
 TARGET LANGUAGE: {lang_name}
-All "translations" output MUST be in {lang_name}. The Pāli source text is in Pāli;
-your job is to produce {lang_name} renderings that are both ACCURATE and READABLE
-for a GENERAL but serious audience. Try to minimize the use of pali term in translation 
-except commonly accepted terms like nibbāna, tathāgata, etc. 
+All "translations" output MUST be in {lang_name} — and ONLY {lang_name}. The Pāli
+source text is in Pāli; your job is to produce {lang_name} renderings that are both
+ACCURATE and READABLE for a GENERAL but serious audience. Try to minimize the use
+of pali term in translation except commonly accepted terms like nibbāna, tathāgata, etc.
 All glossary "translation" fields must also be in {lang_name}. Return '~' for lines that are
 number, signs, or things not to be translated.
+
+⚠ LANGUAGE-BLEED WARNING: You will be shown reference translations in OTHER
+languages (see block 6 below), which may include a language closely related to,
+or sharing a script family with, {lang_name} (e.g. Thai reference text when
+translating to Lao, Khmer, etc.). Those are reference material ONLY — for
+meaning and terminology, never for wording. Do NOT let the wording, script, or
+orthography of any reference language leak into your output. Every single
+character you write in "translation" fields must belong to {lang_name}. Before
+finalizing each translation, double-check it is not accidentally in a
+different (even closely related) language.
 
 You will be given several reference blocks:
   1. ESTABLISHED GLOSSARY — accumulated translation memory containing
@@ -577,9 +638,8 @@ You will be given several reference blocks:
                                     for tone/terminology continuity.
   5. TRANSLATED MŪLA / AṬṬHAKATHĀ / ṬĪKĀ REFERENCES — other already-translated
                                     paragraphs linked to this passage.
-  6. PARALLEL HUMAN TRANSLATIONS — existing English, Sinhala, Thai translations of THIS SAME passage.
-  7. MYANMAR NISSAYA              — word-by-word gloss (romanised) for each sentence.
-  8. SENTENCES TO TRANSLATE      — JSON array of Pāli sentences (para_id + line_id).
+  6. MYANMAR NISSAYA              — word-by-word gloss (romanised) for each sentence.
+  7. SENTENCES TO TRANSLATE      — JSON array of Pāli sentences (para_id + line_id).
 
 Return ONE JSON object with exactly three keys: "translations", "glossary",
 and "remarks".
@@ -598,8 +658,7 @@ A. "translations" — array, ONE entry per input sentence, SAME ORDER
 CONFIDENCE RULES — be honest, not conservative:
 
   Mark confidence "low" when ANY of the following apply:
-    • No parallel translation (Thai / Sinhala / English book) was provided
-      AND the sentence contains rare compounds, technical terms, or ambiguous
+    • The sentence contains rare compounds, technical terms, or ambiguous
       syntax that the commentary/nissaya does not clearly resolve.
     • The nissaya for this sentence is missing or incomplete.
     • The commentary/ṭīkā directly contradicts or is inconsistent with what
@@ -611,11 +670,10 @@ CONFIDENCE RULES — be honest, not conservative:
 
   Mark confidence "high" when:
     • The sentence is straightforward prose or verse with clear vocabulary.
-    • OR parallel translations agree and confirm your reading.
     • OR the commentary/nissaya clearly resolves any difficult points.
 
   Do NOT mark everything "low" out of caution. Simple sentences with no
-  ambiguity should be "high" even without parallel translations.
+  ambiguity should be "high".
   The confidence field is for the human reviewer, not a disclaimer.
 
 Translation style — read carefully:
@@ -635,9 +693,6 @@ Translation style — read carefully:
         the explanation.
       - The translation of the commentary should remain consistent with the
         translation of the original passage being explained.
-  • If a PARALLEL HUMAN TRANSLATION (English book source) is supplied:
-      use it as a reference for terminology and tone, but do not blindly copy.
-      Rewrite in clear, natural {lang_name} while preserving doctrinal precision.
   • Apply every ESTABLISHED GLOSSARY term/phrase exactly as given, including
     multi-word phrases.
   • Reference the PREVIOUS PARAGRAPH and TRANSLATED REFERENCES for consistency
@@ -738,10 +793,6 @@ USER_TEMPLATE = """Book: {book_id}  —  paragraphs {para_start}–{para_end}
 
 {prev_para_block}
 
-{mula_block}
-
-{parallel_block}
-
 {nissaya_block}
 
 ══════════════════════════════
@@ -761,7 +812,6 @@ def build_prompt(
     pali_defs_block:  str,
     prev_para_block:  str,
     mula_block:       str,
-    parallel_block:   str,
     nissaya_block:    str,
 ) -> tuple[str, list[dict]]:
     """Fill in USER_TEMPLATE for one chunk. Returns (prompt_text, flat_sentence_list)."""
@@ -771,7 +821,7 @@ def build_prompt(
             flat_sentences.append({
                 "para_id":       para["para_id"],
                 "line_id":       s["line_id"],
-                "pali_sentence": s["pali_sentence"],
+                "pali": s["pali"],
             })
 
     prompt = USER_TEMPLATE.format(
@@ -783,7 +833,6 @@ def build_prompt(
         pali_defs_block  = pali_defs_block,
         prev_para_block  = prev_para_block,
         mula_block       = mula_block,
-        parallel_block   = parallel_block,
         nissaya_block    = nissaya_block,
         sentences_json   = json.dumps(flat_sentences, ensure_ascii=False, indent=2),
     )
@@ -871,14 +920,12 @@ def process_book(
             — each step only runs when the previous one wasn't enough, so a
             normal-sized prompt is completely untouched:
 
-              1. Restrict PARALLEL HUMAN TRANSLATIONS to English + the target
-                 language only (drop other languages' parallel blocks).
-              2. Split the chunk in half and recurse. Fewer sentences per
+              1. Split the chunk in half and recurse. Fewer sentences per
                  call shrinks every context block (nissaya, previous
-                 paragraph, mūla, parallel, commentary, word-defs, glossary),
+                 paragraph, mūla, commentary, word-defs, glossary),
                  since all of them are now scoped to the chunk's own
                  paragraph range rather than the whole section.
-              3. Last resort — the chunk is already a single sentence and the
+              2. Last resort — the chunk is already a single sentence and the
                  commentary / word-def context for that one sentence alone
                  is still oversized: hard-truncate those blocks for this
                  call only and log it clearly so it can be reviewed later.
@@ -893,7 +940,6 @@ def process_book(
                 min_length=600, max_lookback=1500,
             ).build()
             mula_block     = MulaAtthaContext(params, book_id, ctx_start, ctx_end).build()
-            parallel_block = ParallelTranslationContext(params, book_id, ctx_start, ctx_end).build()
             nissaya_block  = NissayaContext(params, chunk).build()
 
             # Scoped to this chunk's own pending sentences (not the whole
@@ -901,7 +947,7 @@ def process_book(
             # these blocks too, instead of leaving a fixed section-wide
             # payload baked into every split.
             pali_text_for_chunk = "\n".join(
-                s["pali_sentence"]
+                s["pali"]
                 for para in chunk
                 for s in para["pending"]
             )
@@ -919,22 +965,11 @@ def process_book(
                     chunk=chunk, glossary_block=glossary_block,
                     commentary_block=local_commentary_block, pali_defs_block=local_pali_defs_block,
                     prev_para_block=prev_para_block, mula_block=mula_block,
-                    parallel_block=parallel_block, nissaya_block=nissaya_block,
+                    nissaya_block=nissaya_block,
                 )
 
             prompt, flat_sentences = _build()
             size = _prompt_bytes(system_prompt, prompt)
-
-            if size > PROMPT_SIZE_LIMIT_BYTES:
-                print(f"  [size] p{chunk_start}-{chunk_end}: {size:,} bytes > "
-                      f"{PROMPT_SIZE_LIMIT_BYTES:,} — trimming parallel translations "
-                      f"to English + {args.lang} only")
-                parallel_block = ParallelTranslationContext(
-                    params, book_id, ctx_start, ctx_end,
-                    only_langs=_essential_parallel_langs(args.lang),
-                ).build()
-                prompt, flat_sentences = _build()
-                size = _prompt_bytes(system_prompt, prompt)
 
             if size > PROMPT_SIZE_LIMIT_BYTES:
                 halves = _split_chunk_in_half(chunk)
@@ -990,9 +1025,16 @@ def process_book(
             new_terms    = result.get("glossary",     [])
             remarks      = result.get("remarks",      [])
 
+            bleed_flagged = check_translations_for_script_bleed(args.lang, translations)
+            if bleed_flagged:
+                bad_ids = ", ".join(f"p{t.get('para_id')}L{t.get('line_id')}" for t in bleed_flagged)
+                print(f"  ⚠ SCRIPT BLEED in chunk {chunk_label}: {len(bleed_flagged)} "
+                      f"line(s) look like wrong-language output ({bad_ids}). "
+                      f"Marked low-confidence; re-run with --overwrite for these paragraphs.")
+
             low_conf = sum(1 for t in translations if t.get("confidence") == "low")
             print(f"  Parsed: {len(translations)} translation(s) "
-                  f"({low_conf} low-confidence), "
+                  f"({low_conf} low-confidence, {len(bleed_flagged)} script-bleed), "
                   f"{len(new_terms)} glossary term(s), "
                   f"{len(remarks)} remark(s)")
 

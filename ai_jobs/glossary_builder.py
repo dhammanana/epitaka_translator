@@ -223,11 +223,11 @@ def fetch_translated_pairs(
             pairs = []
             for r in rows:
                 prow = econn.execute(
-                    "SELECT pali_sentence FROM sentences "
+                    "SELECT pali FROM sentences "
                     "WHERE book_id=? AND para_id=? AND line_id=?",
                     (r["book_id"], r["para_id"], r["line_id"]),
                 ).fetchone()
-                pali = (prow["pali_sentence"] or "").strip() if prow else ""
+                pali = (prow["pali"] or "").strip() if prow else ""
                 if pali:
                     pairs.append({
                         "para_id":     r["para_id"],
@@ -321,11 +321,11 @@ def save_remarks(
 
             # Fetch pali from epitaka.db — do not trust AI-supplied pali
             prow = econn.execute(
-                "SELECT pali_sentence FROM sentences "
+                "SELECT pali FROM sentences "
                 "WHERE book_id=? AND para_id=? AND line_id=?",
                 (book_id, para_id, line_id),
             ).fetchone()
-            pali = (prow["pali_sentence"] or "").strip() if prow else ""
+            pali = (prow["pali"] or "").strip() if prow else ""
 
             severity = str(r.get("severity") or "").strip().lower()
             if severity != "critical":

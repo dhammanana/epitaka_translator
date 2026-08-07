@@ -241,7 +241,9 @@ def resolve_pali_stem(epitaka_db: str, word: str) -> str:
       1. dpd_inflections_to_headwords — exact inflection -> headword(s);
          take the first headword and strip bracket/digit/whitespace noise
          DPD sometimes encodes into the field (e.g. "kata[1]" -> "kata").
-      2. pali_definition.plain / pali_definition.word -> stem
+      2. pali_definition.plain -> pali_definition.word (pali_definition no
+         longer has a separate `stem` column; `word` is now the canonical
+         headword for that table).
       3. dpr_stem.word -> stem
 
     Falls back to the input word unchanged if none of the three tables have
@@ -264,11 +266,11 @@ def resolve_pali_stem(epitaka_db: str, word: str) -> str:
                     return dpd_word
 
             row2 = conn.execute(
-                "SELECT stem FROM pali_definition WHERE plain = ? OR word = ? LIMIT 1",
+                "SELECT word FROM pali_definition WHERE plain = ? OR word = ? LIMIT 1",
                 (word, word),
             ).fetchone()
-            if row2 and row2["stem"]:
-                return row2["stem"]
+            if row2 and row2["word"]:
+                return row2["word"]
 
             row3 = conn.execute(
                 "SELECT stem FROM dpr_stem WHERE word = ?", (word,)
