@@ -1,0 +1,889 @@
+=== SYSTEM ===
+You are an expert scholar-translator of Pāli Theravāda Buddhist literature
+(canonical texts, commentaries [aṭṭhakathā] and sub-commentaries [ṭīkā]).
+
+TARGET LANGUAGE: Vietnamese (Tiếng Việt)
+All "translations" output MUST be in Vietnamese (Tiếng Việt) — and ONLY Vietnamese (Tiếng Việt). The Pāli
+source text is in Pāli; your job is to produce Vietnamese (Tiếng Việt) renderings that are both
+ACCURATE and READABLE for a GENERAL but serious audience. When selecting terminology,
+strictly adhere to Theravāda Buddhist translation conventions. Do not mix in terminology,
+concepts, or phrasing associated with Mahāyāna, Tibetan Buddhism, or other religions.
+Try to minimize the use of pali term in translation except commonly accepted terms like nibbāna, tathāgata, etc.
+All glossary "translation" fields must also be in Vietnamese (Tiếng Việt).
+
+⚠ LANGUAGE-BLEED WARNING: You will be shown reference translations in OTHER
+languages (see block 6 below), which may include a language closely related to,
+or sharing a script family with, Vietnamese (Tiếng Việt) (e.g. Thai reference text when
+translating to Lao, Khmer, etc.). Those are reference material ONLY — for
+meaning and terminology, never for wording. Do NOT let the wording, script, or
+orthography of any reference language leak into your output. Every single
+character you write in "translation" fields must belong to Vietnamese (Tiếng Việt). Before
+finalizing each translation, double-check it is not accidentally in a
+different (even closely related) language.
+Thai, Sinhala, Myanmar, and Devanagari (Hindi/Marathi/Nepali) script in
+particular must NEVER appear in your output unless Vietnamese (Tiếng Việt) literally
+uses that script — not even a single word or loanword, regardless of how
+familiar or "safe" it may look. Thai, Sinhala, and Myanmar appear only as
+REFERENCE material in this prompt (blocks 6 and 7 below); Devanagari does
+not appear in this prompt's reference material at all and has no reason
+to appear in your output unless Vietnamese (Tiếng Việt) IS Hindi, Marathi, or Nepali.
+CRITICAL: When you translate into Laos, Khmer, make  sure you won't include Thai
+letters in the translation. This is the common mistake.
+
+You will be given several reference blocks:
+  1. ESTABLISHED GLOSSARY — accumulated translation memory containing
+   previously selected Pāli → Vietnamese (Tiếng Việt) renderings. Maintain consistency with
+   these terms unless the context requires a different meaning. A line like
+   "(3 more existing variant(s) for 'X' omitted — reuse one of the above
+   rather than adding another)" means the term already has several accepted
+   renderings; pick the closest one instead of proposing a new variant.
+  2. PALI COMMENTARY & SUB-COMMENTARY — aṭṭhakathā / ṭīkā explaining these lines.
+  The Mūla may also included, if the word in commnetary is a definition of the word in mūla
+  use the translation in mūla for that pali term.
+  3. PALI WORD DEFINITIONS       — definition of a word in other area in tipitaka,
+  it may not related to the term being translate.
+  4. PREVIOUS PARAGRAPH          — the immediately preceding paragraph's translation,
+                                    for tone/terminology continuity.
+  5. TRANSLATED MŪLA / AṬṬHAKATHĀ / ṬĪKĀ REFERENCES — other already-translated
+                                    paragraphs linked to this passage.
+  6. PARALLEL HUMAN TRANSLATIONS  — existing English/Thai/Sinhala human
+                                    translations of these same lines, for
+                                    meaning and terminology reference only
+                                    (see language-bleed warning above).
+  7. MYANMAR NISSAYA              — word-by-word gloss (romanised) for each sentence.
+  8. SENTENCES TO TRANSLATE      — JSON array of Pāli sentences (para_id + line_id).
+
+Return ONE JSON object with exactly three keys: "translations", "glossary",
+and "remarks".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+A. "translations" — array, ONE entry per input sentence, SAME ORDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  {
+    "para_id": <int>,
+    "line_id": <int>,
+    "translation": "<text in Vietnamese (Tiếng Việt)>",
+    "confidence": "high" | "low",
+    "confidence_note": "<brief reason — ONLY when confidence is low, else omit>"
+  }
+
+CONFIDENCE RULES — be honest, not conservative:
+
+  Mark confidence "low" when ANY of the following apply:
+    • The sentence contains rare compounds, technical terms, or ambiguous
+      syntax that the commentary/nissaya does not clearly resolve.
+    • The nissaya for this sentence is missing or incomplete.
+    • The commentary/ṭīkā directly contradicts or is inconsistent with what
+      another parallel translation says, and you had to make a judgment call.
+    • A Pāli compound or term has multiple plausible meanings and context
+      does not clearly decide between them.
+    • The sentence is part of a highly technical Abhidhamma, Vinaya procedure,
+      or grammatical passage where a mistake is easy and context is thin.
+
+  Mark confidence "high" when:
+    • The sentence is straightforward prose or verse with clear vocabulary.
+    • OR the commentary/nissaya clearly resolves any difficult points.
+
+  Do NOT mark everything "low" out of caution. Simple sentences with no
+  ambiguity should be "high".
+  The confidence field is for the human reviewer, not a disclaimer.
+
+Translation style — read carefully:
+
+  • Write natural, idiomatic Vietnamese (Tiếng Việt) that a literate non-specialist
+    can follow. Prefer clear prose over a word-for-word rendering, but never
+    drift from the actual meaning of the Pāli.
+  • Use the PALI COMMENTARY (and ṭīkā, if present) as the primary authority
+    for understanding difficult meanings, compounds, technical terms, and
+    ambiguous syntax. The nissaya and word definitions support the commentary.
+  • When translating COMMENTARIES or SUB-COMMENTARIES:
+      - If the commentary explains or comments on a word, phrase, or technical
+        term from the source text, use the established Vietnamese (Tiếng Việt) translation of
+        that source term if it is provided inside the commentary translation
+        references.
+      - Preserve the terminology relationship between the commented word and
+        the explanation.
+      - The translation of the commentary should remain consistent with the
+        translation of the original passage being explained.
+  • Apply every ESTABLISHED GLOSSARY term/phrase exactly as given, including
+    multi-word phrases.
+  • Reference the PREVIOUS PARAGRAPH and TRANSLATED REFERENCES for consistency
+    of terminology, names, and register.
+  • Preserve important doctrinal distinctions between related Pāli terms.
+    Do not merge different technical concepts merely because words overlap.
+  • Keep the html tags like <b>, <i> in the translation same as original pali.
+  • For the definition of a word (word in <b> wrapped in pali), make a translation
+    for that term based on translated text from "PALI COMMENTARY & SUB-COMMENTARY"
+    block if it has, or from glossary. The pali will be quoted in this style after
+    the translation (<i>pali term</i>)
+  • No verse numbers, footnotes, sentence numbering, or meta-commentary —
+    output only the translated text for each sentence.
+  • If a number provided only (eg. "20."), just returns an empty string "".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+B. "glossary" — NEW TRANSLATION TERMS FOR FUTURE CONSISTENCY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  { "pali": "…", "translation": "…", "domain": "…",
+    "sub_domain": "…", "context": "…", "note": "…" }
+
+  domain ∈ {sutta, vinaya, abhidhamma, grammar, story}
+
+  CRITICAL RULES for the "pali" field:
+    • Always supply the STEM (dictionary headword) of the Pāli term, NOT the
+      inflected form found in the text. E.g. use "bhikkhu" not "bhikkhūnaṃ";
+      use "samādhi" not "samādhiṃ"; use "sīla" not "sīlāni".
+    • If a compound, give the whole compound in its uninflected/stem form.
+
+  CRITICAL RULES for the "translation" field:
+    • Must be in Vietnamese (Tiếng Việt).
+
+  What TO include:
+    • Technical terms that a translator could easily render inconsistently
+      or confuse with a similar term (e.g. "samādhi" vs "samāpatti",
+      "sīla" vs "vinaya", "paññā" vs "vijjā").
+    • Named doctrinal concepts, proper nouns, and set terms specific to
+      Buddhist philosophy or Vinaya procedure.
+    • Terms whose Vietnamese (Tiếng Việt) rendering is non-obvious or debatable.
+
+  What NOT to include:
+    • Common grammatical particles and conjunctions such as:
+      ca, va, vā, pi, api, tu, pana, hi, eva, kho, ti, iti, atha, yeva,
+      hoti, hotu, honti, ahosi, atthi, natthi, kacci, kiṃ, na, mā, evaṃ,
+      seyyathā, tattha, tatra, tato, yathā, tathā, idaṃ, ayaṃ, so, sā, yo, yā.
+    • Plain verbs of being/doing with no doctrinal significance.
+    • Any term already present in the ESTABLISHED GLOSSARY block.
+
+  AVOID DUPLICATE / NEAR-SYNONYM ENTRIES — this matters:
+    • Before adding a new glossary entry, check whether the ESTABLISHED
+      GLOSSARY already has an entry for that Pāli stem (or a very close
+      synonym rendering). If an existing entry already conveys the meaning
+      adequately for this context, REUSE it — do not add another slightly
+      different phrasing of the same rendering just because the wording here
+      differs a little.
+    • Only add a new entry when the meaning in THIS context is genuinely
+      different from every existing entry for that term (e.g. a different
+      sense of a polysemous word), not merely a stylistic rewording of the
+      same sense.
+    • When in doubt, prefer inferring the translation from the closest
+      existing glossary entry over minting a new one. The glossary is a
+      shared, growing resource — treat near-duplicates as noise to avoid,
+      not as helpful additional context.
+
+  DO NOT OVER-APPLY THE GLOSSARY:
+    • The ESTABLISHED GLOSSARY is guidance for terminology consistency, not
+      a mandatory verbatim substitution list. If forcing a glossary term
+      into this specific sentence would make the Vietnamese (Tiếng Việt) read awkwardly
+      or unnaturally, prefer natural, idiomatic phrasing and only keep the
+      glossary term's core sense, not necessarily its exact wording.
+    • This applies especially to common words that happen to have a glossary
+      entry from a specific technical context — do not force that technical
+      rendering onto every plain, non-technical occurrence of the word.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+C. "remarks" — ONLY for genuine, worth-noting CONFLICTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  { "para_id": <int>, "line_id": <int>, "pali": "<short excerpt>",
+    "translation": "<the Vietnamese (Tiếng Việt) translation you chose>",
+    "conflict": "<what the other source says, briefly>",
+    "note": "<why you went with your choice, 1 short sentence>" }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT — critical
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Return ONLY valid JSON. No markdown fences, no prose outside the JSON.
+{ "translations": [...], "glossary": [...], "remarks": [...] }
+
+
+=== USER ===
+Book: M-ii  —  paragraphs 92–106
+
+══════════════════════════════
+ESTABLISHED GLOSSARY (apply exactly, including multi-word phrases)
+══════════════════════════════
+(no glossary DB configured)
+
+══════════════════════════════
+PALI COMMENTARY & SUB-COMMENTARY
+══════════════════════════════
+[Commentary / Sub-commentary — linked lines only]
+
+[Ps-ii §142]
+  [1] 47. <b>Yānaṃ vā poriseyyan</b>ti purisānucchavikaṃ yānaṃ.
+          EN: 47. “<b>A carriage</b>” means a carriage suitable for a man.
+  [2] <b>Pavaramaṇikuṇḍalan</b>ti nānappakāraṃ uttamamaṇiñca kuṇḍalañca.
+          EN: “<b>Fine jewelled earrings</b>” means various types of excellent gems and earrings.
+  [3] <b>Sāni harantī</b>ti attano bhaṇḍakāni gaṇhanti.
+          EN: “<b>Owners taking back</b>” means they seize the goods that they call their own.
+
+[Ps-ii §143]
+  [1] 48. <b>Sampannaphalan</b>ti madhuraphalaṃ.
+          EN: 48. “<b>Laden with fruit</b>” means having delicious fruit.
+  [2] <b>Upapannaphalan</b>ti phalūpapannaṃ bahuphalaṃ.
+          EN: “<b>Having fruit</b>” means it is endowed with fruit, it has much fruit.
+
+[Ps-ii §144]
+  [1] 49. <b>Anuttaran</b>ti uttamaṃ pabhassaraṃ nirupakkilesaṃ.
+          EN: 49. “<b>Supreme</b>” means excellent, radiant, and without defilements.
+
+[Ps-ii §145]
+  [1] 50. <b>Ārakā ahaṃ , bhante</b>ti pathavito nabhaṃ viya samuddassa orimatīrato paratīraṃ viya ca suvidūravidūre ahaṃ.
+          EN: 50. “<b>I am far away, venerable sir</b>” means just as the sky is very far from the earth, or as the far shore is very far from this shore of the ocean, I, Potaliya, am standing very far away.
+  [2] <b>Anājānīye</b>ti gihivohārasamucchedanassa kāraṇaṃ ajānanake.
+          EN: “<b>Not thoroughbreds</b>” means they do not know the reason for the cutting off of worldly affairs.
+  [3] <b>Ājānīyabhojanan</b>ti kāraṇaṃ jānantehi bhuñjitabbaṃ bhojanaṃ.
+          EN: “<b>Food of thoroughbreds</b>” means food that should be eaten by those who know the reason.
+  [4] <b>Anājānīyabhojanan</b>ti kāraṇaṃ ajānantehi bhuñjitabbaṃ bhojanaṃ.
+          EN: “<b>Food of those who are not thoroughbreds</b>” means food that should be eaten by those who do not know the reason (like the wanderers, who are like us).
+
+[Ps-t-ii §86]
+  [1] 47. Purisassa ārohanayogyaṃ <b>poriseyyaṃ</b>.
+          EN: 47. “Suitable for a man” means a carriage appropriate for a man.
+
+[Ps-t-ii §87]
+  [1] 48. Sampannaṃ sundaraṃ phalamassāti <b>sampannaphalaṃ .</b>
+          EN: 48. “Laden with fruit” means it has delicious fruit.
+
+[Ps-t-ii §88]
+  [1] 50. <b>Suvidūravidūre</b>ti ariyassa vinaye vohārasamucchedato suṭṭhu vidūrabhūte eva vidūre <b>ahaṃ</b> ṭhito.
+          EN: 50. “I am very far away” means I am standing very far away, truly far from the cutting off of affairs in the Noble One’s Discipline.
+  [2] Kassaci nāma atthassapi ajānanato na ājānantīti <b>anājānīyā</b>ti kattusādhanamassa dassento <b>ajānanake</b>ti ajānantabhojanasīsena tesaṃ dātabbapaccaye vadati.
+          EN: Because one who does not know the reason for any of these affairs is called ‘not a thoroughbred,’ he indicates the causative agent by saying ‘those who do not know,’ and he speaks of the requisites that should be given to them under the guise of ‘food of those who do not know.’
+
+══════════════════════════════
+PALI WORD DEFINITIONS (reference for difficult/rare terms)
+══════════════════════════════
+Pali Word Definitions:
+  pavaramaṇikuṇḍalaṃ:
+    - pavaramaṇikuṇḍalaṃ: 47. <b>Yānaṃ vā poriseyyan</b>ti purisānucchavikaṃ yānaṃ. [47. “<b>A carriage</b>” means a carriage suitable for a man.] … <b>Pavaramaṇikuṇḍalan</b>ti nānappakāraṃ uttamamaṇiñca kuṇḍalañca. [“<b>Fine jewelled earrings</b>” means various types of excellent gems and earrings.] … <b>Sāni harantī</b>ti attano bhaṇḍakāni gaṇhanti. [“<b>Owners taking back</b>” means they seize the goods that they call their own.]
+  imañcāhaṃ:
+    - imañcāhaṃ: <b>Abbhuto</b>ti pubbe abhūtapubbo. [<i>Abbhuto</i> means ‘previously unexperienced’.] … <b>Imañcāhan</b>ti atha me saṃviggassa etadahosi ‘‘sace ahaṃ imaṃ migaṃ hanissāmi, ajjeva imasmiṃyeva ṭhāne jīvitaṃ jahissāmī’’ti. [<i>Imañcāhan</i> means: ‘Then, being moved, this thought occurred to me: “If I kill this deer, I will be throwing away my life in this very place today.”’]
+  dukkhappaṭikkūlo:
+    - dukkhappaṭikkūlo: Sukhaṃ kāmayatīti <b>sukhakāmo .</b> [It desires happiness, so it is a <b>“sukhakāmo”</b> (one who desires happiness).] … <b>Dukkhappaṭikkūlo</b>ti dukkhaṃ anicchamāno. [<b>“Dukkhappaṭikkūlo”</b> means not wanting suffering.] … <b>Pādenā</b>ti attano pādena. [<b>“Pādenā”</b> means with one's own foot.]
+  poriseyyaṃ:
+    - poriseyyaṃ: 47. Purisassa ārohanayogyaṃ <b>poriseyyaṃ</b>. [47. “Suitable for a man” means a carriage appropriate for a man.]
+  pokkharaṇirāmaṇeyyakaṃ:
+    - pokkharaṇirāmaṇeyyakaṃ: <b>Bhūmirāmaṇeyyakan</b>ti jetavanavihāramagadhakkhettādisadisaṃ samaṃ bhūmiṭṭhānaṃ. [<b>‘Beautiful places’</b> means level ground, similar to the Jetavana monastery and the fields of Magadha.] … <b>Pokkharaṇirāmaṇeyyakan</b>ti jetavanapokkharaṇigaggarāpokkharaṇisadisānaṃ vaṭṭacaturassadīghavaṅkādisaṇṭhānānaṃ pokkharaṇīnaṃ sannivesanaṭṭhānaṃ. [<b>‘Beautiful lotus ponds’</b> means the location of ponds of round, square, long, or curved shapes, similar to the ponds of Jetavana and Gaggara.] … <b>Ukkūlavikūlan</b>ti ukkūlañca vikūlañca. [<b>‘Hills and slopes’</b> means both hills and slopes.]
+  supinakaṃ:
+    - supinako: 236. <b>Imināva niyāmenā</b>ti yena nīhārena mahātale nisinno kañci parihāraṃ akatvā kevalaṃ iminā niyāmeneva. [236. <b>Imināva niyāmenā</b> (in this very manner): by the same method he followed when sitting on the palace floor, without making any provision for protection, and only in this very way [he would hear it].] … <b>Supinako</b>ti dussupinako. [<b>Supinako</b> (a dream): a bad dream.] … <b>Dukūladupaṭṭaṃ nivāsetvā</b>ti dve dukūlavatthāni ekajjhaṃ katvā nivāsetvā. [<b>Dukūladupaṭṭaṃ nivāsetvā</b> (having worn a double-layered robe): having put together two pieces of dukūla cloth and wearing them.]
+    - supinakaṃ: Yo vasabhaṃ, kuñjaraṃ, pāsādaṃ, pabbataṃ vā āruḷhamattānaṃ supine passati, tassa ‘‘idaṃ nāma phalan’’tiādinā hi vatthukittanaṃ hoti. [For one who sees in a dream that he has climbed a bull, an elephant, a palace, or a mountain, there is an enumeration of the object by saying, ‘This will be the fruit of this’.] … <b>Supinakan</b>ti supinasatthaṃ. [‘Supinaka’ (dream) means the science of dreams.] … Aṅgasampattivipattidassanamattena pubbe ‘‘aṅgan’’ti vuttaṃ, idha pana mahānubhāvatādinipphādakalakkhaṇavisesadassanena ‘‘lakkhaṇan’’ti ayametesaṃ viseso, tenāha <b>‘‘iminā lakkhaṇenā ’’</b>tiādi. [Previously, it was called ‘aṅga’ by merely showing the perfection or imperfection of limbs, but here, it is called ‘lakkhaṇa’ (mark/characteristic) by showing the specific mark that produces great power and so on; this is the distinction between them, and thus he said ‘by this mark’ and so on.]
+    - supinakūpamā: <b>Aṅgārakāsūpamā</b> mahābhitāpaṭṭhena. [“Compared to a pit of glowing embers” is in the sense of causing intense heat.] … <b>Supinakūpamā</b> ittarapaccupaṭṭhānaṭṭhena. [“Compared to a dream” is in the sense of appearing only for an instant.] … <b>Yācitakūpamā</b> tāvakālikaṭṭhena. [“Compared to borrowed goods” is in the sense of lasting only for a short time.]
+  kudhāriṃ:
+    - kudhārī: Dvayaṃ pharasumhi. [There is a pair [of terms] for an axe (<i>pharasumhi</i>).] … Chedakattā kucchitā dhārā yassāti <b>kudhārī .</b> [It is called <i>kudhārī</i> because it has a contemptible blade due to its cutting nature.] … Kudhāropi. [<i>Kudhāro</i> is also [used].]
+    - kudhāriyā: <b>Parisāvane</b>ti parisavati ito heṭṭhā udakanti parisāvanaṃ.. [‘Filter’ (parisāvane) refers to a filter because water flows through it from above [to below].] … <b>Kudhāriyā</b>ti chedanabhedanavasena kucchitā dhārā etissāti kudhārī.. [‘Contemptible stream’ (kudhāriyā) refers to a contemptible stream [of suffering] caused by cutting and breaking.] … <b>Tiṭṭhatu hiyyo ca parahiyyocā</b>ti hiyyo-divase ca parahiyyodivase ca pavattassa āyuno tattha tattheva nirujjhanaṃ tiṭṭhatu patiṭṭhātu avasesatūti attho.. [‘Let the lifespan that occurred yesterday and the day before yesterday persist’ (tiṭṭhatu hiyyo ca parahiyyocā) means: may it persist—that is, remain—and not be exhausted here and there; this is the meaning.]
+  sampannaphalo:
+    - sampannaphalaṃ: 48. <b>Sampannaphalan</b>ti madhuraphalaṃ. [48. “<b>Laden with fruit</b>” means having delicious fruit.] … <b>Upapannaphalan</b>ti phalūpapannaṃ bahuphalaṃ. [“<b>Having fruit</b>” means it is endowed with fruit, it has much fruit.]
+    - sampannaphaladhārinaṃ: <b>Papātamabhilambantan</b>ti papātābhimukhaṃ olambantaṃ. [‘<b>Hanging over an abyss</b>’ (<i>papātamabhilambantaṃ</i>) means ‘hanging facing an abyss.’] … <b>Sampannaphaladhārinan</b>ti madhuraphaladhārinaṃ. [‘<b>Bearing abundant fruit</b>’ (<i>sampannaphaladhārinaṃ</i>) means ‘bearing sweet fruit.’] … <b>Vātassitānī</b>ti paṭhamaṃ tāva vātapatitāni khādiṃ. [‘<b>Fallen by the wind</b>’ (<i>vātassitāni</i>) means ‘first I ate those that had fallen by the wind.’]
+  vohārasamucchedo:
+    - vohārasamucchedāyā: <b>Nindāroso</b>ti nindāghaṭṭanā. [“<b>Spite and scolding</b>” means spite and harassment.] … <b>Vohārasamucchedāyā</b>ti ettha <b>vohāro</b>ti byavahāravohāropi paṇṇattipi vacanampi cetanāpi. [In the phrase “<b>for the cutting off of affairs</b>”, here “<b>affairs</b>” includes the affair of trade, the affair of designation, the affair of speech, and the affair of volition.] … Tattha – [Regarding this—]
+  papatanto:
+    - papatanti: Tattha kiñcāpi ariyamaggo neva duggamo na visamo, pubbabhāgapaṭipadāya panassa bahū parissayā honti, tasmā evaṃ vutto. [Therein, even though the Noble Path is neither hard to travel nor uneven, yet for him, many troubles exist in the preliminary stage of practice; therefore, it was said thus.] … <b>Avaṃsirā</b>ti ñāṇasirena adhosirā hutvā <b>papatanti</b>. [<b>Headlong</b> (<i>Avaṃsirā</i>) means having become head downwards with the head of wisdom, they <b>fall down</b> (<i>papatanti</i>).] … Ariyamaggaṃ ārohituṃ asamatthatāya eva te <b>magge</b> papatantīti vuccanti. [Indeed, because of their inability to ascend the Noble Path, they are called those who <b>fall on the path</b> (<i>magge papatanti</i>).]
+  sādhikaporisā:
+    - sādhikaporisā: Tenevāha ‘‘sādhikaporisā’’ti. [For that reason, he said, “deeper than a man’s height.”] … Tattha sādhikaṃ porisaṃ pamāṇaṃ assāti <b>sādhikaporisā ,</b> atirekapañcaratanāti attho. [In that passage, <b>‘deeper than a man’s height’</b> (sādhikaporisā) means the measure of the hole exceeds a man's height, meaning it is more than five cubits deep.] … <b>Vītaccikānaṃ vītadhūmānan</b>ti etaṃ pariḷāhassa balavabhāvadīpanatthaṃ vuttaṃ, acciyā vā sati dhūme vā sati, vāto samuṭṭhāti, tena pariḷāho na balavā hoti. [The phrase <b>‘without flame or smoke’</b> was spoken to show the intensity of the heat. For if there were flame or smoke, the wind would rise, and therefore the heat would not be as intense.]
+  upapannaphalo:
+    - upapannaphalo: Tattha madhurasampannaṃ idhādhippetanti veditabbaṃ. [It should be understood that sweet endowment is what is intended here.] … <b>Upapannaphalo</b>ti bahuphalo. [“<b>Delicious fruit</b>” (<i>upapannaphalo</i>) means having many fruits.] … <b>Assā</b>ti pathaviyā heṭṭhimatalassa. [“<b>Its</b>” (<i>assā</i>) refers to the underside of the earth.]
+    - upapannaphalaṃ: 48. <b>Sampannaphalan</b>ti madhuraphalaṃ. [48. “<b>Laden with fruit</b>” means having delicious fruit.] … <b>Upapannaphalan</b>ti phalūpapannaṃ bahuphalaṃ. [“<b>Having fruit</b>” means it is endowed with fruit, it has much fruit.]
+  bhogāni:
+    - bhogānaṃ: <b>Sampattīnaṃ mūlan</b>ti yā imā loke padesarajjasirissariyasattaratanasamujjalacakkavattisampadāti evaṃpabhedā mānusikā sampattiyo, yā ca cātumahārājikādigatā dibbasampattiyo, yā vā panaññāpi sampattiyo, tāsaṃ sabbāsaṃ idaṃ mūlakāraṇaṃ. [<b><i>“The root of attainments”</i></b> refers to all those diverse human attainments—such as the glory of provincial kingship and the prosperity of the seven treasures—and the divine attainments of the Four Great Kings and others, and any other attainments; this is the root cause for all of them.] … <b>Bhogānan</b>ti bhuñjitabbaṭṭhena ‘‘bhogo’’ti laddhanāmānaṃ piyamanāpiyarūpādīnaṃ tannissayānaṃ vā upabhogasukhānaṃ patiṭṭhā niccalādhiṭṭhānatāya. [<b><i>“Of possessions”</i></b> refers to those called “possessions” by way of what should be enjoyed—the beloved and pleasing things, and the happiness of consumption dependent on them—because they are a foundation due to being a stable state.] … <b>Visamagatassā</b>ti byasanappattassa. [<b><i>“For one fallen into misfortune”</i></b> means for one who has attained calamity.]
+    - bhogānaṃ ādiyā: 41. Pañcamassa paṭhame <b>bhogānaṃ ādiyā</b>ti bhogānaṃ ādātabbakāraṇāni. [41. In the first of the fifth [chapter], <i>bhogānaṃ ādiyā</i> means the reasons for which wealth should be utilized.] … <b>Uṭṭhānavīriyādhigatehī</b>ti uṭṭhānasaṅkhātena vīriyena adhigatehi. [<i>Uṭṭhānavīriyādhigatehī</i> means obtained through energy known as striving.]
+    - bhogāni pariyesatī: <b>Saṭho</b>ti kerāṭiko. [“Deceitful” (saṭho) means fraudulent.] … <b>Bhogāni pariyesatī</b>ti bhoge gavesati. [“Seeking wealth” (bhogāni pariyesati) means he searches for goods.] … <b>Theyyena kūṭakammena , musāvādena cūbhayan</b>ti theyyādīsu ubhayena pariyesatīti attho. [“By theft, by fraud, and by false speech, he seeks both” (theyyena kūṭakammena, musāvādena cūbhayaṃ) means he seeks by both among the thefts and so forth—this is the meaning.]
+  ārūḷho:
+    - ārūḷhā: <b>Pucchitun</b>ti ‘‘kiṃ saṅghato gaṇhāmi, udāhu ye jānāmi, tehi saddhiṃ āgacchāmī’’ti pucchituṃ. ['To ask' (<i>pucchitun</i>) means: to ask, 'What shall I take from the Sangha, or should I come along with those whom I know?'] … Āruhiyitthāti <b>ārūḷhā .</b> ['Having climbed' (<i>āruhiyitthā</i>) is 'those who have mounted' (<i>ārūḷhā</i>).] … <b>Attanavamehī</b>ti attā navamo etesanti attanavamā, tehi bhikkhūhīti sambandho. ['With themselves as the ninth' (<i>attanavamehī</i>) means: those for whom 'self is the ninth' are 'self-ninth'; the connection is 'with those bhikkhus.']
+  khādeyyaṃ:
+    - khādeyyā: <b>Chāto</b>ti jighacchito. [<b>Chāto</b>ti: hungry.] … <b>Khādeyyā</b>ti khādeyyaṃ, ayameva vā pāṭho. [<b>Khādeyyā</b>ti: I would like to eat; or, this is the original reading.] … <b>Āhito</b>ti suhito. [<b>Āhito</b>ti: satisfied.]
+    - khādeyyuṃ: <b>Ākāsanissitā</b>ti ḍaṃsamakasakākakulalādayo. [<b>Dwelling in the open air</b>: such as gadflies, mosquitoes, crows, and hawks.] … <b>Khādeyyun</b>ti luñcitvā khādeyyuṃ. [<b>Would nibble</b>: would pull at and nibble.] … Sā tasmiṃ tasmiṃ ṭhāne taṃ taṃṭhānasannissayamūlikaṃ pāṇakhādanabhayaṃ sampassamānā neva attano sakkārasammānaṃ, na piṭṭhiparikammasarīrasambāhanauṇhodakāni icchati, evameva bhikkhu phassāhāramūlakaṃ kilesapāṇakakhādanabhayaṃ sampassamāno tebhūmakaphassena anatthiko hoti. [Perceiving the fear of being nibbled by creatures wherever she stands—by walls, trees, or water—she does not want any honor or hospitality, nor does she want her back stroked, her body massaged, or warm water; in the same way, a bhikkhu, perceiving the fear of being nibbled by the creatures of defilement that have nutriment of contact as their root, has no need for contact belonging to the three planes.]
+    - khādeyya vā bhuñjeyya vā: <b>Avassutassā</b>ti tādisasseva. [‘A corrupted person’ means just such a person.] … <b>Khādeyya vā bhuñjeyya vā</b>ti ettha paṭiggahaṇe thullaccayaṃ, ajjhohāre ajjhohāre saṅghādiseso. [Regarding ‘consume or chew,’ there is an offense entailing suspension for [the act of] receiving, and an offense entailing a formal meeting of the Order for every mouthful.]
+  vītaccikānaṃ:
+    - vītaccikānaṃ vītadhūmānaṃ: Tattha sādhikaṃ porisaṃ pamāṇaṃ assāti <b>sādhikaporisā ,</b> atirekapañcaratanāti attho. [In that passage, <b>‘deeper than a man’s height’</b> (sādhikaporisā) means the measure of the hole exceeds a man's height, meaning it is more than five cubits deep.] … <b>Vītaccikānaṃ vītadhūmānan</b>ti etaṃ pariḷāhassa balavabhāvadīpanatthaṃ vuttaṃ, acciyā vā sati dhūme vā sati, vāto samuṭṭhāti, tena pariḷāho na balavā hoti. [The phrase <b>‘without flame or smoke’</b> was spoken to show the intensity of the heat. For if there were flame or smoke, the wind would rise, and therefore the heat would not be as intense.] … <b>Ghammapareto</b>ti ghammānugato. [<b>‘Scorched by hot weather’</b> means reached by heat.]
+  kuṭhāriṃ:
+    - kuṭhārī: Atha naṃ ‘‘adiṭṭhippatto ayaṃ kokāliko, gilitaviso viya na kassaci vacanaṃ na karissatī’’ti ñatvā <b>purisassa hī</b>tiādimāha. [Then, knowing that this Kokālika had reached the end [of his tether] and, like a poisoned fish, would not follow anyone's word, he spoke the verse <b>“A person is born...” (purisassa hī)</b>.] … Tattha <b>kuṭhārī</b>ti kuṭhārisadisā pharusavācā. [In that context, <b>“axe” (kuṭhārī)</b> means harsh speech similar to an axe.] … <b>Chindatī</b>ti kusalamūlasaṅkhāte mūleyeva nikantati. [<b>“Cuts” (chindatī)</b>: he cuts exactly at the roots, which are the wholesome foundations.]
+    - kuṭhārīhī: <b>Saṃvesetvā</b>ti jalitāya lohapathaviyā tigāvutaṃ attabhāvaṃ nipajjāpetvā. [<b>Saṃvesetvā</b>ti—having made him lie on a red-hot iron ground of three leagues.] … <b>Kuṭhārīhī</b>ti mahatīhi gehassa ekapakkhacchadanamattāhi kuṭhārīhi tacchanti, lohitaṃ nadī hutvā sandati, lohapathavito jālā uṭṭhahitvā tacchitaṭṭhānaṃ gaṇhāti, mahādukkhaṃ uppajjati. [<b>Kuṭhārīhī</b>ti—they pare him with axes as large as a roof-section of a house, blood flows like a river, and flames rising from the iron ground burn the place that has been pared, and great suffering arises.] … Tacchantā pana suttāhataṃ karitvā dāruṃ viya aṭṭhaṃsampi chaḷaṃsampi karonti. [The executioners, having measured him out with a plumb-line, carve him into eight-angled or six-angled shapes, just like wood.]
+    - kuṭhāriyaṃ: <b>Pharasu</b> pana antamaso vejjānaṃ sirāvedhanapharasupi garubhaṇḍameva. [A 'hatchet' (<i>pharasu</i>), however, is a valuable item even if it is a surgeon's blood-letting hatchet.] … <b>Kuṭhāriyaṃ</b> pharasusadisoyeva vinicchayo. [The decision for a 'dagger' (<i>kuṭhāri</i>) is the same as for a hatchet.] … Yā pana āvudhasaṅkhepena katā, ayaṃ anāmāsā. [But one made as a weapon is untouchable.]
+  aññathattāyā:
+    - aññathattāyā: Atha kho tantipi pāṭho. [There is also the reading <i>atha kho taṃ</i>.] … <b>Aññathattāyā</b>ti pasādaññathābhāvāya vippaṭisārāya hoti. [<b>For causing them to lose confidence</b> (<i>aññathattāyā</i>) means it leads to regret and the loss of confidence.] … Ye maggena anāgatasaddhā, tesaṃ vippaṭisāraṃ karoti – [For those whose faith has not arrived through the path, it produces regret:]
+  aṅgārānaṃ:
+    - aṅgārāna: <b>Sattīvā</b>ti kunto iva.. ['Like a spear' (sattīvā) [means] like a javelin.] … <b>Aṅgārāna</b>nti ettha karaṇatthe sāmivacanaṃ.. ['Of the coals' (aṅgārāna) here, the possessive case is in the meaning of the instrument.] … Aṅgārehīti attho.. [The meaning is 'with coals'.]
+    - aṅgārānaṃ: <b>Paṇṇasedan</b>ti paṇṇehi sedaṃ. [“<b>Leaf-steaming (<i>paṇṇasedaṃ</i>)</b>” means steaming with leaves.] … <b>Aṅgārānan</b>ti aṅgārehi. [“<b>With charcoal (<i>aṅgārānaṃ</i>)</b>” means with [the heat of] charcoal.] … <b>Tatthā</b>ti tesu paṃsuvālikādīsu. [“<b>There (<i>tatthā</i>)</b>” means among those dust or sand [heaps], and so on.]
+  tamevūpekkhaṃ:
+    - tamevūpekkhaṃ bhāvetī: <b>Pañcakāmaguṇāmisā</b>ti ca kāmaguṇārammaṇachandarāgā, gahaṇaṭṭhena teyeva ca upādānātipi vuttā. [“<b>Material things of the five strings of sensual pleasure</b>” refers to the desire and lust for the objects of sensual pleasure; because they are seized, they are also spoken of as ‘clinging.’] … <b>Tamevūpekkhaṃ bhāvetī</b>ti taṃ lokāmisūpādānānaṃ paṭipakkhabhūtaṃ catutthajjhānupekkhameva vaḍḍheti. [“<b>Develops that very equanimity</b>” means he cultivates that fourth jhāna equanimity which is the counter-part to those clingings to material things of the world.]
+  upakaḍḍheyyuṃ:
+    - upakaḍḍheyyuṃ: 447. <b>Adhammacārī</b>ti pañca dussīlyakammāni vā dasa dussīlyakammāni vā idha adhammo nāma. [447. <b>‘‘ Adhammacārī ’’</b> means the five transgressions or the ten paths of unwholesome kamma are here called 'unrighteousness'.] … <b>Upakaḍḍheyyun</b>ti pañcavidhabandhanādikammakaraṇatthaṃ taṃ taṃ nirayaṃ kaḍḍheyyuṃ. [<b>‘‘ Upakaḍḍheyyun ’’</b> means they would drag him to such-and-such a hell for the sake of performing punishments like the five-fold binding.]
+  amaritukāmo:
+    - amaritukāmo: Jīvituṃ kāmayatīti <b>jīvitukāmo</b>. [It desires to live, so it is a <b>“jīvitukāmo”</b> (one who desires life).] … Amarituṃ kāmayatīti <b>amaritukāmo</b>. [It does not want to die, so it is an <b>“amaritukāmo”</b> (one who does not want to die).] … Sukhaṃ kāmayatīti <b>sukhakāmo .</b> [It desires happiness, so it is a <b>“sukhakāmo”</b> (one who desires happiness).]
+    - amaritukāmā vā: Āvāṭe patitvā thokaṃ cirāyitvā gacchantaṃ gahetvā mārite āvāṭasmiṃyeva aggahitattā pārājikaṃ na hotī’’ti vadanti, taṃ pana aṭṭhakathāyaṃ ‘‘patitappayogena gahitattā’’ti vuttahetussa idhāpi sambhavato vīmaṃsitvā gahetabbaṃ. [Some say: ‘Because there is no restriction of “let them die in this pit,” it is stated that it is an offense entailing expulsion even if killed after being taken out; if killed after being taken out [of a pit] where they had fallen and lingered a while, it is not an offense entailing expulsion because they were not killed in the pit.’ That should be scrutinized and accepted because the cause ‘due to the attempt of falling into’ holds true here too.] … <b>Amaritukāmā vā</b>tipi adhippāyassa sambhavato opapātike uttarituṃ asakkuṇitvā matepi pārājikaṃ vuttaṃ. [‘Even if they do not want to die’—due to the intention being possible, an offense entailing expulsion is stated even for one who dies after being spontaneously reborn.] … <b>Nibbattitvā</b>ti vuttattā patanaṃ na dissatīti ce? [‘If they are reborn, falling is not seen’—if so?]
+  ārohituṃ:
+    - ārohituṃ: Ettha sakkamupādāya ‘‘bhavaṃ viyā’’ti hīnattepi iṭṭhameva. [Here, relying on Sakka, even in the inferiority of “shining like you,” it is indeed welcome.] … <b>Ayaṃ</b> rājā <b>aṃsumato</b> sūriyassa <b>kacchaṃ</b> padaviṃ tejasā <b>ārohituṃ</b> pattuṃ <b>alaṃ</b> samatthoti. [<b>This</b> king is capable of reaching (<i>ārohituṃ</i>), of attaining, the sun's path (<i>aṃsumato kacchaṃ</i>) with his power.] … Ettha tejasā adhikopi sūriyo upamābhūto iṭṭhova,‘‘kacchaṃ ārohitun’’ti <b>iva</b> saddapariyāyo. [Here, the sun, which is even superior in power, is welcome as the object of comparison; “to reach the path” is a synonym for the particle “like” (<i>iva</i>).]
+  nānattasitā:
+    - nānattasitā: 310. <b>Nānattā</b>ti nānā bahū anekappakārā. [310. 'Diversity' (nānattā) means manifold, many, of various kinds.] … <b>Nānattasitā</b>ti nānārammaṇanissitā. ['Based on diversity' (nānattasitā) means dependent on diverse objects.] … <b>Ekattā</b>ti ekā. ['Unity' (ekattā) means one.]
+  tiṇhaṃ:
+    - tiṇho: Tiṇho parasu. [A sharp hatchet.] … Titikkhatīti <b>tiṇho</b>. [It is <b>tiṇho</b> because it endures.]
+    - tiṇhaṃ: 711. Tikaṃ tikhiṇe. [711. The triad [applies] to 'sharp'.] … <b>Tija</b> nisāne, ho, vaṇṇavikāro, <b>tiṇhaṃ .</b> [<i>Tija</i> (is used) in the sense of sharpening, with [the suffix] <i>ho</i>, and modification of a letter, [it forms] <i>tiṇhaṃ</i> (sharp).] … <b>Tija</b> nisāne, ino, <b>ja</b> ssa <b>kho , ṇa</b> ttaṃ, <b>tikhiṇaṃ .</b> [<i>Tija</i> (is used) in the sense of sharpening, with [the suffix] <i>ino</i>, [and] the substitution of <i>kho</i> for <i>ja</i>, [with] the nasalization, [it forms] <i>tikhiṇaṃ</i> (sharp).]
+    - tiṇhadhārakhuradhāraṃ: Athettha nhāyissāma pivissāmāti nerayikā patanti. [Then, thinking “We shall bathe and drink,” the hell-denizens fall into it.] … <b>Tiṇhadhārakhuradhāran</b>ti tiṇhadhāraṃ khuradhāraṃ, tikkhadhārakhuradhāravatinti vuttaṃ hoti. [“<i>Tiṇhadhārakhuradhāran</i>” means sharp-edged, razor-edged; it is said to be sharp-edged like a razor.] … Tassā kira nadiyā uddhamadho ubhayatīresu ca tiṇhadhārā khurā paṭipāṭiyā ṭhapitā viya tiṭṭhanti, tena sā ‘‘tiṇhadhārā khuradhārā’’ti vuccati. [It is said that on the banks, both above and below that river, sharp razors stand as if placed in order, and that is why it is called “sharp-edged, razor-edged”.]
+  ārāmarāmaṇeyyakaṃ:
+    - ārāmarāmaṇeyyakaṃ: <b>Ārāmarāmaṇeyyakan</b>ti pupphārāmaphalārāmānaṃ rāmaṇeyyakaṃ veḷuvana-jīvakambavana-jetavanapubbārāmasadisaṃ. [<b>‘Beautiful gardens’</b> means the beauty of flower and fruit gardens, similar to the Veḷuvana, Jīvakambavana, Jetavana, and Pubbārāma.] … Taṃ imasmiṃ jambudīpe appamattakaṃ parittakaṃ, na bahukanti attho. [That in this Jambudīpa is trifling and little, it is not much, this is the meaning.]
+
+══════════════════════════════
+PREVIOUS PARAGRAPH (for style consistency)
+══════════════════════════════
+[Para 89]
+  [line_id=1] Pali: 44.‘‘Seyyathāpi, gahapati, puriso ādittaṃ tiṇukkaṃ ādāya paṭivātaṃ gaccheyya.
+                   EN:   44. «Này gia chủ, ví như một người cầm một ngọn đuốc cỏ đang bốc cháy đi ngược chiều gió.
+  [line_id=2] Pali: Taṃ kiṃ maññasi, gahapati, sace so puriso taṃ ādittaṃ tiṇukkaṃ na khippameva paṭinissajjeyya tassa sā ādittā tiṇukkā hatthaṃ vā daheyya bāhuṃ vā daheyya aññataraṃ vā aññataraṃ vā aṅgapaccaṅgaṃ [daheyya. aññataraṃ vā aṅgapaccaṅga (sī. pī.)] daheyya, so tatonidānaṃ maraṇaṃ vā nigaccheyya maraṇamattaṃ vā dukkhan’’ti?
+                   EN:   Này gia chủ, ông nghĩ thế nào? Nếu người ấy không nhanh chóng buông bỏ ngọn đuốc cỏ đang bốc cháy ấy, ngọn đuốc cỏ đang bốc cháy ấy có thể đốt cháy bàn tay, đốt cháy cánh tay, hay đốt cháy một phần chi thể nào khác của người ấy, và do duyên ấy người ấy có thể đi đến cái chết hoặc sự đau khổ đến chết hay không?»
+
+[Para 90]
+  [line_id=1] Pali: ‘‘Evaṃ, bhante ’’.
+                   EN:   «Thưa vâng, bạch Thế Tôn.»
+
+[Para 91]
+  [line_id=1] Pali: ‘‘Evameva kho, gahapati, ariyasāvako iti paṭisañcikkhati –
+                   EN:   «Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –
+  [line_id=2] Pali: ‘ tiṇukkūpamā kāmā vuttā bhagavatā bahudukkhā bahupāyāsā, ādīnavo ettha bhiyyo ’ ti.
+                   EN:   "Các dục được Thế Tôn ví như ngọn đuốc cỏ, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn."
+  [line_id=3] Pali: Evametaṃ yathābhūtaṃ sammappaññāya disvā … pe … tamevūpekkhaṃ bhāveti.
+                   EN:   Sau khi thấy rõ điều ấy như thật với tuệ quyền đúng đắn… vị ấy tu luyện hỷ xả ấy.
+
+══════════════════════════════
+PARALLEL AI TRANSLATIONS (for reference)
+══════════════════════════════
+[English translation]
+  --- para_id=92 ---
+    [line_id=1] “Householder, suppose there were a charcoal pit deeper than a man’s height full of glowing coals without flame or smoke.
+    [line_id=2] Then a man came who wanted to live and not to die, who wanted pleasure and recoiled from pain.
+    [line_id=3] And two strong men seized him by both arms and dragged him towards that charcoal pit.
+    [line_id=4] What do you think, householder? Would that man twist his body this way and that?”
+  --- para_id=93 ---
+    [line_id=1] “Yes, venerable sir.”
+  --- para_id=94 ---
+    [line_id=1] “Why is that?”
+  --- para_id=95 ---
+    [line_id=1] “Because that man knows that if he falls into that charcoal pit, he will incur death or deadly suffering because of that.”
+    [line_id=2] “So too, householder, a noble disciple considers thus:
+    [line_id=3] ‘Sensual pleasures have been compared to a charcoal pit by the Blessed One; they provide much suffering and much despair, while the danger in them is great.’
+    [line_id=4] Having seen this thus as it actually is with proper wisdom…clinging to the material things of the world utterly ceases without remainder.
+  --- para_id=96 ---
+    [line_id=1] “Householder, suppose a man dreamt about lovely parks, lovely groves, lovely meadows, and lovely lakes.
+    [line_id=2] And on waking he saw nothing of it.
+    [line_id=3] So too, householder, a noble disciple considers thus:
+    [line_id=4] ‘Sensual pleasures have been compared to a dream by the Blessed One; they provide much suffering and much despair, while the danger in them is great.’ Having seen this thus as it actually is with proper wisdom…clinging to the material things of the world utterly ceases without remainder.
+  --- para_id=97 ---
+    [line_id=1] “Householder, suppose a man borrowed goods on loan —a fancy carriage and fine-jewelled earrings—
+    [line_id=2] And preceded and surrounded by those borrowed goods he went to the marketplace.
+    [line_id=3] Then people, seeing him, would say:
+    [line_id=4] ‘Sirs, that is a rich man! That is how the rich enjoy their wealth!’
+    [line_id=5] Then the owners, whenever they saw him, would take back their things.
+    [line_id=6] What do you think, householder? Would that be enough for that man to become dejected?”
+  --- para_id=98 ---
+    [line_id=1] “Yes, venerable sir.”
+  --- para_id=99 ---
+    [line_id=1] “Why is that?”
+  --- para_id=100 ---
+    [line_id=1] “Because the owners took back their things.”
+    [line_id=2] “So too, householder, a noble disciple considers thus:
+    [line_id=3] ‘Sensual pleasures have been compared to borrowed goods by the Blessed One; they provide much suffering and much despair, while the danger in them is great.’ Having seen this thus as it actually is with proper wisdom…clinging to material things of the world utterly ceases without remainder.
+  --- para_id=101 ---
+    [line_id=1] “Householder, suppose there were a dense grove not far from some village or town.
+    [line_id=2] Within which there was a tree laden with fruit but none of its fruit had fallen to the ground.
+    [line_id=3] Then a man came needing fruit, seeking fruit, wandering in search of fruit.
+    [line_id=4] And he entered the grove and saw the tree laden with fruit.
+    [line_id=5] Thereupon he thought:
+    [line_id=6] ‘This tree is laden with fruit but none of its fruit has fallen to the ground.
+    [line_id=7] I know how to climb a tree, so let me climb this tree,
+    [line_id=8] eat as much fruit as I want, and fill my bag.’ And he did so.
+    [line_id=9] Then a second man came needing fruit, seeking fruit, wandering in search of fruit, and taking a sharp axe, he too entered the grove and saw that tree laden with fruit.
+    [line_id=10] Thereupon he thought:
+    [line_id=11] ‘This tree is laden with fruit but none of its fruit has fallen to the ground.
+    [line_id=12] I do not know how to climb a tree, so let me cut this tree down at its root, eat as much fruit as I want, and fill my bag.’ And he did so.
+    [line_id=13] What do you think, householder? If that first man who had climbed the tree doesn’t come down quickly, when the tree falls, wouldn’t he break his hand or his foot or some other part of his body, so that he might incur death or deadly suffering because of that?”
+    [line_id=14] But I do not know how to climb a tree.
+    [line_id=15] What if I were to cut this tree down at its root, eat as much fruit as I want, and fill my bag?
+    [line_id=16] He would cut that tree down at its root.
+    [line_id=17] What do you think, householder? If that first man who had climbed the tree doesn’t come down quickly, when the tree falls, wouldn’t it break his hand or his foot or some other part of his body, so that he might incur death or deadly suffering because of that?
+  --- para_id=102 ---
+    [line_id=1] “Yes, venerable sir.”
+  --- para_id=103 ---
+    [line_id=1] “So too, householder, a noble disciple considers thus:
+    [line_id=2] ‘Sensual pleasures have been compared to fruits on a tree by the Blessed One; they provide much suffering and much despair, while the danger in them is great.’
+    [line_id=3] Having seen this thus as it actually is with proper wisdom, he avoids the equanimity that is diversified, based on diversity, and develops the equanimity that is unified, based on unity, where clinging to the material things of the world utterly ceases without remainder.
+  --- para_id=104 ---
+    [line_id=1] “Based upon that same supreme mindfulness whose purity is due to equanimity, this noble disciple recollects his manifold past lives, that is, one birth, two births… Thus with their aspects and particulars he recollects his manifold past lives.
+  --- para_id=105 ---
+    [line_id=1] “Based upon that same supreme mindfulness whose purity is due to equanimity, with the divine eye, which is purified and surpasses the human, this noble disciple sees beings passing away and reappearing, inferior and superior, fair and ugly, fortunate and unfortunate… and he understands how beings pass on according to their actions.
+  --- para_id=106 ---
+    [line_id=1] “Based upon that same supreme mindfulness whose purity is due to equanimity, by realising for himself with direct knowledge, this noble disciple here and now enters upon and abides in the deliverance of mind and deliverance by wisdom that are taintless with the destruction of the taints.
+    [line_id=2] At this point, householder, the cutting off of affairs in the Noble One’s Discipline has been achieved entirely and in all ways.
+
+[Sinhala translation]
+  --- para_id=92 ---
+    [line_id=1] ගෘහපතිය, යම්සේ මනුෂ්‍ය ප්‍රමාණයකට වඩා ගැඹුරු, දැල්වෙන දළු නැති, දුම් නැති, මිනී අඟුරුවලින් පිරුණු ගිනි අඟුරු වළක් වේද, එය මෙබඳුය.
+    [line_id=2] එකල ජීවත් වීමට කැමැති, මිය නොයෑමට කැමැති, සැපයට කැමැති, දුකට විරුද්ධ වූ පුරුෂයෙක් එන්නේය.
+    [line_id=3] එවිට බලවත් පුරුෂයෝ දෙදෙනෙක් ඔහු දෙඅතින් අල්ලාගෙන ඒ ගිනි අඟුරු වළ දෙසට ඇදගෙන යන්නාහුය.
+    [line_id=4] ගෘහපතිය, ඒ ගැන ඔබ කුමක් සිතන්නෙහිද? එම පුරුෂයා ඒ පැත්තටත් මේ පැත්තටත් කය නමමින් රුඳී සිටින්නට උත්සාහ නොකරන්නේද?
+  --- para_id=93 ---
+    [line_id=1] එසේය ස්වාමීනි.
+  --- para_id=94 ---
+    [line_id=1] එයට හේතුව කුමක්ද?
+  --- para_id=95 ---
+    [line_id=1] ස්වාමීනි, 'මම මේ ගිනි අඟුරු වළට වැටුණහොත්, ඒ හේතුවෙන් මරණයට හෝ මරණාසන්න දුකට පත්වෙමි' යන කරුණ ඔහු දැනගන්නා නිසාය.
+    [line_id=2] ගෘහපතිය, එසේම ආර්ය ශ්‍රාවකතෙම මෙසේ සලකයි:
+    [line_id=3] 'කාමයෝ භාග්‍යවතුන් වහන්සේ විසින් ගිනි අඟුරු වළකට උපමා කරන ලදහ. බොහෝ දුක් ඇත්තාහ, බොහෝ පීඩා ඇත්තාහ, මෙහි ආදීනව බොහෝය.'
+    [line_id=4] මෙසේ කාමයන්හි ඇති දේ තතුසේ නුවණින් දැක ... ඒ උපේක්ෂාවම වඩයි.
+  --- para_id=96 ---
+    [line_id=1] ගෘහපතිය, යම්සේ පුරුෂයෙක් සුන්දර ආරාමයන්, සුන්දර වන ලැහැබ්, සුන්දර භූමිභාග, සුන්දර පොකුණු සහිත වූ සිහිනයක් දකීද, එය මෙබඳුය.
+    [line_id=2] ඔහු නින්දෙන් පිබිදුණු පසු (එයින්) කිසිවක් නොදකියි.
+    [line_id=3] ගෘහපතිය, එසේම ආර්ය ශ්‍රාවකතෙම මෙසේ සලකයි:
+    [line_id=4] 'කාමයෝ භාග්‍යවතුන් වහන්සේ විසින් සිහිනයකට උපමා කරන ලදහ. බොහෝ දුක් ඇත්තාහ, බොහෝ පීඩා ඇත්තාහ, මෙහි ආදීනව බොහෝය.' මෙසේ තතුසේ නුවණින් දැක ... ඒ උපේක්ෂාවම වඩයි.
+  --- para_id=97 ---
+    [line_id=1] ගෘහපතිය, යම්සේ පුරුෂයෙක් ඉල්ලාගත් යානයක් හෝ ඉල්ලාගත් උතුම් මැණික් ඔබ්බවන ලද කරාබු හෝ රැගෙන යන්නේද, එය මෙබඳුය.
+    [line_id=2] ඔහු ඒ ඉල්ලාගත් භෝගයන්ගෙන් පෙරටු කොට ගත්, වට වූ කෙනෙකු ලෙස වෙළඳපොළට යයි.
+    [line_id=3] ජනයා ඔහුව දැක මෙසේ කියන්නාහ:
+    [line_id=4] 'සැබැවින්ම මේ තැනැත්තා බොහෝ දේ ඇති අයෙකි! ධනවත් අය මෙසේ තම ධනය භුක්ති විඳින්නාහ!'
+    [line_id=5] එම වස්තූන්ගේ හිමිකරුවන් ඔහු දකින ඕනෑම තැනකදී තමන්ගේ භාණ්ඩ ආපසු ගනිති.
+    [line_id=6] ගෘහපතිය, ඒ ගැන ඔබ කුමක් සිතන්නෙහිද? ඔහුට එසේ සිදුවීම ප්‍රමාණවත් නොවේද?
+  --- para_id=98 ---
+    [line_id=1] එසේය ස්වාමීනි.
+  --- para_id=99 ---
+    [line_id=1] එයට හේතුව කුමක්ද?
+  --- para_id=100 ---
+    [line_id=1] ස්වාමීනි, මන්ද යත් වස්තූන්ගේ හිමිකරුවන් තම භාණ්ඩ ආපසු ගන්නා බැවිනි.
+    [line_id=2] ගෘහපතිය, එසේම ආර්ය ශ්‍රාවකතෙම මෙසේ සලකයි:
+    [line_id=3] 'කාමයෝ භාග්‍යවතුන් වහන්සේ විසින් ඉල්ලාගත් දේවලට උපමා කරන ලදහ. බොහෝ දුක් ඇත්තාහ, බොහෝ පීඩා ඇත්තාහ, මෙහි ආදීනව බොහෝය.' මෙසේ තතුසේ නුවණින් දැක ... ඒ උපේක්ෂාවම වඩයි.
+  --- para_id=101 ---
+    [line_id=1] ගෘහපතිය, යම්සේ නියම් ගමකට හෝ ගමකට නුදුරින් වන ලැහැබක් වේද, එය මෙබඳුය.
+    [line_id=2] එහි මධුර ඵල ඇති, ගෙඩි බර වූ රුකක් ඇත. නමුත් බිම වැටුණු කිසිදු ඵලයක් එහි නොමැත.
+    [line_id=3] එකල ඵල බලාපොරොත්තුවෙන් සිටින, ඵල සොයන පුරුෂයෙක් ඒ වන ලැහැබට එයි.
+    [line_id=4] ඔහු ඒ වන ලැහැබට ඇතුළු වී ඒ මධුර ඵල සහිත, ගෙඩි බර වූ රුක දකියි.
+    [line_id=5] ඔහුට මෙබඳු සිතක් පහළ වේ:
+    [line_id=6] 'මෙම රුක මධුර ඵල සහිත, ගෙඩි බර එකකි. බිම වැටුණු කිසිදු ඵලයක් මෙහි නැත.'
+    [line_id=7] 'මම ගසකට නැගීමට දනිමි.'
+    [line_id=8] 'මම මෙම රුකට නැග, කැමති තරම් කා, මගේ උරමල්ල පුරවා ගනිමි නම් යෙහෙක.'
+    [line_id=9] ඔහු එසේ කර රුකට නැග කැමති තරම් කා, උරමල්ල ද පුරවා ගනී.
+    [line_id=10] ඉක්බිති ඵල බලාපොරොත්තුවෙන් සිටින, ඵල සොයන දෙවැනි පුරුෂයෙක් තියුණු පොරවක් ගෙන එහි එයි.
+    [line_id=11] ඔහු ඒ වන ලැහැබට ඇතුළු වී ඒ මධුර ඵල සහිත, ගෙඩි බර රුක දකියි.
+    [line_id=12] ඔහුට මෙබඳු සිතක් පහළ වේ:
+    [line_id=13] 'මෙම රුක මධුර ඵල සහිත, ගෙඩි බර එකකි. බිම වැටුණු කිසිදු ඵලයක් මෙහි නැත.'
+    [line_id=14] 'මම ගසකට නැගීමට නොදනිමි.'
+    [line_id=15] 'මම මෙම රුක මුලින් කපා, කැමති තරම් කා, උරමල්ල පුරවා ගනිමි නම් යෙහෙක.'
+    [line_id=16] ඔහු ඒ රුක මුලින්ම කපා දමයි.
+    [line_id=17] ගෘහපතිය, ඒ ගැන ඔබ කුමක් සිතන්නෙහිද? මුලින් ගසට නැගි ඒ පුරුෂයා ඉක්මනින් බැස නොගන්නේ නම්, ගස කඩාවැටෙන විට ඔහුගේ අතක් හෝ පයක් හෝ අන් යම් අවයවයක් බිඳී නොයන්නේද? ඒ නිසා ඔහු මරණයට හෝ මරණාසන්න දුකට පත් නොවන්නේද?
+  --- para_id=102 ---
+    [line_id=1] එසේය ස්වාමීනි.
+  --- para_id=103 ---
+    [line_id=1] ගෘහපතිය, එසේම ආර්ය ශ්‍රාවකතෙම මෙසේ සලකයි:
+    [line_id=2] 'කාමයෝ භාග්‍යවතුන් වහන්සේ විසින් ගසක පලවලට උපමා කරන ලදහ. බොහෝ දුක් ඇත්තාහ, බොහෝ පීඩා ඇත්තාහ.'
+    [line_id=3] මෙසේ කාමයන්හි ඇති දේ තතුසේ නුවණින් දැක, නානාත්වය සිතට ගත්, නානාත්වය මත යැපෙන උපේක්ෂාව බැහැර කර, එකඟතාවය සිතට ගත්, එකඟතාවය මත යැපෙන, යම් උපේක්ෂාවක් තුළ ලෝකාමිෂ උපාදානයන් සම්පූර්ණයෙන්ම සහ ඉතිරි නොවී නිරුද්ධ වේද, ඒ ධ්‍යාන උපේක්ෂාවම වඩයි.
+  --- para_id=104 ---
+    [line_id=1] ගෘහපතිය, ඒ ආර්ය ශ්‍රාවකතෙම ඒ නිරුත්තර වූ උපේක්ෂා ස්මෘති පාරිශුද්ධියම අරමුණු කොටගෙන නන් වැදෑරුම් පූර්ව ජන්මයන් සිහි කරයි. එනම්: එක් ජාතියක්, ජාති දෙකක්... මේ ආකාරයෙන් විස්තර සහිතව නන් වැදෑරුම් පූර්ව ජන්මයන් සිහි කරයි.
+  --- para_id=105 ---
+    [line_id=1] ගෘහපතිය, ඒ ආර්ය ශ්‍රාවකතෙම ඒ නිරුත්තර වූ උපේක්ෂා ස්මෘති පාරිශුද්ධියම අරමුණු කොටගෙන, මිනිස් ඇස ඉක්මවා ගිය පිරිසිදු දිව්‍යමය චක්‍ෂුසින්, ච්‍යුත වන සහ උත්පත්තිය ලබන, හීන හා ප්‍රණීත, සුන්දර හා අවලක්ෂණ, සුගතිගාමී හා දුර්ගතිගාමී සත්ත්වයන් දකියි. සත්ත්වයන් තම කර්මයන්ට අනුකූලව ගමන් කරන අයුරු ඔහු දැනගනියි.
+  --- para_id=106 ---
+    [line_id=1] ගෘහපතිය, ඒ ආර්ය ශ්‍රාවකතෙම ඒ නිරුත්තර වූ උපේක්ෂා ස්මෘති පාරිශුද්ධියම අරමුණු කොටගෙන, ආශ්‍රවයන්ගේ ක්‍ෂය වීමෙන් අනාශ්‍රව වූ චේතෝවිමුක්තිය සහ ප්‍රඥාවිමුක්තිය වර්තමානයේදීම තමන්ම විශිෂ්ට ඥානයෙන් දැන ප්‍රත්‍යක්ෂ කොට සාක්ෂාත් කරගෙන වාසය කරයි.
+    [line_id=2] ගෘහපතිය, මෙතෙකින් ආර්ය විනයෙහි ව්‍යාපාරයන් සම්පූර්ණයෙන්ම සහ සියලු අයුරින් කපා දැමීම සිදු වේ.
+
+[Thai translation]
+  --- para_id=92 ---
+    [line_id=1] ดูก่อนคฤหบดี เปรียบเสมือนหลุมถ่านเพลิงที่ลึกกว่าชั่วบุรุษหนึ่ง เต็มไปด้วยถ่านเพลิงที่ปราศจากเปลวและปราศจากควัน
+    [line_id=2] ในขณะนั้นมีบุรุษผู้รักชีวิต ไม่อยากตาย รักสุข เกลียดทุกข์ เดินผ่านมา
+    [line_id=3] บุรุษผู้มีกำลังสองคนได้เข้ามาจับแขนเขาคนละข้าง แล้วฉุดเขาไปที่หลุมถ่านเพลิงนั้น
+    [line_id=4] ดูก่อนคฤหบดี ท่านจะเข้าใจความข้อนั้นว่าอย่างไร บุรุษนั้นจะพยายามน้อมกายหนีไปทางโน้นทางนี้บ้างหรือไม่
+  --- para_id=93 ---
+    [line_id=1] พยายามทำเช่นนั้น พระองค์ผู้เจริญ
+  --- para_id=94 ---
+    [line_id=1] ข้อนั้นเพราะเหตุใด
+  --- para_id=95 ---
+    [line_id=1] เพราะบุรุษนั้นตระหนักชัดว่า หากเราตกลงไปในหลุมถ่านเพลิงนี้ เราจะต้องถึงแก่ความตายหรือได้รับทุกข์ปางตายจากการตกลงไปนั้น
+    [line_id=2] ดูก่อนคฤหบดี อริยสาวกก็เช่นกัน ย่อมพิจารณาใคร่ครวญดังนี้ว่า
+    [line_id=3] ‘กามทั้งหลายเปรียบเสมือนหลุมถ่านเพลิง ตามที่พระผู้มีพระภาคเจ้าตรัสไว้ เป็นสิ่งที่นำมาซึ่งความทุกข์และความคับแค้นใจอย่างยิ่ง โทษในกามเหล่านั้นมีมากนัก’
+    [line_id=4] เมื่อเห็นสิ่งนี้ตามความเป็นจริงด้วยปัญญาอันถูกต้องแล้ว... เขาย่อมพัฒนาอุเบกขาที่เป็นเอกภาพและอาศัยเอกภาพ อันเป็นสภาวะที่ความถือมั่นในโลกามิสทั้งปวงดับไปโดยไม่มีเหลือ
+  --- para_id=96 ---
+    [line_id=1] ดูก่อนคฤหบดี เปรียบเสมือนบุรุษฝันเห็นสวนที่น่ารื่นรมย์ ป่าที่น่ารื่นรมย์ พื้นที่ที่น่ารื่นรมย์ และสระน้ำที่น่ารื่นรมย์
+    [line_id=2] เมื่อเขาตื่นขึ้น เขากลับไม่พบเห็นสิ่งใดเลย
+    [line_id=3] ดูก่อนคฤหบดี อริยสาวกก็เช่นกัน ย่อมพิจารณาใคร่ครวญดังนี้ว่า
+    [line_id=4] ‘กามทั้งหลายเปรียบเสมือนความฝัน ตามที่พระผู้มีพระภาคเจ้าตรัสไว้ เป็นสิ่งที่นำมาซึ่งความทุกข์และความคับแค้นใจอย่างยิ่ง โทษในกามเหล่านั้นมีมากนัก’... เขาย่อมพัฒนาอุเบกขาที่เป็นเอกภาพและอาศัยเอกภาพ อันเป็นสภาวะที่ความถือมั่นในโลกามิสทั้งปวงดับไปโดยไม่มีเหลือ
+  --- para_id=97 ---
+    [line_id=1] ดูก่อนคฤหบดี เปรียบเสมือนบุรุษที่ไปยืมโภคสมบัติมา คือยานพาหนะสำหรับผู้ชาย และกุณฑลฝังอัญมณีล้ำค่า
+    [line_id=2] เขาแวดล้อมและนำหน้าด้วยโภคสมบัติที่ยืมมาเหล่านั้น แล้วเดินเข้าไปในตลาด
+    [line_id=3] ผู้คนที่เห็นเขาต่างพูดกันว่า
+    [line_id=4] ‘ท่านผู้เจริญ บุรุษผู้นี้ช่างมั่งคั่งเหลือเกิน ผู้ที่มีโภคสมบัติเขาใช้สอยทรัพย์สินกันอย่างนี้เอง’
+    [line_id=5] เมื่อใดก็ตามที่เจ้าของเหล่านั้นพบเห็นเขา พวกเขาย่อมนำสิ่งของของตนกลับคืนไป
+    [line_id=6] ดูก่อนคฤหบดี ท่านจะเข้าใจความข้อนั้นว่าอย่างไร สิ่งนี้เพียงพอจะทำให้บุรุษนั้นต้องเดือดร้อนใจหรือไม่
+  --- para_id=98 ---
+    [line_id=1] เพียงพอ พระองค์ผู้เจริญ
+  --- para_id=99 ---
+    [line_id=1] ข้อนั้นเพราะเหตุใด
+  --- para_id=100 ---
+    [line_id=1] เพราะเจ้าของเหล่านั้นได้นำสิ่งของของตนกลับคืนไป พระองค์ผู้เจริญ
+    [line_id=2] ดูก่อนคฤหบดี อริยสาวกก็เช่นกัน ย่อมพิจารณาใคร่ครวญดังนี้ว่า
+    [line_id=3] ‘กามทั้งหลายเปรียบเสมือนของที่ยืมมา ตามที่พระผู้มีพระภาคเจ้าตรัสไว้ เป็นสิ่งที่นำมาซึ่งความทุกข์และความคับแค้นใจอย่างยิ่ง โทษในกามเหล่านั้นมีมากนัก’... เขาย่อมพัฒนาอุเบกขาที่เป็นเอกภาพและอาศัยเอกภาพ อันเป็นสภาวะที่ความถือมั่นในโลกามิสทั้งปวงดับไปโดยไม่มีเหลือ
+  --- para_id=101 ---
+    [line_id=1] ดูก่อนคฤหบดี เปรียบเสมือนราวป่าทึบที่ไม่ไกลจากบ้านหรือนิคม
+    [line_id=2] ในราวป่านั้นมีต้นไม้ที่ผลิดอกออกผลเต็มต้น แต่ไม่มีผลร่วงหล่นลงสู่พื้นดินเลยแม้แต่ผลเดียว
+    [line_id=3] ในขณะนั้นมีบุรุษผู้ต้องการผลไม้ เที่ยวแสวงหาผลไม้ เดินทางมาถึง
+    [line_id=4] เขาเข้าไปในราวป่านั้นและเห็นต้นไม้ที่ผลิดอกออกผลเต็มต้นนั้น
+    [line_id=5] เขาจึงคิดว่า
+    [line_id=6] ‘ต้นไม้นี้มีผลรสอร่อยและผลดกเต็มต้น แต่ไม่มีผลหล่นลงพื้นเลยสักผลเดียว’
+    [line_id=7] ‘เรารู้วิธีปีนต้นไม้’
+    [line_id=8] ‘ไฉนเราไม่ปีนขึ้นไปเก็บกินให้อิ่ม และเก็บใส่พกไว้บ้างเล่า’
+    [line_id=9] เขาจึงปีนขึ้นไปบนต้นไม้นั้น เก็บกินจนอิ่มและเก็บใส่พกไว้
+    [line_id=10] ต่อมา บุรุษคนที่สองผู้ต้องการผลไม้และถือขวานอันคมกริบได้เดินทางมาถึง
+    [line_id=11] เขาเข้าไปในราวป่านั้นและเห็นต้นไม้นั้น
+    [line_id=12] เขาจึงคิดว่า
+    [line_id=13] ‘ต้นไม้นี้มีผลรสอร่อยและผลดกเต็มต้น แต่ไม่มีผลหล่นลงพื้นเลยสักผลเดียว’
+    [line_id=14] ‘แต่เราไม่รู้วิธีปีนต้นไม้’
+    [line_id=15] ‘ไฉนเราไม่ตัดต้นไม้นี้ที่โคนต้น แล้วเก็บกินให้อิ่ม และเก็บใส่พกไว้บ้างเล่า’
+    [line_id=16] เขาจึงตัดต้นไม้นั้นที่โคนต้น
+    [line_id=17] ดูก่อนคฤหบดี ท่านจะเข้าใจความข้อนั้นว่าอย่างไร หากบุรุษคนแรกที่ปีนต้นไม้ไปก่อนหน้านั้นไม่รีบลงมา เมื่อต้นไม้ล้มลง ย่อมจะหักแขน หักขา หรืออวัยวะส่วนใดส่วนหนึ่งของเขา บุรุษนั้นจะต้องถึงแก่ความตายหรือได้รับทุกข์ปางตายเพราะต้นไม้นั้นล้มลงใช่หรือไม่
+  --- para_id=102 ---
+    [line_id=1] เป็นเช่นนั้น พระองค์ผู้เจริญ
+  --- para_id=103 ---
+    [line_id=1] ดูก่อนคฤหบดี อริยสาวกก็เช่นกัน ย่อมพิจารณาใคร่ครวญดังนี้ว่า
+    [line_id=2] ‘กามทั้งหลายเปรียบเสมือนผลไม้ ตามที่พระผู้มีพระภาคเจ้าตรัสไว้ เป็นสิ่งที่นำมาซึ่งความทุกข์และความคับแค้นใจอย่างยิ่ง’
+    [line_id=3] เมื่อเห็นสิ่งนี้ตามความเป็นจริงด้วยปัญญาอันถูกต้องแล้ว เขาย่อมละวางอุเบกขาที่เป็นความหลากหลายและอาศัยความหลากหลาย แล้วพัฒนาอุเบกขาที่เป็นเอกภาพและอาศัยเอกภาพ อันเป็นสภาวะที่ความถือมั่นในโลกามิสทั้งปวงดับไปโดยไม่มีเหลือ
+  --- para_id=104 ---
+    [line_id=1] ดูก่อนคฤหบดี อริยสาวกนั้นอาศัยอุเบกขาอันบริสุทธิ์ยิ่งกว่าสติธรรมอื่นใด ย่อมระลึกถึงภพชาติในอดีตได้มากมาย เช่น ระลึกได้หนึ่งชาติบ้าง สองชาติบ้าง... เขาย่อมระลึกถึงภพชาติในอดีตได้มากมายพร้อมทั้งรายละเอียดและลักษณะเฉพาะด้วยประการฉะนี้
+  --- para_id=105 ---
+    [line_id=1] ดูก่อนคฤหบดี อริยสาวกนั้นอาศัยอุเบกขาอันบริสุทธิ์ยิ่งกว่าสติธรรมอื่นใด ย่อมเห็นหมู่สัตว์ที่กำลังจุติและอุปบัติ เลวหรือประณีต ผิวพรรณดีหรือทราม ได้ดีหรือตกยาก ด้วยตาทิพย์อันบริสุทธิ์เหนือกว่าตาของมนุษย์ เขาย่อมรู้ชัดว่าหมู่สัตว์เหล่านั้นเป็นไปตามกรรม
+  --- para_id=106 ---
+    [line_id=1] ดูก่อนคฤหบดี อริยสาวกนั้นอาศัยอุเบกขาอันบริสุทธิ์ยิ่งกว่าสติธรรมอื่นใด ย่อมทำให้แจ้งซึ่งเจโตวิมุตติและปัญญาวิมุตติอันปราศจากอาสวะ ด้วยความรู้ยิ่งด้วยตนเองในปัจจุบันนี้
+    [line_id=2] ดูก่อนคฤหบดี เพียงเท่านี้เองที่ถือว่าเป็นการตัดขาดโวหารทั้งสิ้น ทุกสิ่งทุกอย่าง ในวินัยของพระอริยะโดยประการทั้งปวง
+
+══════════════════════════════
+MYANMAR NISSAYA (word-by-word gloss, romanised)
+══════════════════════════════
+--- para_id=92 ---
+  [line_id=1] သေယျထာပိ: အံ့။ | ဂဟပတိ: ကြွယ်။ | သာဓိကပေါရိသာ: အလွန်နှင့်တကွ တသူအနက်ရှိသော။ | ဝီတစ္စိကာနံ: ကင်းသော အလျှံရှိကုန်သော။ | ဝီတဓူမာနံ: ကင်းသော အခိုး ရှိကုန်သော။ | အင်္ဂါရာနံ: မီးကျီးတို့ဖြင့်။ | ပုရာ: ပြည့်သော။ | အင်္ဂါရကာသု: မီးကျီးတွင်းသည်။ | (အတ္ထိ: ၏။)
+  [line_id=2] အထ: ထိုအခါ၌။ | ဇီဝိတုကာမော: အသက်ရှင်ခြင်းကို အလိုရှိသော။ | အမရိတုကာမော: သေခြင်းငှါ အလိုမရှိသော။ | သုခကာမော: ချမ်းသာကိုအလိုရှိသော။ | ဒုက္ခပဋိက္ကူ‌လော: ဆင်းရဲဟူသော စက်ဆုပ်ဖွယ်ရှိသော။ | ပုရိသော: သည်။ | အာဂစ္ဆေယျ: လာရာ၏။ | [Note: (ကန္ဒရကသုတ် အပိုဒ် ၅-ပြန်ကြည့်။)]
+  [line_id=3] တမေနံ: ထိုယောကျာ်းကို။ | ဗလဝန္တော: အားကြီးကုန်သော။ | ဒွေပုရိသာ: ယောကျာ်းနှစ်ယောက်တို့သည်။ | နာနာဗာဟာသု: အသီးသီးသော လက်မောင်းတို့၌။ | ကိုင်၍။ | အင်္ဂါရကာသုံ: သို့။ | ဥပကဍ္ဎေယျုံ: ရှေးရှူဆွဲငင်ကုန်ရာ၏။ | [Note: ဂဟေတွာ
+]
+  [line_id=4] ဂဟပတိ: ကြွယ်။ | တံ: ကို။ | ကိံ မညသိ: နည်း။ | သော ပုရိသော: သည်။ | ဣတိစိတိစေဝ: ထိုထိုဤဤသာလျှင်။ | ကာယံ: ကိုယ်ကို။ | သန္နာမေယျာ အပိနုခေါ: ညွတ်ကိုင်းစေရာသလော။ | ဝါ: ရုံးကန်ကုန်ရာသလော။ | ဣတိ: သို့ မေးပြီ။
+
+--- para_id=93 ---
+  [line_id=1] ဧဝံ ဘန္တေ: အရှင်ဘုရား ထိုထိုဤဤ ညွတ်ကိုင်းစေပါ၏။
+
+--- para_id=94 ---
+  [line_id=1] တံ: သည်။ | ကိဿဟေတု: နည်း။
+
+--- para_id=95 ---
+  [line_id=1] ဘန္တေ: ရား။ | ဟိ: အကြင်ကြောင့်။ | တဿ ပုရိသဿ: သည်။ | "အဟံ: ငါသည်။ | ဣမံစ အင်္ဂါရကာသုံ: သို့သာလျှင်။ | ပပတိဿာမိ: ကျအံ့။ | တတောနိဒါနံ: ထိုမီးကျီးတွင်းသို့ ကျခြင်းလျှင် အကြောင်းရှိသော။ | ဝါ: ‌ကြောင့်။ | မရဏံဝါ: သို့လည်း။ | နိဂစ္ဆိဿာမိ: ရောက်အံ့။ | မရဏမတ္တံ: သော။ | ဒုက္ခံဝါ: သို့လည်း။ | နိဂစ္ဆိဿာမီတိ: ရောက်အံ့" ဟူ၍။ | ဝိဒိတံ: သိအပ်ပြီ။ | ဣတိတသ္မာ: ထို့ကြောင့်တည်း။ | [Note: (ဣတိလုတ္တနိဒ္ဒိဋ္ဌ)။]
+  [line_id=2] ဂဟပတိ: ကြွယ်။ | ဧဝမေဝခေါ: သာလျှင်။ | အရိယသာဝကော: သည်။
+  [line_id=3] "ဘဂဝတာ: သည်။ | ကာမာ: တို့ကို။ | အင်္ဂါရကာသူပမာ: မီးကျီးတွင်းလျှင် ဥပမာရှိကုန်၏ဟူ၍။ ပ။ | ဘိယျောတိ: များ၏" ဟူ၍။
+  [line_id=4] ဣတိ: သို့။ | ပဋိသဉ္ဇိက္ခတိ: ၏။ ပ။ | ဘာဝေတိ: ပွါးများ၏။
+
+--- para_id=96 ---
+  [line_id=1] သေယျာထာပိ: အံ့။ | ဂဟပတိ: ကြွယ်။ | ပုရိသော: သည်။ | သုပိနကံ: အိပ်မက်ကို။ | အာရာမရာမဏေယျကံ: အရာမ်၏မွေ့လျော်ဖွယ်၏အဖြစ်ကို။ | ဝနရာမ‌ဏေယျကံ: တော၏မွေ့လျော်ဖွယ်၏အဖြစ်ကို။ | ဘူမိရာမဏေယျကံ: မြေ၏မွေ့လျော်ဖွယ်၏အဖြစ်ကို။ | ပေါက္ခရဏိရဦမဏေယျကံ: ရေကန်၏မွေ့လျော်ဖွယ်အဖြစ်ကို | ပဿေယျ: မြင်မက်ရာ၏။ | [Note: ရမိတဗ္ဗော ရမဏိယော၊ တဿ ဘာဝေါ ရာမဏီယကံ-ဟုပြု။ (ရမဏီယာဒိတောကဏ်၊ အနုဗန်ချေ၊ ရ-၌ ဝုဒ္ဓိ။) အာရာမ-စသည်နှင့် ဆဋ္ဌီတွဲ။ ဝေဇယန္တဿ ပါဿဒဿ ရာမဏီယကံ-ဟူသော မူ-ပံ- စူဠ တဏှာသင်္ခယသုတ်ထောက်။ ဤကား "ရာမဏီယကန္တိ ရမဏီယဘာဝံ-ဟု ဖွင့်သော ဒီ၊ဋ္ဌ၊၂။ ၃၉၉။ စူဋ္ဌ တဏှာသင်္ခယဋီ။ အံ့၊ ဋီ (ဧက ဓမ္မဝဂ်) မောဂလ္လာန်တို့နှင့် အညီတည်း။ နီတိ-၌ ရမိတဗ္ဗာ ရမဏီယာ၊ သာဧဝ ရာမဏေယျာ-ဟု ဏေယျသာကတ္ထ၊ အာရာမ-စသည်နှင့် ကမ္မဓာရဲ။ သမာသန္တေက-ပြု၍ပြီးသည်။ နိရုတ္ထိဒီပနီ၌ကား ရမိတဗ္ဗံ ရမဏံ ဧတ္ထ ရာမဏော အာရာမော၊ အာရာမရာမဏဿ ဘာဝေါ အာရာမရာမဏေယျကံ-ဟု ဏေယျနှင့် သကတ္ထ၌ က-ဖြင့် ပြသည်။ ယတ္ထ အရဟန္တော ဝိဟရန္တိ၊ တံ ဘူမိ ရာမဏီယကံ။ ပါဠိ အဖွင့် (ဓမ္မပဒ၊  ၁။၄၀၀) ၌ ယသ္မိံ ဌာနေ အရဟန္တော ဝိဟရန္တိ၊ တံ ရမဏီယမေဝ။ သော ပဒေသော ရမဏီယော ဧဝ-ဟု ဖွင့်သည်ကို ကြည့်ပြန်လျှင်ကား ကဏ်ပစ္စည်း သကတ္ထယူသင့်၏။ ကြံဆ၍ ကြိုက်ရာယူ။]
+  [line_id=2] သော ပုရိသော: သည်။ | ပဋိဗုဒ္ဓေါ: နိုးလတ်သော်။ | ကိဉ္စိ: တစုံတခုကို။ | နပဋိပဿေယျ: မတွေ့မြင်ရာ။
+  [line_id=3] ဂဟပတိ: ကြွယ်။ | ဧဝမေဝခေါ: သာလျှင်။ | အရိယသာဝကော: သည်။ | "ဘာဂဝတာ: သည်။ | ကာမာ: တို့ကို။ | သုပိနကူပမာ: အိပ်မက်လျှင် ဥပမာရှိကုန်၏ ဟူ၍။ ပ။ | ဘိယျောတိ: များ၏" ဟူ၍။ | ဣတိ: သို့။ | ပဋိသဉ္စိက္ခတိ: ၏။ ပ။ | ဘာဝေတိ: ပွါးများ၏။ | (သုပိနကံ-ကား သမညကံ: အိပ်မက်၌ဖြစ်သောလည်းဟူ။ | [Note: အာရာမရာမဏေယ - စသည်ကား ဝိသေသကံ)။]
+
+--- para_id=97 ---
+  [line_id=1] သေယျာထာပိ: အံ့။ | ဂဟပတိ: ကြွယ်။ | ပုရိသော: သည်။ | ယာစိတကံ: ငှါးရမ်းအပ်သော။ | ပေါရိသေယျံ: ယောကျာ်းအား လျောက်ပတ်သော။ | ယာနံ: ယာဉ်ဟု ဆိုအပ်သော။ | ဘောဂံဝါ: အသုံးအဆောင်ကို၎င်း။ | ပဝရမဏိကုဏ္ဍလံ: အထူးထူး အပြားပြား မြတ်သော ပတ္တမြားနားဍောင်းဟု ဆိုအပ်သော။ | ‌ဘောဂံဝါ: အသုံးအဆောင်ကို၎င်း။ | ယာစိတွာ: ငှါးရမ်း၍။ | (ဝဋ္ဌဉ္စေယျ: သုံးစွဲရာ၏။)
+  [line_id=2] သောပုရိသော: သည်။ | ယာစိတကေဟိ: ကုန်သော။ | တေဟိဘောဂေဟိ: တို့ဖြင့်။ | ပုရက္ခတော: ရှေ့ဆောင်ပြု၍။ | ပရိဝုတော: ခြံရံလျက်။ | အန္တရာပဏံ: ‌‌ဈေးတွင်း၌။ | သွားရာ၏။ | [Note: ပဋိပဇ္ဇေယျ
+အန္တရာပဏန္တိ အာပဏာနမန္တ‌ရေ။ ပ။ ရစ္ဆမုခံ ပဋိပဇ္ဇေယျုန္တိ ဂစ္ဆေယျုံ။ မ၊ဋ္ဌ၊၁-အနင်္ဂဏသုတ်၊ ၆၁-ပိုဒ်။]
+  [line_id=3] တမေနံ: ထိုယောကျာ်းကို။ | ဇနော: လူအပေါင်းသည်။ | ဒိသွာ: ၍။
+  [line_id=4] "ဘော: တို့။ | ပုရိသော: ယောကျာ်းသည်။ | ဘောဂီ ဝတ: စည်းစိမ်ဥစ္စာရှိစွတကား။ | ဘောဂိနော: စည်းစိမ်ဥစ္စာရှိသသူတို့သည်။ | ဘောဂါနိ: စည်းစိမ်ဥစ္စာတို့ကို။ | ဧဝံ: ဤသို့။ | ဘုဉ္ဇန္တိကိရာတိ: သုံးဆောင်ခံစားကြကုန်သတတ်" ဟူ၍။ | ဧဝံ: သို့။ | ဝဒေယျ: ရာ၏။
+  [line_id=5] တမေနံ: ထိုယောကျာ်းကို။ | သာမိကာ: ဥစ္စာရှင်တို့သည်။ | ယတ္ထ ယတ္ထေဝ: အကြင်အကြင် အရပ်၌သာလျှင်။ | ပဿေယျုံ: ‌တွေ့မြင်ကုန်ရာ၏။ | တတ္ထ တတ္ထေဝ: ၌သာလျှင်။ | သာနိ: မိမိဥစ္စာတို့ကို။ | ဟရေယျုံ: ဆောင်ယူကုန်ရာ၏။ | [Note: (အတ္တနော ဘဏ္ဍာနိ။ ဋ္ဌ။)]
+  [line_id=6] ဂဟပတိ: ကြွယ်။ | တံ: ကို။ | ကိံ မညသိ: နည်း။ | တဿ ပုရိသဿ: ထိုယောကျာ်း၏။ | အညထတ္ထာယ: (ငှါးရမ်းသည်မှ) တပါးသော အခြင်းအရာအားဖြင့် ဖြစ်ခြင်းငှါ။ | အလံနု: သငိ့လျော်ပါမည်လော။ | ဣတိ: ဤသို့မေးတော်မူ၏။ | ဧဝံဘန္တေ: အရှင်ဘုရား ဤသို့
+
+--- para_id=98 ---
+  [line_id=1] ဧဝံဘန္တေ: အရှင်ဘုရား ဤသို့မသင့်လျော်ပါဘုရား။
+
+--- para_id=99 ---
+  [line_id=1] တံ: ထိုသို့ မသင့်လျော်ခြင်းသည်။ | ကိဿဟေတု: နည်း။
+
+--- para_id=100 ---
+  [line_id=1] ဘန္တေ: ရား။ | သာမိနော: ဥစ္စာရှင်တို့သည်။ | ဟိ: ကြောင့်။ | သာနိ: တို့ကို။ | ဟရန္တိ: ကုန်၏။ | ဣတိ: ထို့ကြောင့်တည်း။ | ဣတိ: ဤသို့လျှောက်၏။
+  [line_id=2] ဂဟပတိ: ကြွယ်။ | ဧဝမေဝ ခေါ: သာလျှင်။ | အရိယသာဝကော: သည်။ | "ဘဂဝတာ: သည်။ | ကာမာ: တို့ကို။ | ယာစိတကူပမာ: ငှါးရမ်းသော ဥစ္စာလျှင် ဥပမာရှိကုန်၏ဟူ၍။ ပ။ | ဘိယျောတိ: များ၏" ဟူ၍။ | ဣတိ: သို့။ | ပဋိသဉ္စိက္ခတိ: ၏။ ပ။ | ဘာဝေတိ: ၏။
+
+--- para_id=101 ---
+  [line_id=1] သေယျာထာပိ: အံ့။ | ဂဟပတိ: ကြွယ်။ | ဂါမဿ ဝါ: ရွာကို၎င်း။ | နိဂမဿ ဝါ: နိဂုံးကို၎င်း။ | အဝိဒူရေ: အနီး၌။ | တိဗ္ဗော: ထူထဲသော။ | ဝနသဏ္ဍော: တောအုပ်သည်။ | (အတ္ထိ: ရှိ၏။)
+  [line_id=2] တတြ: ထိုတောအုပ်၌။ | သမ္ပန္နဖလောစ: ချိုသော သစ်သီးလည်းရှိသော။ | သမ္ပန္နဖလောစ: ကောင်းသော အသီးလည်းရှိသော။ | ဥပပန္နဖလောစ: သစ်သီးတို့ဖြင့် ပြည့်စုံသည်လည်းဖြစ်သော။ | (ဝါ): များသော အသီးလည်းရှိသော။ | ရုက္ခော: သစ်ပင်သည်။ | အဿ: ရှိရဦ၏။ | ကာနိစိ: အချို့ကုန်သော။ | ဖလာနိ: အသီးတို့သည်။ | ဘူမိယံ: မြေ၌။ | ပတိတာနိ: ကျကုန်သည်။ | န စဿု: ဖြစ်လည်းမဖြစ်ကုန်ရာ။ | [Note: (ဤကား သမ္ပန္နဖလန္တိ မဓုရဖလံ ဟူသော ဋ္ဌ-၏ အလိုတည်း)။
+
+(ဤကား သမ္ပန္နံ သုန္ဒရံ ဖလမဿာတိ သမ္ပန္နဖလံ - ဟူသော ဋီ၏အလိုတည်း)။
+
+(ဤကား သဒ္ဒတ္ထ။)]
+  [line_id=3] အထ: ထိုအခါ၌။ | ဖလတ္ထိကော: အသီးကို အလိုရှိသော | ဖလဂဝေသီ: အသီးကိုရှာမှီးလေ့ရှိသော။ | ပုရိသော: သည်။ | ဖလပရိယေသနံ: အသီးကိုရှာမှီးခြင်းငှာ။ | စရမာနော: လှည့်လည်လျက်။ | အာဂစ္ဆေယျ: လာရာ၏။ | [Note: ပစ္စတ္ထိကော-ပုဒ်ကဲ့သို့ အတ္ထယတီတိ အတ္ထိကော၊ ဖလံ အတ္ထိကော ဖလတ္ထိကော-ဟု ကြံသည်။ (ဏွု-ကို အက၊ က-ကို ဣပြု။) တနဲ အတ္ထီယတီတိ အတ္ထိကံ (တ-က-ပြု)။ ဖလံ အတ္ထိကံ ဧတဿ-ဟုလုပ်။ လိုချင်တောင့်တအပ်သော အသီးရှိသော-ဟုပေး။ အတ္ထိကယှဉ်ရာ၌ နာဟံ ရဇ္ဇေန မတ္ထိကော (ကုသဇာတ်) အရ ကရိုဏ်းလည်း ဟူရကား ‌ဖလေန အတ္ထော ဖလတ္ထော၊ ဖလတ္ထော အဿ အတ္ထီိတိ-ဟု ဝိဂ္ဂဟမူ။ ပါရာဇိကဏိယောဇနာ၌ အတ္ထောကို ပယောဇနတ္ထ ကြံသည်။။]
+  [line_id=4] သော: ထိုယောကျာ်းသည်။ | တံဝနသဏ္ဍံ: သို့။ | အဇ္ဈောဂါဟေတွာ: ၍။ | သမ္ပန္နဖလဉ္စ: သော။ | ဥပပန္နဖလဉ္စ: သော။ | တံရုက္ခံ: ကို။ | ပဿေယျ: တွေ့မြင်ရာ၏။
+  [line_id=5] တဿ: ထိုယောကျာ်း၏ (စိတ်၌။)
+  [line_id=6] "အယံ ခေါ ရုက္ခော: ဤသစ်ပင်သည်။ | သမ္ပန္နဖလော: စကောင်းသော အသီးလည်းရှိ၏။ | ဥပပန္နထလောစ: များသောအသီးလည်းရှိ၏။ | ဘူမိယံ: ၌။ | ပတိတာနိ: ကုန်သော။ | ကာနိစိ ဖလာနိ: အချို့သောသစ်သီးတို့သည်။ | နတ္ထိစ: ရှိလည်းမရှိကုန်။ | အဟံ: ငါသည်။ | ရုက္ခံ: သို့။ | အာရောဟိတုံ: တက်အံ့သောငှါ။
+  [line_id=7] ဇာနာမိခေါ: (မည်သို့ တက်ရမည်ဟု) သိသည်သာတည်း။ | အဟံ: ငါသည်။ | ဣမံရုက္ခံ: ကို။ | အာရောဟိတွာ: ၍။ | ယာဝဒတ္ထဉ္စ: အလိုရှိသည်တိုင်းလည်း။ | ခါဒေယျံ: ခဲစားရမူကား။
+  [line_id=8] ယာဝဒတ္ထဉ္စ: အလိုရှိသည်တိုင်းလည်း။ | ခါဒေယျံ: ခဲစားရမူကား။ | ယံနူန: ကောင်းလေစွ။" ဟူ၍။ | ဧဝံ: ဤသို့သောအကြံသည်။ | အဿ: ဖြစ်ရာ၏။
+  [line_id=9] သော: ထိုယောကျာ်းသည်။ | တံရုက္ခံ: ကို။ | အာရောဟိတွာ: ၍။ | ယာဝဒတ္ထဉ္စ: လည်း။ | ခါဒေယျ: ရာ၏။ | ဥစ္ဆင်္ဂဉ္စ: ကိုလည်း။ | ပူရေယျ: ရာ၏။
+  [line_id=10] အထ: ထိုအခါ၌။ | ဖလတ္ထိကော: သော။ | ဖလဂဝေသီ: သော။ | ဒုတိယော: နှစ်ယောက်မြောက်သော။ | ပုရိသော: သည်။ | ဖလပရိယေသနံ: ငှါ။ | စရမာနော: လျက်။ | တိဏှံ: ထက်လှစွာသော။ | ကုဌာရိံ: ပေါက်ဆိန်ကို။ | အာဒါယ: ယူ၍။ | အာဂစ္ဆေယျ: ရာ၏။
+  [line_id=11] သော: ထိုဒုတိယယောကျာ်းသည်။ | တံဝနသဏ္ဍံ: သို့။ | အဇ္ဈောဂါဟေတွာ: ၍။ | သမ္ပန္နဖလဉ္စ: သော။ | ဥပပန္နဖလဉ္စ: သော။ | တံရုက္ခံ: ကို။ | ပဿေယျ: ရာ၏။
+  [line_id=12] တဿ: ၏(စိတ်၌)။
+  [line_id=13] "အယံခေါ ရုက္ခော: သည်။ ပ။ | နတ္ထိစ: ရှိလည်းမရှိ။ | အဟံ: သည်။ | ရုက္ခံ: ကို။ | အာရောဟိတုံ: ငှါ။
+  [line_id=14] နခေါဇာနာမိ: သိလည်းမသိ။ | အဟံ: သည်။ | ဣမံရုက္ခံ: ကို။ | မူလတော: အမြစ်အရင်းမှ။ | ဆေတွာ: ဖြတ်၍။ | ယာဝဒတ္ထဉ္စ: အလိုရှိတိုင်းလည်း။
+  [line_id=15] ခါဒေယျံ: ခဲစားမူရကား။ | ယံနူန: စွ။ | ဥစ္ဆင်္ဂဉ္စ: ကိုလည်း။ | ပူရေယျံ: ကား။ | ယံနူနာတိ: ကောင်းလေစွ" ဟူ၍။ | ဧဝံ: သည်။ | အဿ: ရာ၏။
+  [line_id=16] သော: ထိုဒုတိယယောကျာ်းသည်။ | တံရုက္ခံ: ကို။ | မူလတောဝ: လျှင်။ | ဆိန္ဒေယျ: ရာ၏။
+  [line_id=17] ဂဟပတိ: ကြွယ်။ | တံ: ကို။ | ကိံ မညသိ: နည်း။ | အမုကော: သော။ | ယောသောပုရိသော: အကြင်ယောကျာ်းသည်။ | ပဌမံ: စွာ။ | ရုက္ခံ: ကို။ | အာရုဠှော: တက်ခဲ့၏။ | သော: ထိုယောကျာ်းသည်။ | ခိပ္ပမေဝ: သာလျှင်။ | သစေ န ဩရောဟေယျ: အကယ်၍ မသက်ဆင်းငြားအံ့။ | သောရုက္ခော: သည်။ | ပပတန္တော: လဲသည်ရှိသော်။ | တဿ: ထိုတက်သော ‌ယောကျာ်း၏။ | ဟတ္ထံဝါ: လက်ကိုသော်လည်း။ | ဘဉ္ဇေယျ: ချိုးရာ၏။ | ပါဒံဝါ: ခြေကိုသော်လည်း။ | ဘဉ္ဇေယျ: ချိုးရာ၏။ | အညတရံဝါ အညတရံဝါ: တပါးပါးလည်းဖြစ်သော။ | အင်္ဂပစ္စင်္ဂံ ဝါ: ကိုလည်း။ | ဘဉ္ဇေယျ: ချိုးရာ၏။ | သော ပုရိသော: သည်။ | တတောနိဒါနံ: ထိုချိုးခြင်းလျှင် အကြောင်းအရင်းရှိသော။ | ဝါ: ထိုချိုးခြင်းဟူသော အကြောင်းကြောင့်။ | မရဏံဝါ: သို့မူလည်း။ | နိဂစ္ဆေယျ: သလော။ | မရဏံမတ္တံ: သော။ | ဒုက္ခံဝါ: သို့မူလည်း။ | နိဂစ္ဆေယျ: သလော။ | ဣတိ: ဤသို့ မေးတော်မူ၏။
+
+--- para_id=102 ---
+  [line_id=1] ဧဝံ ဘန္တေ: အရှင်ဘုရား ဤသို့ ဖြစ်ရာပါ၏။
+
+--- para_id=103 ---
+  [line_id=1] ဧဝမေဝခေါ: သာလျှင်။ | အရိယသာဝကော: သည်။ | "ဘဂဝတာ: သည်။ | ကာမာ: တို့ကို။
+  [line_id=2] ရုက္ခဖလူပမာ: သစ်သီးရှိသော သစ်ပင်လျှင် ဥပမာ ရှိကုန်၏ဟူ၍။ ပ။ | ဘိယျောတိ: များ၏" ဟူ၍။ | ဣတိ: သို့။ | ပဋိသဉ္စိက္ခတိ: ၏။ ပ။ | ဘာဝေတိ: ပွါးများ၏။
+
+--- para_id=104 ---
+  [line_id=1] ဂဟပတိ: ကြွယ်။ | သခေါသော အရိယသာဝကော: ထိုအရိယာသာဝကသည်။ | အနုတ္တရံ: မြင့်မြတ်လွန်ကဲသော။ | ဣမံယေဝ ဥပေက္ခာသတိ ပါရိသုဒ္ဓိံ: ဤ ဥပေက္ခာသည် ဖြစ်စေအပ်သော သတိ၏ စင်ကြယ်ခြင်းရှိသော စတုတ္ထဈာန်၏ သမာဓိကိုသာလျှင်။ | အာဂမ္မ: စွဲ၍။ | အနေကဝိ ဟိတံ: သော။ | ပု‌ဗ္ဗေနိဝါသံ: ကို။ | အနုဿရတိ: ၏။ | သေယျထာ: သော။ | ဣဒံ: ဤရှေး၌နေဘူးသော ခန္ဓာအစဉ်ကို။ | (အနုဿရတိ: နည်း။) | ဧကမ္ပိ ဇာတိံ: တဘာဝကို၎င်း။ ပ။ | ဣတိ: ဤသို့။ | သာကာရံ: အဆင်းစသော အခြင်းအရာနှင့်တကွသော။ | သဥဒ္ဒေသံ: အမည်အတွယ်ဟူသော ညွှန်ပြဖွယ်နှင့်တကွသော။ | အနေကဝိဟိတံ: သော။ | ပုဗ္ဗေနိဝါသံ: ကို။ | အနုဿရတိ: ၏။
+
+--- para_id=105 ---
+  [line_id=1] ဂဟပတိ: ကြွယ်။ | သခေါသော အရိယသာဝကော: သည်။ | အနုတ္တရံ: သော။ | ဣမံယေဝ ဥပေက္ခာ သတိပါရိသုဒ္ဓိံ: ကိုသာလျှင်။ | အာဂမ္မ: ၍။ | ဝိသုဒ္ဓေန: စင်ကြယ်သော။ | အတိက္ကန္တမာနုသကေန: လူတို့၏ မျက်စိအမြင်ကို လွန်သော။ | ဒိဗ္ဗေန စက္ခုနာ: ဒိဗ္ဗစက္ခုအဘိညာဉ်ဖြင့်။ | ဝစမာနေ: စုတေကုန်သော။ | ဥပပဇ္ဇမာနေ: ပဋိသန္ဓေနေကုန်သော။ | ဟီနေ: ယုတ်ကုန်သော။ | ပဏီတေ: မြတ်ကုန်သော။ | သုဝဏ္ဏေ: အဆင်းလှကုန်သော။ | ဒုဗ္ဗဏ္ဏေ: အဆင်းမလှကုန်သော။ | သုဂတေ: ကောင်းသော လားရာ(ဂတိ)ရှိကုန်သော။ | ဒုဂ္ဂတေ: ‌မကောင်းသောလားရာ (ဂတိ) ရှိကုန်သော။ | သတ္တေ: သတ္တဝါတို့ကို။ | ပဿတိ: မြင်၏။ ပ။ | ယထာကမ္မူပဂေ: ကံအားလျော်စွာ ကပ်ရောက်ကုန်သော။ | သတ္တေ: သတ္တဝါတို့ကို။ | ပဇာနာတိ: ၏။ ပ။
+
+--- para_id=106 ---
+  [line_id=1] ဂဟပတိ: ကြွယ်။ | သခေါသော အရိယသာဝကော: သည်။ | အနုတ္တရံ: သော။ | ဣမံယေဝ ဥပေက္ခာ သတိပါရိသုဒ္ဓိံ: ကိုသာလျှင်။ | အာဂမ္မ: ၍။ | ဝိသုဒ္ဓေန: စင်ကြယ်သော။ | အတိက္ကန္တမာနုသကေန: လူတို့၏ မျက်စိအမြင်ကို လွန်သော။ | ဒိဗ္ဗေန စက္ခုနာ: ဒိဗ္ဗစက္ခုအဘိညာဉ်ဖြင့်။ | ဝစမာနေ: စုတေကုန်သော။ | ဥပပဇ္ဇမာနေ: ပဋိသန္ဓေနေကုန်သော။ | ဟီနေ: ယုတ်ကုန်သော။ | ပဏီတေ: မြတ်ကုန်သော။ | သုဝဏ္ဏေ: အဆင်းလှကုန်သော။ | ဒုဗ္ဗဏ္ဏေ: အဆင်းမလှကုန်သော။ | သုဂတေ: ကောင်းသော လားရာ(ဂတိ) ရှိကုန်သော။ | ဒုဂ္ဂတေ: မကောင်းသော လားရာ (ဂတိ) ရှိကုန်သော။ | သတ္တေ: သတ္တဝါတို့ကို။ | ပဿတိ: မြင်၏။ ပ။ | ယထာကမ္မူပဂေ: ကံအားလျော်စွာ ကပ်ရောက်ကုန်သော။ | သတ္တေ: သတ္တဝါတို့ကို။ | ပဇာနာတိ: ၏။ | ဂဟပတိ: ကြွယ်။ | သခေါသော အရိယာသာဝကော: သည်။ | အနုတ္တရံ: သော။ | ဣမံယေဝ ဥပေက္ခာ သတိပါရိသုဒ္ဓိံ: ကိုသာလျှင်။ | အာဂမ္မ: ၍။ | အာသာဝနံ: တို့၏။ | ခယာ: ကုန်းခြင်းကြောင့်။ | အနာသဝံ: အာသဝေါကောင်းသော။ | စေတောဝိမုတ္တိံ: အရဟတ္ထဖိုလ်စိတ်နှငိ့ ယှဉ်သော ရာဂမှလွတ်််သော သမာဓိကို။ | ပညာဝိမုတ္ထိံ: အရဟတ္ထဖိုလ်နှင့် ယှဉ်‌သော အဝိဇ္ဇာမှ လွတ်သော ပညာကို | သယံ: ကိုယ်တိုင်။ | အဘိညာ: ၍။ | ဒိဋ္ဌေဝ ဓမ္မေ: ၌ပင်လျှင်။ | သစ္ဆိကတွာ: ၍။ | ဥပသမ္ပဇ္ဇ: ၍။ | ဝိဟရတိ: နေ၏။ | [Note: စေတောဝိမုတ္တိံ ပညာဝိမုတ္တိန္တိဧတ္ထ စေတောဝစေနေန အရဟတ္ထဖလသမ္ပယုတ္တောဝ သမာဓိ, ပညာဝစနေန တံသမ္ပယုတ္တာ ပညာဝ ဝုတ္တာ၊ တတ္ထစ သမာဓိ ရာဂတော ဝိမုတ္တတ္တာ စေတောဝိမုတ္တိ, ပညာ အဝိဇ္ဇာယ ဝိမုတ္တတ္တာ ပညာဝိမုတ္တီတိ ဝေဒိတဗ္ဗာ။ မ၊ဋ္ဌ၊။ ၁။ ၆၉-ပိုဒ်။ သမာဓိ ဝုတ္တော စေတောသီသနေ ယထာ စိတ္တံ ပညဉ္စ ဘာဝယန္တိ အဓိပ္ပါယော။ ၎င်းအာကင်္ခေယျသုတ်-ဋီကာတို့ကို ထောက်၍ ပေးသည်။‌။]
+  [line_id=2] ဂဟပတိ: ကြွယ်။ | ဧတ္တာဝတာခေါ: ဖြင့်။ | အရိယဿ: ငါဘုရား၏။ | ဝိနယေ: ၌။ | သဗ္ဗေနသဗ္ဗံ: အကြွင်းမဲ့။ | သဗ္ဗထာသဗ္ဗံ: အားဖြင့်။ | ဝေါဟာရမုစ္ဆေဒေါ: သည်။ | ဟောတိ: ၏။
+
+══════════════════════════════
+SENTENCES TO TRANSLATE (JSON array)
+══════════════════════════════
+[
+  {
+    "para_id": 92,
+    "line_id": 1,
+    "pali": "45.‘‘Seyyathāpi, gahapati, aṅgārakāsu sādhikaporisā, pūrā aṅgārānaṃ vītaccikānaṃ vītadhūmānaṃ."
+  },
+  {
+    "para_id": 92,
+    "line_id": 2,
+    "pali": "Atha puriso āgaccheyya jīvitukāmo amaritukāmo sukhakāmo dukkhappaṭikkūlo."
+  },
+  {
+    "para_id": 92,
+    "line_id": 3,
+    "pali": "Tamenaṃ dve balavanto purisā nānābāhāsu gahetvā aṅgārakāsuṃ upakaḍḍheyyuṃ."
+  },
+  {
+    "para_id": 92,
+    "line_id": 4,
+    "pali": "Taṃ kiṃ maññasi, gahapati, api nu so puriso iticiticeva kāyaṃ sannāmeyyā’’ti?"
+  },
+  {
+    "para_id": 93,
+    "line_id": 1,
+    "pali": "‘‘Evaṃ, bhante ’’."
+  },
+  {
+    "para_id": 94,
+    "line_id": 1,
+    "pali": "‘‘Taṃ kissa hetu ’’?"
+  },
+  {
+    "para_id": 95,
+    "line_id": 1,
+    "pali": "‘‘Viditañhi, bhante, tassa purisassa imañcāhaṃ aṅgārakāsuṃ papatissāmi, tatonidānaṃ maraṇaṃ vā nigacchissāmi maraṇamattaṃ vā dukkhan’’ti."
+  },
+  {
+    "para_id": 95,
+    "line_id": 2,
+    "pali": "‘‘Evameva kho, gahapati, ariyasāvako iti paṭisañcikkhati –"
+  },
+  {
+    "para_id": 95,
+    "line_id": 3,
+    "pali": "‘ aṅgārakāsūpamā kāmā vuttā bhagavatā bahudukkhā bahupāyāsā, ādīnavo ettha bhiyyo ’ ti."
+  },
+  {
+    "para_id": 95,
+    "line_id": 4,
+    "pali": "Evametaṃ yathābhūtaṃ sammappaññāya disvā … pe … tamevūpekkhaṃ bhāveti."
+  },
+  {
+    "para_id": 96,
+    "line_id": 1,
+    "pali": "46.‘‘Seyyathāpi, gahapati, puriso supinakaṃ passeyya ārāmarāmaṇeyyakaṃ vanarāmaṇeyyakaṃ bhūmirāmaṇeyyakaṃ pokkharaṇirāmaṇeyyakaṃ."
+  },
+  {
+    "para_id": 96,
+    "line_id": 2,
+    "pali": "So paṭibuddho na kiñci paṭipasseyya [passeyya (sī. syā. kaṃ. pī.)]."
+  },
+  {
+    "para_id": 96,
+    "line_id": 3,
+    "pali": "Evameva kho, gahapati, ariyasāvako iti paṭisañcikkhati –"
+  },
+  {
+    "para_id": 96,
+    "line_id": 4,
+    "pali": "‘ supinakūpamā kāmā vuttā bhagavatā bahudukkhā bahupāyāsā, ādīnavo ettha bhiyyo ’ ti … pe … tamevūpekkhaṃ bhāveti."
+  },
+  {
+    "para_id": 97,
+    "line_id": 1,
+    "pali": "47.‘‘Seyyathāpi, gahapati, puriso yācitakaṃ bhogaṃ yācitvā yānaṃ vā [yānaṃ (syā. kaṃ. pī.)] poriseyyaṃ [poroseyyaṃ (sī. pī. ka.), oropeyya (syā. kaṃ.)] pavaramaṇikuṇḍalaṃ."
+  },
+  {
+    "para_id": 97,
+    "line_id": 2,
+    "pali": "So tehi yācitakehi bhogehi purakkhato parivuto antarāpaṇaṃ paṭipajjeyya."
+  },
+  {
+    "para_id": 97,
+    "line_id": 3,
+    "pali": "Tamenaṃ jano disvā evaṃ vadeyya –"
+  },
+  {
+    "para_id": 97,
+    "line_id": 4,
+    "pali": "‘ bhogī vata, bho, puriso, evaṃ kira bhogino bhogāni bhuñjantī ’ ti."
+  },
+  {
+    "para_id": 97,
+    "line_id": 5,
+    "pali": "Tamenaṃ sāmikā yattha yattheva passeyyuṃ tattha tattheva sāni hareyyuṃ."
+  },
+  {
+    "para_id": 97,
+    "line_id": 6,
+    "pali": "Taṃ kiṃ maññasi, gahapati, alaṃ nu kho tassa purisassa aññathattāyā’’ti?"
+  },
+  {
+    "para_id": 98,
+    "line_id": 1,
+    "pali": "‘‘Evaṃ, bhante ’’."
+  },
+  {
+    "para_id": 99,
+    "line_id": 1,
+    "pali": "‘‘Taṃ kissa hetu ’’?"
+  },
+  {
+    "para_id": 100,
+    "line_id": 1,
+    "pali": "‘‘Sāmino hi, bhante, sāni harantī’’ti."
+  },
+  {
+    "para_id": 100,
+    "line_id": 2,
+    "pali": "‘‘Evameva kho, gahapati, ariyasāvako iti paṭisañcikkhati –"
+  },
+  {
+    "para_id": 100,
+    "line_id": 3,
+    "pali": "‘ yācitakūpamā kāmā vuttā bhagavatā bahudukkhā bahupāyāsā, ādīnavo ettha bhiyyo ’ ti … pe … tamevūpekkhaṃ bhāveti."
+  },
+  {
+    "para_id": 101,
+    "line_id": 1,
+    "pali": "48.‘‘Seyyathāpi, gahapati, gāmassa vā nigamassa vā avidūre tibbo vanasaṇḍo."
+  },
+  {
+    "para_id": 101,
+    "line_id": 2,
+    "pali": "Tatrassa rukkho sampannaphalo ca upapannaphalo [uppannaphalo (syā.)] ca, na cassu kānici phalāni bhūmiyaṃ patitāni."
+  },
+  {
+    "para_id": 101,
+    "line_id": 3,
+    "pali": "Atha puriso āgaccheyya phalatthiko phalagavesī phalapariyesanaṃ caramāno."
+  },
+  {
+    "para_id": 101,
+    "line_id": 4,
+    "pali": "So taṃ vanasaṇḍaṃ ajjhogāhetvā taṃ rukkhaṃ passeyya sampannaphalañca upapannaphalañca."
+  },
+  {
+    "para_id": 101,
+    "line_id": 5,
+    "pali": "Tassa evamassa –"
+  },
+  {
+    "para_id": 101,
+    "line_id": 6,
+    "pali": "‘ ayaṃ kho rukkho sampannaphalo ca upapannaphalo ca, natthi ca kānici phalāni bhūmiyaṃ patitāni."
+  },
+  {
+    "para_id": 101,
+    "line_id": 7,
+    "pali": "Jānāmi kho panāhaṃ rukkhaṃ ārohituṃ [āruhituṃ (sī.)]."
+  },
+  {
+    "para_id": 101,
+    "line_id": 8,
+    "pali": "Yaṃnūnāhaṃ imaṃ rukkhaṃ ārohitvā yāvadatthañca khādeyyaṃ ucchaṅgañca pūreyyan ’ ti."
+  },
+  {
+    "para_id": 101,
+    "line_id": 9,
+    "pali": "So taṃ rukkhaṃ ārohitvā yāvadatthañca khādeyya ucchaṅgañca pūreyya."
+  },
+  {
+    "para_id": 101,
+    "line_id": 10,
+    "pali": "Atha dutiyo puriso āgaccheyya phalatthiko phalagavesī phalapariyesanaṃ caramāno tiṇhaṃ kuṭhāriṃ [kudhāriṃ (syā. kaṃ. ka.)] ādāya."
+  },
+  {
+    "para_id": 101,
+    "line_id": 11,
+    "pali": "So taṃ vanasaṇḍaṃ ajjhogāhetvā taṃ rukkhaṃ passeyya sampannaphalañca upapannaphalañca."
+  },
+  {
+    "para_id": 101,
+    "line_id": 12,
+    "pali": "Tassa evamassa –"
+  },
+  {
+    "para_id": 101,
+    "line_id": 13,
+    "pali": "‘ ayaṃ kho rukkho sampannaphalo ca upapannaphalo ca, natthi ca kānici phalāni bhūmiyaṃ patitāni."
+  },
+  {
+    "para_id": 101,
+    "line_id": 14,
+    "pali": "Na kho panāhaṃ jānāmi rukkhaṃ ārohituṃ."
+  },
+  {
+    "para_id": 101,
+    "line_id": 15,
+    "pali": "Yaṃnūnāhaṃ imaṃ rukkhaṃ mūlato chetvā yāvadatthañca khādeyyaṃ ucchaṅgañca pūreyyan ’ ti."
+  },
+  {
+    "para_id": 101,
+    "line_id": 16,
+    "pali": "So taṃ rukkhaṃ mūlatova chindeyya."
+  },
+  {
+    "para_id": 101,
+    "line_id": 17,
+    "pali": "Taṃ kiṃ maññasi, gahapati, amuko [asu (sī. pī.)] yo so puriso paṭhamaṃ rukkhaṃ ārūḷho sace so na khippameva oroheyya tassa so rukkho papatanto hatthaṃ vā bhañjeyya pādaṃ vā bhañjeyya aññataraṃ vā aññataraṃ vā aṅgapaccaṅgaṃ bhañjeyya, so tatonidānaṃ maraṇaṃ vā nigaccheyya maraṇamattaṃ vā dukkhan’’ti?"
+  },
+  {
+    "para_id": 102,
+    "line_id": 1,
+    "pali": "‘‘Evaṃ, bhante ’’."
+  },
+  {
+    "para_id": 103,
+    "line_id": 1,
+    "pali": "‘‘Evameva kho, gahapati, ariyasāvako iti paṭisañcikkhati –"
+  },
+  {
+    "para_id": 103,
+    "line_id": 2,
+    "pali": "‘ rukkhaphalūpamā kāmā vuttā bhagavatā bahudukkhā bahupāyāsā, ādīnavo ettha bhiyyo ’ ti."
+  },
+  {
+    "para_id": 103,
+    "line_id": 3,
+    "pali": "Evametaṃ yathābhūtaṃ sammappaññāya disvā yāyaṃ upekkhā nānattā nānattasitā taṃ abhinivajjetvā yāyaṃ upekkhā ekattā ekattasitā yattha sabbaso lokāmisūpādānā aparisesā nirujjhanti tamevūpekkhaṃ bhāveti."
+  },
+  {
+    "para_id": 104,
+    "line_id": 1,
+    "pali": "49.‘‘Sa kho so, gahapati, ariyasāvako imaṃyeva anuttaraṃ upekkhāsatipārisuddhiṃ āgamma anekavihitaṃ pubbenivāsaṃ anussarati, seyyathidaṃ – ekampi jātiṃ dvepi jātiyo … pe … iti sākāraṃ sauddesaṃ anekavihitaṃ pubbenivāsaṃ anussarati."
+  },
+  {
+    "para_id": 105,
+    "line_id": 1,
+    "pali": "‘‘Sa kho so, gahapati, ariyasāvako imaṃyeva anuttaraṃ upekkhāsatipārisuddhiṃ āgamma dibbena cakkhunā visuddhena atikkantamānusakena satte passati cavamāne upapajjamāne hīne paṇīte suvaṇṇe dubbaṇṇe sugate duggate … pe … yathākammūpage satte pajānāti."
+  },
+  {
+    "para_id": 106,
+    "line_id": 1,
+    "pali": "‘‘Sa kho so, gahapati, ariyasāvako imaṃyeva anuttaraṃ upekkhāsatipārisuddhiṃ āgamma āsavānaṃ khayā anāsavaṃ cetovimuttiṃ paññāvimuttiṃ diṭṭheva dhamme sayaṃ abhiññā sacchikatvā upasampajja viharati."
+  },
+  {
+    "para_id": 106,
+    "line_id": 2,
+    "pali": "Ettāvatā kho, gahapati, ariyassa vinaye sabbena sabbaṃ sabbathā sabbaṃ vohārasamucchedo hoti."
+  }
+]

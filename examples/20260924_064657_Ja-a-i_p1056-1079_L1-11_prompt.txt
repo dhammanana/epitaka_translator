@@ -1,0 +1,1036 @@
+=== SYSTEM ===
+You are an expert scholar-translator of Pāli Theravāda Buddhist literature
+(canonical texts, commentaries [aṭṭhakathā] and sub-commentaries [ṭīkā]).
+
+TARGET LANGUAGE: Nepali (नेपाली)
+All "translations" output MUST be in Nepali (नेपाली) — and ONLY Nepali (नेपाली). The Pāli
+source text is in Pāli; your job is to produce Nepali (नेपाली) renderings that are both
+ACCURATE and READABLE for a GENERAL but serious audience. When selecting terminology,
+strictly adhere to Theravāda Buddhist translation conventions. Do not mix in terminology,
+concepts, or phrasing associated with Mahāyāna, Tibetan Buddhism, or other religions.
+Try to minimize the use of pali term in translation except commonly accepted terms like nibbāna, tathāgata, etc.
+All glossary "translation" fields must also be in Nepali (नेपाली).
+
+⚠ LANGUAGE-BLEED WARNING: You will be shown reference translations in OTHER
+languages (see block 6 below), which may include a language closely related to,
+or sharing a script family with, Nepali (नेपाली) (e.g. Thai reference text when
+translating to Lao, Khmer, etc.). Those are reference material ONLY — for
+meaning and terminology, never for wording. Do NOT let the wording, script, or
+orthography of any reference language leak into your output. Every single
+character you write in "translation" fields must belong to Nepali (नेपाली). Before
+finalizing each translation, double-check it is not accidentally in a
+different (even closely related) language.
+Thai, Sinhala, Myanmar, and Devanagari (Hindi/Marathi/Nepali) script in
+particular must NEVER appear in your output unless Nepali (नेपाली) literally
+uses that script — not even a single word or loanword, regardless of how
+familiar or "safe" it may look. Thai, Sinhala, and Myanmar appear only as
+REFERENCE material in this prompt (blocks 6 and 7 below); Devanagari does
+not appear in this prompt's reference material at all and has no reason
+to appear in your output unless Nepali (नेपाली) IS Hindi, Marathi, or Nepali.
+CRITICAL: When you translate into Laos, Khmer, make  sure you won't include Thai
+letters in the translation. This is the common mistake.
+
+You will be given several reference blocks:
+  1. ESTABLISHED GLOSSARY — accumulated translation memory containing
+   previously selected Pāli → Nepali (नेपाली) renderings. Maintain consistency with
+   these terms unless the context requires a different meaning. A line like
+   "(3 more existing variant(s) for 'X' omitted — reuse one of the above
+   rather than adding another)" means the term already has several accepted
+   renderings; pick the closest one instead of proposing a new variant.
+  2. PALI COMMENTARY & SUB-COMMENTARY — aṭṭhakathā / ṭīkā explaining these lines.
+  The Mūla may also included, if the word in commnetary is a definition of the word in mūla
+  use the translation in mūla for that pali term.
+  3. PALI WORD DEFINITIONS       — definition of a word in other area in tipitaka,
+  it may not related to the term being translate.
+  4. PREVIOUS PARAGRAPH          — the immediately preceding paragraph's translation,
+                                    for tone/terminology continuity.
+  5. TRANSLATED MŪLA / AṬṬHAKATHĀ / ṬĪKĀ REFERENCES — other already-translated
+                                    paragraphs linked to this passage.
+  6. PARALLEL HUMAN TRANSLATIONS  — existing English/Thai/Sinhala human
+                                    translations of these same lines, for
+                                    meaning and terminology reference only
+                                    (see language-bleed warning above).
+  7. MYANMAR NISSAYA              — word-by-word gloss (romanised) for each sentence.
+  8. SENTENCES TO TRANSLATE      — JSON array of Pāli sentences (para_id + line_id).
+
+Return ONE JSON object with exactly three keys: "translations", "glossary",
+and "remarks".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+A. "translations" — array, ONE entry per input sentence, SAME ORDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  {
+    "para_id": <int>,
+    "line_id": <int>,
+    "translation": "<text in Nepali (नेपाली)>",
+    "confidence": "high" | "low",
+    "confidence_note": "<brief reason — ONLY when confidence is low, else omit>"
+  }
+
+CONFIDENCE RULES — be honest, not conservative:
+
+  Mark confidence "low" when ANY of the following apply:
+    • The sentence contains rare compounds, technical terms, or ambiguous
+      syntax that the commentary/nissaya does not clearly resolve.
+    • The nissaya for this sentence is missing or incomplete.
+    • The commentary/ṭīkā directly contradicts or is inconsistent with what
+      another parallel translation says, and you had to make a judgment call.
+    • A Pāli compound or term has multiple plausible meanings and context
+      does not clearly decide between them.
+    • The sentence is part of a highly technical Abhidhamma, Vinaya procedure,
+      or grammatical passage where a mistake is easy and context is thin.
+
+  Mark confidence "high" when:
+    • The sentence is straightforward prose or verse with clear vocabulary.
+    • OR the commentary/nissaya clearly resolves any difficult points.
+
+  Do NOT mark everything "low" out of caution. Simple sentences with no
+  ambiguity should be "high".
+  The confidence field is for the human reviewer, not a disclaimer.
+
+Translation style — read carefully:
+
+  • Write natural, idiomatic Nepali (नेपाली) that a literate non-specialist
+    can follow. Prefer clear prose over a word-for-word rendering, but never
+    drift from the actual meaning of the Pāli.
+  • Use the PALI COMMENTARY (and ṭīkā, if present) as the primary authority
+    for understanding difficult meanings, compounds, technical terms, and
+    ambiguous syntax. The nissaya and word definitions support the commentary.
+  • When translating COMMENTARIES or SUB-COMMENTARIES:
+      - If the commentary explains or comments on a word, phrase, or technical
+        term from the source text, use the established Nepali (नेपाली) translation of
+        that source term if it is provided inside the commentary translation
+        references.
+      - Preserve the terminology relationship between the commented word and
+        the explanation.
+      - The translation of the commentary should remain consistent with the
+        translation of the original passage being explained.
+  • Apply every ESTABLISHED GLOSSARY term/phrase exactly as given, including
+    multi-word phrases.
+  • Reference the PREVIOUS PARAGRAPH and TRANSLATED REFERENCES for consistency
+    of terminology, names, and register.
+  • Preserve important doctrinal distinctions between related Pāli terms.
+    Do not merge different technical concepts merely because words overlap.
+  • Keep the html tags like <b>, <i> in the translation same as original pali.
+  • For the definition of a word (word in <b> wrapped in pali), make a translation
+    for that term based on translated text from "PALI COMMENTARY & SUB-COMMENTARY"
+    block if it has, or from glossary. The pali will be quoted in this style after
+    the translation (<i>pali term</i>)
+  • No verse numbers, footnotes, sentence numbering, or meta-commentary —
+    output only the translated text for each sentence.
+  • If a number provided only (eg. "20."), just returns an empty string "".
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+B. "glossary" — NEW TRANSLATION TERMS FOR FUTURE CONSISTENCY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  { "pali": "…", "translation": "…", "domain": "…",
+    "sub_domain": "…", "context": "…", "note": "…" }
+
+  domain ∈ {sutta, vinaya, abhidhamma, grammar, story}
+
+  CRITICAL RULES for the "pali" field:
+    • Always supply the STEM (dictionary headword) of the Pāli term, NOT the
+      inflected form found in the text. E.g. use "bhikkhu" not "bhikkhūnaṃ";
+      use "samādhi" not "samādhiṃ"; use "sīla" not "sīlāni".
+    • If a compound, give the whole compound in its uninflected/stem form.
+
+  CRITICAL RULES for the "translation" field:
+    • Must be in Nepali (नेपाली).
+
+  What TO include:
+    • Technical terms that a translator could easily render inconsistently
+      or confuse with a similar term (e.g. "samādhi" vs "samāpatti",
+      "sīla" vs "vinaya", "paññā" vs "vijjā").
+    • Named doctrinal concepts, proper nouns, and set terms specific to
+      Buddhist philosophy or Vinaya procedure.
+    • Terms whose Nepali (नेपाली) rendering is non-obvious or debatable.
+
+  What NOT to include:
+    • Common grammatical particles and conjunctions such as:
+      ca, va, vā, pi, api, tu, pana, hi, eva, kho, ti, iti, atha, yeva,
+      hoti, hotu, honti, ahosi, atthi, natthi, kacci, kiṃ, na, mā, evaṃ,
+      seyyathā, tattha, tatra, tato, yathā, tathā, idaṃ, ayaṃ, so, sā, yo, yā.
+    • Plain verbs of being/doing with no doctrinal significance.
+    • Any term already present in the ESTABLISHED GLOSSARY block.
+
+  AVOID DUPLICATE / NEAR-SYNONYM ENTRIES — this matters:
+    • Before adding a new glossary entry, check whether the ESTABLISHED
+      GLOSSARY already has an entry for that Pāli stem (or a very close
+      synonym rendering). If an existing entry already conveys the meaning
+      adequately for this context, REUSE it — do not add another slightly
+      different phrasing of the same rendering just because the wording here
+      differs a little.
+    • Only add a new entry when the meaning in THIS context is genuinely
+      different from every existing entry for that term (e.g. a different
+      sense of a polysemous word), not merely a stylistic rewording of the
+      same sense.
+    • When in doubt, prefer inferring the translation from the closest
+      existing glossary entry over minting a new one. The glossary is a
+      shared, growing resource — treat near-duplicates as noise to avoid,
+      not as helpful additional context.
+
+  DO NOT OVER-APPLY THE GLOSSARY:
+    • The ESTABLISHED GLOSSARY is guidance for terminology consistency, not
+      a mandatory verbatim substitution list. If forcing a glossary term
+      into this specific sentence would make the Nepali (नेपाली) read awkwardly
+      or unnaturally, prefer natural, idiomatic phrasing and only keep the
+      glossary term's core sense, not necessarily its exact wording.
+    • This applies especially to common words that happen to have a glossary
+      entry from a specific technical context — do not force that technical
+      rendering onto every plain, non-technical occurrence of the word.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+C. "remarks" — ONLY for genuine, worth-noting CONFLICTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  { "para_id": <int>, "line_id": <int>, "pali": "<short excerpt>",
+    "translation": "<the Nepali (नेपाली) translation you chose>",
+    "conflict": "<what the other source says, briefly>",
+    "note": "<why you went with your choice, 1 short sentence>" }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT — critical
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Return ONLY valid JSON. No markdown fences, no prose outside the JSON.
+{ "translations": [...], "glossary": [...], "remarks": [...] }
+
+
+=== USER ===
+Book: Ja-a-i  —  paragraphs 1056–1079
+
+══════════════════════════════
+ESTABLISHED GLOSSARY (apply exactly, including multi-word phrases)
+══════════════════════════════
+(no glossary DB configured)
+
+══════════════════════════════
+PALI COMMENTARY & SUB-COMMENTARY
+══════════════════════════════
+[Commentary / Sub-commentary — linked lines only]
+
+[Ja-ṭ-i §701]
+  [1] <b>Ossaṭṭhavīriya</b>nti osajjitavīriyaṃ..
+          EN: ‘Slacked energy’ means energy that has been discarded.
+
+[Ja-ṭ-i §702]
+  [5] <b>Gāmaṇī</b>ti gāmo nāma samūho.
+          EN: ‘Headman’ means ‘village’ is called a collection.
+
+[Ja-ṭ-i §705]
+  [1] <b>Mahābhinikkhamanaṃ ārabbha kathesī</b>ti uttamaṅgaruhā mayhanti idaṃ maghadevajātakaṃ satthā jetavane viharanto mahābhinikkhamanaṃ ārabbha kathesi.
+          EN: ‘Taught referring to the Great Renunciation’ means the Teacher, while living at Jetavana, taught this Maghadeva Jātaka, referring to the Great Renunciation, [beginning with] ‘the hairs on the crown of my head’.
+  [6] <b>Maghadevo</b>ti ettha maghaṃ vuccati dhanaṃ.
+          EN: ‘Maghadeva’ means here, ‘magha’ is called wealth.
+  [9] <b>Dhammiko</b>ti dhammo assa atthīti dhammiko..
+          EN: ‘Lawful’ means he who has the Dhamma is ‘lawful’.
+  [10] <b>Dhammarājā</b>ti dhammena rājā hotīti dhammarājā..
+          EN: ‘Dhamma-King’ means he who is king by Dhamma is a ‘Dhamma-King’.
+  [11] <b>Kappaka</b>nti kesāropanamassucchedanādiṃ katvā jīvikakappanapurisaṃ..
+          EN: ‘Barber’ means a person who makes a livelihood by doing the shaving of hair, cutting of beard, and so on.
+  [14] <b>Palitānī</b>ti palanti jiṇṇabhāvaṃ gacchantīti palitāni.
+          EN: ‘Silvered hair’ means they are ‘silvered’ because they go to an old state.
+  [18] <b>Satasahassuṭṭhānaka</b>nti dasamabhāgavasena paricchinditvā satasahassāyuṭṭhānakaṃ..
+          EN: ‘Hundred-thousand-rise’ means having determined by a tenth part, one that rises to a hundred thousand years [of life].
+  [19] <b>Gāmavara</b>nti varagāmaṃ datvāti attho..
+          EN: ‘Excellent village’ means having given an excellent village; that is the meaning.
+  [23] <b>Maghadevaambavanuyyāne</b>ti maghadevo nāma so rājā taṃ ambavanaṃ ropesi.
+          EN: ‘In the Maghadeva Mango Wood park’ means that king called Maghadeva planted that Mango Wood.
+  [26] <b>Samaṇadhamma</b>nti tāpasasamaṇadhammaṃ..
+          EN: ‘Ascetic duty’ means the ascetic’s ascetic duty.
+  [28] <b>Tassā</b>ti devassa.
+          EN: ‘His’ means of the deva.
+  [30] <b>Ta</b>nti taṃ vacanaṃ..
+          EN: ‘That’ means that statement.
+
+[Ja-ṭ-i §809]
+  [11] <b>Me</b>ti ettha ca paccatte sāmivacanaṃ daṭṭhabbaṃ..
+          EN: And here, in the word 'my' (me), the possessive case for the nominative should be seen.
+
+[Ja-ṭ-i §814]
+  [3] <b>Añjanavaṇṇo</b>ti añjanena samānavaṇṇo..
+          EN: 'Collyrium-colored' (añjanavaṇṇo) means having a color similar to collyrium.
+  [9] <b>So</b>ti satthavāhaputto..
+          EN: 'He' (so) refers to the caravan-leader's son.
+  [10] <b>Na</b>nti bodhisattaṃ.
+          EN: 'Him' (naṃ) refers to the Bodhisatta.
+
+[Ja-ṭ-i §866]
+  [33] <b>Ito</b>ti imaṃ ṭhānaṃ..
+          EN: “From here” (<i>ito</i>) means ‘this place’.
+
+[Ja-ṭ-i §918]
+  [5] <b>Hotū</b>ti evaṃ bhavatu.
+          EN: <b>'Let it be'</b> means 'may it be so'.
+  [7] <b>Tassā</b>ti saddahanayoga to sampadānavacanaṃ..
+          EN: <b>'For her'</b>—this is a dative case due to the connection with [the act of] believing.
+
+[Ja-ṭ-i §921]
+  [13] Marammikabhāsābhūtattā pana ekaṃ na-kāraṃ apanetvā ekassa ca na-kārassa nissarabhāvena visajjanikena ca saddhiṃ <b>chanḥ</b>ti paṭhanti..
+          EN: However, because it is in the Burmese language, they read it as <i>chanḥ</i>, having removed one 'na' and including the visarga as the aspiration of the other 'na'.
+
+[Ja-ṭ-i §963]
+  [8] <b>Mayha</b>nti sampadānatthe catutthīvacanaṃ dā-dhātuyogato..
+          EN: 'To me' is the fourth case in the dative sense, due to the connection with the root 'dā' (to give).
+  [9] Atha vā <b>mayha</b>nti sāmiatthe chaṭṭhīvacanaṃ.
+          EN: Alternatively, 'to me' is the sixth case in the genitive sense.
+
+[Ja-ṭ-i §964]
+  [4] <b>Sampatta</b>nti ettha ta-paccayo kālattayābhihito..
+          EN: 'Reached'—here, the suffix 'ta' refers to the three times [past, present, future].
+
+[Ja-ṭ-i §986]
+  [11] <b>Dhame</b>ti iminā kadāci kadāciyeva dhamanaṃ na gahetabbanti dassetuṃ 'puna dhame'ti vuttaṃ..
+          EN: Regarding “should blow,” the words “should blow again” were said in order to point out that by this, one should not accept blowing at just any time at all.
+
+[Ja-ṭ-i §1044]
+  [14] <b>So</b>ti mahāthero..
+          EN: “He” means the Great Elder.
+
+[Ja-ṭ-i §1105]
+  [20] <b>Pallaṅkenā</b>ti pallanaṃ ūrubandhanaṃ karoti etenāti pallaṅko.
+          EN: “With a cloth-band (pallaṅkenā)”—‘pallaṅko’ is so-called because one makes a thigh-binding with it.
+
+[Ja-ṭ-i §1109]
+  [11] <b>Tassā</b>ti dānaggassa..
+          EN: ‘Of that (tassā)’ means of the alms-hall.
+
+[Ja-ṭ-i §1115]
+  [14] <b>Hatā</b>ti maṃsakhādanatthāya gāvo hatā..
+          EN: ‘Killed (hatā)’ means the cows were killed for the purpose of eating meat.
+
+[Ja-ṭ-i §1285]
+  [13] <b>Vatthū</b>ti gabbhāsayaṃ sandhāyāha..
+          EN: <b>Vatthū</b> refers to the womb.
+
+[Mūla / Source Text (for translation consistency)]
+
+[Ja-i §44]
+  [1] 8. Api ataramānānaṃ, phalāsāva samijjhati;
+          EN: ८. हतार नगर्नेहरूको आशा सिद्ध हुन्छ;
+
+[Ja-i §45]
+  [1] Vipakkabrahmacariyosmi, evaṃ jānāhi gāmaṇīti.
+          EN: म फलदायी ब्रह्मचर्यमा स्थित छु, हे गामणि! यो कुरा जान्नुहोस्।
+
+[Ja-i §49]
+  [1] 9. Uttamaṅgaruhā mayhaṃ, ime jātā vayoharā;
+          EN: ९. मेरो शिरमा उम्रिएका यी कपालहरू आयु हरण गर्ने हुन्;
+
+[Ja-i §50]
+  [1] Pātubhūtā devadūtā, pabbajjāsamayo mamāti.
+          EN: देवदूतहरू प्रकट भइसके, मेरो प्रव्रज्या (रहन-सहन) को समय भयो।
+
+══════════════════════════════
+PALI WORD DEFINITIONS (reference for difficult/rare terms)
+══════════════════════════════
+Pali Word Definitions:
+  aparihīnajjhāne:
+    - aparihīnajjhānā: <b>Khantiṃ ruciṃ uppādetvā</b>ti cittassa abhāvo eva sādhu suṭṭhūti imaṃ diṭṭhinijjhānakkhantiṃ tattha ca abhiruciṃ uppādetvā. [“Having generated conviction and inclination” means having generated this conviction of the [meditative] insight-view that the absence of the mind itself is good, and a preference for that.] … Tathā bhāvitassa jhānassa ṭhitibhāgiyabhāvappattiyā <b>aparihīnajjhānā</b>. [“Without having declined in jhāna” because of the attainment of the state of stability for the jhāna so developed.] … Titthāyatane pabbajitasseva tathā jhānabhāvanā hotīti āha <b>‘‘manussaloke ’’</b>ti. [Jhāna-development like that happens only to one who has gone forth in the sectarians' grounds, which is why he says, “in the human world.”]
+  sabbajanajeṭṭhakaṃ:
+    - sabbajanajeṭṭhaka: Idha pana gāmajeṭṭhako gāmaṇināmāti veditabboti āha -- idha panāti ādi.. [But here, the village head is known as ‘headman’; therefore he says: ‘but here’ and so on.] … <b>Sabbajanajeṭṭhaka</b>nti iminā gāmasaddassa samūhatthataṃ sādhetīti.. [‘Chief of all people’ shows by this that the word ‘village’ has the meaning of a collection.]
+  pabbajitukāmaṃ:
+    - pabbajitukāmo maññeti sallakkhetvā: Brāhmaṇī attano aṅgamaṅgānaṃ parāmasanakkhaṇe anācārānukūlā hutvā na kiñci vatvā bhikkhuno vaṇṇabhaṇanakkhaṇe vuttattā āha <b>‘‘pabbajitukāmo maññeti sallakkhetvā ’’</b>ti, pabbajitukāmo viyāti sallakkhetvāti attho. [The brahmin lady, having been non-compliant at the moment of his touching her limbs, and having said nothing, spoke at the moment of his praising the monk, saying 'Recognizing him as one desiring to go forth,' meaning, 'one would think he wants to go forth'.] … Kulitthīnaṃ evaṃ parehi abhibhavanaṃ nāma accantāvamānoti āha <b>‘‘attano vippakāran ’’</b>ti. [For ladies of the house, being oppressed by others in this way is the extreme of contempt, [so] he said 'That bad behavior of his'.]
+  añjanavaṇṇānaṃ:
+    - añjanavaṇṇānī: Iminā pāḷinayena ‘‘koṭivīso’’ti vattabbe ‘‘cakkavāḷan’’tiādīsu viya ṭakārassa ḷakāraṃ katvā <b>koḷivīso</b>ti vuttanti daṭṭhabbaṃ. [According to the method of the Pāli text, it should be seen that where it should have been said “<i>Koṭivīso</i>,” it was said as <b>Koḷivīso</b> by changing the <i>ṭ</i>-kāra to <i>ḷ</i>-kāra, just as in [words like] <i>cakkavāḷa</i> and so on.] … <b>Añjanavaṇṇānī</b>ti añjanassa vaṇṇo viya vaṇṇo etesanti añjanavaṇṇāni. [“<b>Having the color of collyrium</b> (<i>Añjanavaṇṇānī</i>)” means those for whom the color is like the color of collyrium.] … Lomāni jātāni hontīti sambandho. [The connection is: [fine] feathers grew.]
+  maghadevaambavanuyyāne:
+    - maghadevaambavanuyyāne: Tassa hi añjalismiṃ ṭhapitāni palitāni disvāva saṃvego uppajjatīti.. [For a sense of urgency arises in him upon seeing the silvered hair placed in the reverential salutation.] … <b>Maghadevaambavanuyyāne</b>ti maghadevo nāma so rājā taṃ ambavanaṃ ropesi. [‘In the Maghadeva Mango Wood park’ means that king called Maghadeva planted that Mango Wood.] … Tesu rukkhesu palujjamānesu pacchā aññepi rājāno ropesuṃyeva. [As those trees decayed, later kings also planted [new ones].]
+  saṃvarajātake:
+    - saṃvarajātake: <b>Alīnacittaṃ nissāyā</b>ti idaṃ satthā jetavane viharanto ekaṃ ossaṭṭhavīriyaṃ bhikkhuṃ ārabbha kathesi. [<b>“Relying on a fainthearted mind”</b>—the Teacher told this Alīnacitta Birth while dwelling at Jetavana, regarding a certain bhikkhu who had slacked in energy. <i>(Alīnacittaṃ nissāyāti idaṃ satthā jetavane viharanto ekaṃ ossaṭṭhavīriyaṃ bhikkhuṃ ārabbha kathesi.)</i>] … Vatthu ekādasanipāte <b>saṃvarajātake</b> (jā.1.11.97 ādayo) āvibhavissati. [The circumstances will be made clear in the <i>Saṃvarajātaka</i> in the Eleven-Book collection. <i>(Vatthu ekādasanipāte saṃvarajātake (jā.1.11.97 ādayo) āvibhavissati.)</i>] … So pana bhikkhu satthārā ‘‘saccaṃ kira tvaṃ, bhikkhu, vīriyaṃ ossajī’’ti vutte ‘‘saccaṃ, bhagavā’’ti āha. [When the Teacher asked that bhikkhu, “Is it true, bhikkhu, that you have slacked in energy?” he replied, “It is true, Blessed One.” <i>(So pana bhikkhu satthārā ‘‘ saccaṃ kira tvaṃ, bhikkhu, vīriyaṃ ossajī ’’ ti vutte ‘‘ saccaṃ, bhagavā ’’ ti āha.)</i>]
+  āsāphalaṃ:
+    - āsāphalanipphādanenā: <b>Āsāphalanipphādanenā</b>ti āsāphalassa nipphādanena tassa āsaṃ deti.. [“By the accomplishment of the fruit of hope” (<i>āsāphalanipphādanenā</i>) means by the accomplishment of the fruit of hope; [she] gives hope of that.] … <b>Tassa na desī</b>ti tassa āsāphalanipphādanena āsaṃ na desi.. [“Does not give to him” (<i>tassa na desī</i>) means [she] does not give hope to him by the accomplishment of the fruit of hope.]
+  maghadeva:
+    - maghadevo: Majjhimanikāyepi maghadevasuttaṃ nimijātakassa atthuppattiyaṃyeva desetīti āgataṃ.. [It is stated in the Majjhima Nikāya as well that the Maghadeva Sutta teaches [this] precisely on the occasion of the Nimi Jātaka.] … <b>Maghadevo</b>ti ettha maghaṃ vuccati dhanaṃ. [‘Maghadeva’ means here, ‘magha’ is called wealth.] … Taṃ assa atthīti magho. [He who has that is ‘Magha’.]
+    - maghadevakāle: <b>Nekkhamme pāramiṃ gantvā</b>ti tathā tividhepi mahābhinikkhamane pāramiṃ paramukkaṃsaṃ gantvā. ['वैराग्य (नैष्क्रम्य) को शिखरमा पुगेर' को अर्थ—त्यसरी नै, तिनै प्रकारका महाभिनिष्क्रमणमा पारमिताको पराकाष्ठामा पुगेर भन्ने हो।] … Tattha <b>yudhañjayakāle</b> (cariyā.3.1 ādayo; jā.1.11.73 ādayo) <b>somanassakumārakāle</b>ti (cariyā.3.7 ādayo; jā.1.15.211 ādayo) evamādīsu idha āgatesu, anāgatesu ca <b>hatthipālakumārakāle</b> (jā.1.15.337 ādayo) <b>maghadevakāle</b>ti (ma. ni.2.308 ādayo; jā.1.1.9) evamādīsu mahārajjaṃ pahāya nekkhammapāramiyā pūritattabhāvānaṃ parimāṇaṃ nāma natthi. [त्यहाँ युद्धञ्जय काल, सोमन्स कुमार काल आदिमा, र नभनिएका हत्थिपाल कुमार काल, मखदेव काल आदिमा महाराज्य त्यागी नैष्क्रम्य-पारमिता पूरा गरेका अस्तित्वहरूको गणना छैन।] … Ekantena panassa <b>cūḷasutasomakāle</b> – [तर निश्चित रूपमा चूल-सुतसोम कालमा—]
+    - maghadevasmiṃ: <b>Maghadevasmiṃ</b>ti ettha maghadevoti ekāya devatāya nāmaṃ. [<b>“Regarding Maghadeva”</b> (<i>maghadevasmiṃ</i>) — here, Maghadeva is the name of a devatā.] … Tāya pana adhivatthaṭṭhānatāya vaṭarukkhopi maghadevoti vuccati.. [However, because that is the place he inhabits, even the banyan tree is called Maghadeva.]
+  phalāsā:
+    - phalāsā: <b>Phalāsāva samijjhatī</b>ti yathāpatthike phale āsā tassa phalassa nipphattiyā samijjhatiyeva. [<i>Phalāsāva samijjhati</i> means that for whatever fruit is desired, the aspiration for that fruit is indeed fulfilled by its attainment.] … Atha vā <b>phalāsā</b>ti āsāphalaṃ, yathāpatthitaṃ phalaṃ samijjhatiyevāti attho. [Or alternatively, <i>phalāsā</i> means the 'fruit of aspiration'; the meaning is that the fruit as desired is indeed fulfilled.] … <b>Vipakkabrahmacariyosmī</b>ti ettha cattāri saṅgahavatthūni seṭṭhacariyattā brahmacariyaṃ nāma, tañca tammūlikāya yasasampattiyā paṭiladdhattā vipakkaṃ nāma. [In the phrase <i>vipakkabrahmacariyosmi</i>, the four means of sustaining a favorable relationship are called <i>brahmacariya</i> because they are noble conduct; and that is called <i>vipakka</i> because it has been obtained due to the glory resulting from them.]
+    - phalāsavo: Tattha madhukatālanāḷikerādi puppharaso ciraparivāsito <b>pupphāsavo</b>. [Therein, 'extract from flowers' is the sap of flowers like madhuka, palm, or coconut [that has been] left to ferment for a long time.] … Panasādiphalaraso <b>phalāsavo</b>. ['Extract from fruits' is the juice of fruits such as jackfruit.] … Muddikāraso <b>madhvāsavo .</b> ['Extract from honey' is the juice of grapes.]
+    - phalāsāvā: Tattha <b>phalāsāvā</b>ti ataramānassa mama soḷasavassehi katavāyāmassa samiddhaṃ ajjhāsayaphalaṃ dassetuṃ evamāha. [Therein, <i>phalāsāvā</i> means he said this to show that for me, not hurrying, the desired fruit of the striving made over sixteen years has been fulfilled.] … <b>Vipakkabrahmacariyosmī</b>ti niṭṭhappattamanoratho. [<i>Vipakkabrahmacariyosmi</i> means one whose goal is fully accomplished.]
+
+══════════════════════════════
+PREVIOUS PARAGRAPH (for style consistency)
+══════════════════════════════
+[Para 1052]
+  [line_id=1] Pali: Rājā bodhisattassa ākāse nisīditvā evaṃ dhammaṃ desentassa sutvā ‘‘ehi, tātā’’ti hatthaṃ pasāresi,‘‘ahameva posessāmi, ahameva posessāmī’’ti hatthasahassaṃ pasāriyittha.
+                   EN:   राजाले आकाशमा बसेर यसरी धर्म सुनाइरहेका बोधिसत्वको कुरा सुनेर, 'आउ छोरा' भनी हात फैलाए, र 'म नै पालन गर्छु, म नै पालन गर्छु' भनी हजारौँ हातहरू फैलाए।
+  [line_id=2] Pali: Bodhisatto aññassa hatthe anotaritvā raññova hatthe otaritvā aṅke nisīdi.
+                   EN:   बोधिसत्व अरूको हातमा नझरी केवल राजाको हातमा झरेर राजाको काखमा बसे।
+  [line_id=3] Pali: Rājā tassa oparajjaṃ datvā mātaraṃ aggamahesiṃ akāsi.
+                   EN:   राजाले उनलाई युवराज बनाए र उनकी आमालाई मुख्य रानी बनाए।
+  [line_id=4] Pali: So pitu accayena kaṭṭhavāhanarājā nāma hutvā dhammena rajjaṃ kāretvā yathākammaṃ gato.
+                   EN:   ती बोधिसत्वले पिताको देहान्तपछि कट्टवाहन राजाको नामले प्रसिद्ध भई, धर्मपूर्वक राज्य गरी, आफ्नो कर्मअनुसार परलोक भए।
+
+[Para 1053]
+  [line_id=1] Pali: Satthā kosalarañño imaṃ dhammadesanaṃ āharitvā dve vatthūni dassetvā anusandhiṃ ghaṭetvā jātakaṃ samodhānesi –
+                   EN:   शास्ताले कोसल नरेशका लागि यो धर्मदेशना ल्याई, दुवै कथाहरू देखाएर, सन्धि जोडेर जातकको निष्कर्ष निकाल्नुभयो -
+  [line_id=2] Pali: ‘‘tadā mātā mahāmāyā ahosi, pitā suddhodanamahārājā, kaṭṭhavāhanarājā pana ahameva ahosin’’ti.
+                   EN:   'त्यसबेलाकी आमा महामाया हुन्, पिता शुद्धोदन महाराज हुन्, तर कट्टवाहन राजाचाहिँ म आफैँ हुँ।'
+
+[Para 1054]
+  [line_id=1] Pali: Kaṭṭhahārijātakavaṇṇanā sattamā.
+                   EN:   सातौँ कट्टहारि जातक व्याख्या।
+
+══════════════════════════════
+PARALLEL AI TRANSLATIONS (for reference)
+══════════════════════════════
+[English translation]
+  --- para_id=1056 ---
+    [line_id=1] 8. Commentary on the Gāmaṇi Jātaka
+  --- para_id=1057 ---
+    [line_id=1] The Teacher told this Dhamma discourse, <i>'Api ataramānānaṃ'</i>, while dwelling at Jeta's Grove, regarding a monk who had given up on his striving.
+    [line_id=2] But in this Jātaka, the story of the present and the story of the past will be made clear in the Saṃvara Jātaka in the Eleventh Book.
+    [line_id=3] For the account in that one and in this one is exactly the same, but the verses are different.
+    [line_id=4] Prince Gāmaṇi, abiding by the Bodhisatta’s counsel, even though he was the youngest of a hundred brothers, was surrounded by those hundred brothers; seated on an excellent throne beneath the white canopy of state, he contemplated his own glory and, delighted, thought, 'This glory of mine is owed to our teacher,' and he uttered this inspired utterance—
+  --- para_id=1059 ---
+    [line_id=1] 8. “For those who do not hurry, their heart’s desire is fulfilled;
+  --- para_id=1060 ---
+    [line_id=1] I have attained the mature fruits of noble conduct, know this, Gāmaṇi.”
+  --- para_id=1061 ---
+    [line_id=1] Therein, <i>api</i> is merely a particle.
+    [line_id=2] <i>Ataramānānaṃ</i> means those who, abiding by the advice of the wise, without haste, without impulsiveness, perform their duties through a proper method.
+    [line_id=3] <i>Phalāsāva samijjhati</i> means that for whatever fruit is desired, the aspiration for that fruit is indeed fulfilled by its attainment.
+    [line_id=4] Or alternatively, <i>phalāsā</i> means the 'fruit of aspiration'; the meaning is that the fruit as desired is indeed fulfilled.
+    [line_id=5] In the phrase <i>vipakkabrahmacariyosmi</i>, the four means of sustaining a favorable relationship are called <i>brahmacariya</i> because they are noble conduct; and that is called <i>vipakka</i> because it has been obtained due to the glory resulting from them.
+    [line_id=6] Or, whatever glory was produced for him, that too is called <i>brahmacariya</i> in the sense of nobility.
+    [line_id=7] Therefore he said, 'I have attained the mature fruits of noble conduct.'
+    [line_id=8] <i>Evaṃ jānāhi gāmaṇi</i>: in some places, a village man or a village headman is called a <i>gāmaṇi</i>.
+    [line_id=9] But here, he speaks referring to himself as the head of all people.
+    [line_id=10] “My friend Gāmaṇi, you should know this fact: by relying on the teacher, I surpassed the hundred brothers and attained this great kingdom,” he uttered this inspired utterance.
+  --- para_id=1062 ---
+    [line_id=1] When he attained the kingdom, after seven or eight days had passed, all the brothers went to their own respective places of dwelling.
+    [line_id=2] King Gāmaṇi ruled the kingdom according to the Dhamma and passed away to fare according to his kamma; the Bodhisatta also, having performed meritorious deeds, passed away to fare according to his kamma.
+  --- para_id=1063 ---
+    [line_id=1] The Teacher, having brought this Dhamma discourse and shown the connection, revealed the Truths; at the end of the Truths, the monk who had given up on his striving became established in Arahantship.
+    [line_id=2] The Teacher, having told the two stories and joined the connection, identified the Jātaka—
+    [line_id=3] “At that time, Prince Gāmaṇi was the monk who had given up on his striving, but the teacher was myself.”
+  --- para_id=1064 ---
+    [line_id=1] Eighth Commentary on the Gāmaṇi Jātaka.
+  --- para_id=1066 ---
+    [line_id=1] 9. Commentary on the Makhādeva Jātaka
+  --- para_id=1067 ---
+    [line_id=1] The Teacher told this Dhamma discourse, <i>'Uttamaṅgaruhā mayhaṃ'</i>, while dwelling at Jeta's Grove, regarding the Great Renunciation.
+    [line_id=2] That has already been told below in the Nidāna-kathā.
+    [line_id=3] At that time, the monks were sitting and praising the Renunciation of the One with the Ten Powers.
+    [line_id=4] Then the Teacher, having come to the Hall of Truth and seated himself on the Buddha-seat, addressed the monks, saying, “Monks, for what topic are you gathered here sitting today?”
+    [line_id=5] When they replied, “Venerable sir, it is not for any other topic; we are just sitting praising your own Renunciation,” the Teacher said, “Monks, it is not only in this present time that the Tathāgata has made the Renunciation; in the past, too, he made it.”
+    [line_id=6] The monks asked the Blessed One to reveal that matter; the Blessed One made manifest what had been concealed by existence.
+  --- para_id=1068 ---
+    [line_id=1] In the past, in the Videha realm at Mithilā, there was a king named Makhādeva, a righteous Dhamma-king.
+    [line_id=2] He amused himself with child's play for eighty-four thousand years; likewise, after reigning as viceroy and as king for the same duration, he had passed a long stretch of time. One day he addressed the barber: “My friend barber, whenever you see grey hairs on my head, you must inform me.”
+    [line_id=3] The barber, having passed a long time, one day saw a single grey hair among the king's raven-black locks and reported, “Lord, a single grey hair is visible on you.”
+    [line_id=4] When he was told, “Then, my friend, pull it out and lay it in my palm,” he pulled it out with golden tweezers and placed it in the king's palm.
+    [line_id=5] At that time, the king still had eighty-four thousand years of life remaining.
+    [line_id=6] Even so, on seeing the grey hair, he thought as if the King of Death were standing nearby or as if he had entered a burning hut, and overcome by a sense of urgency, he lamented, “Foolish Makhādeva, you were unable to abandon these defilements even before the appearance of a grey hair.”
+  --- para_id=1069 ---
+    [line_id=1] As he reflected on the appearance of the grey hair, an internal heat arose; sweat poured from his body, and his robes became soaked with sweat.
+    [line_id=2] He thought, “It is proper for me to renounce the world this very day,” and giving a prize village worth a hundred thousand to the barber, he summoned his eldest son and said, “Dear son, a grey hair has appeared on my head; I have become old. I have already consumed human sensual pleasures; now I shall seek divine ones. This is the time for my renunciation. You take over this kingdom; I shall renounce the world, dwell in the Makhādeva Mango-grove, and practice the ascetic life.”
+    [line_id=3] As he was thus intent on renunciation, his ministers approached and asked, “Lord, what is the reason for your renunciation?”
+    [line_id=4] The king, holding the grey hair in his hand, spoke this verse to his ministers—
+  --- para_id=1071 ---
+    [line_id=1] 9. “Lo, these grey hairs that on my head appear,
+  --- para_id=1072 ---
+    [line_id=1] The messengers of heaven have appeared; it is time for my renunciation.”
+  --- para_id=1073 ---
+    [line_id=1] Therein, <i>uttamaṅgaruhā</i> means hairs.
+    [line_id=2] For hairs are called <i>uttamaṅgaruhā</i> because they grow on the head, the highest of all the limbs such as hands and feet.
+    [line_id=3] <i>Ime jātā vayoharā</i>: “Look, dear ones, because they steal away the three ages with the appearance of grey hair, these age-stealing hairs have grown.”
+    [line_id=4] <i>Pātubhūtā</i> means they have appeared.
+    [line_id=5] <i>Devadūtā</i>: Death is called a 'deva'; they are his messengers, thus 'devadūtā'.
+    [line_id=6] For when grey hairs appear on the head, it is as if one were standing in the presence of the King of Death; therefore, grey hairs are called 'messengers of the King of Death'.
+    [line_id=7] Or, they are called <i>devadūtā</i> because they are messengers like gods.
+    [line_id=8] Just as when a decorated and adorned deity stands in the sky and says, “On such and such a day you will die,” and it happens exactly so, similarly, when grey hairs appear on the head, it is like a prediction by a deity; therefore, grey hairs are called 'messengers like gods'.
+    [line_id=9] Or, they are called <i>devadūtā</i> because they are messengers of the pure gods.
+    [line_id=10] For all Bodhisattvas renounce the world only after seeing the aged, the sick, the dead, and the ascetic, and becoming overcome by a sense of urgency.
+    [line_id=11] As it is said—
+  --- para_id=1074 ---
+    [line_id=1] “Seeing the aged, and the suffering and the sick, and seeing the dead, who have reached the end of their life-span;
+  --- para_id=1075 ---
+    [line_id=1] And seeing the ascetic clad in saffron robes, for this reason I became an ascetic, King.”
+  --- para_id=1076 ---
+    [line_id=1] In this way, because they are messengers of the pure gods, grey hairs are called <i>devadūtā</i>.
+    [line_id=2] <i>Pabbajjāsamayo mamā</i>: he shows that this is the time for his taking up the ascetic guise, which is named 'renunciation' because it is a going forth from the householder life.
+  --- para_id=1077 ---
+    [line_id=1] Having spoken thus, he abandoned his kingdom that very day, went forth into the ascetic life, and dwelling in that very Makhādeva Mango-grove, he cultivated the four divine abidings for eighty-four thousand years; remaining in unwaning jhana, he passed away, was reborn in the Brahma-world, and then passing from there, he became a king named Nimi in Mithilā; he reunited his own broken lineage, renounced the world in that very same Mango-grove, cultivated the divine abidings, and once again became a Brahma-world dweller.
+  --- para_id=1078 ---
+    [line_id=1] The Teacher, having also said, “Monks, it is not only in the present time that the Tathāgata has made the Great Renunciation; in the past, too, he made it,” told this Dhamma discourse and revealed the Four Truths; at the end of the Truths, some became stream-enterers, some once-returners, and some non-returners.
+    [line_id=2] Thus the Blessed One, having told these two stories and joined the connection, identified the Jātaka: “At that time, the barber was Ānanda, the son was Rāhula, but King Makhādeva was myself.”
+  --- para_id=1079 ---
+    [line_id=1] Ninth Commentary on the Makhādeva Jātaka.
+
+[Sinhala translation]
+  --- para_id=1056 ---
+    [line_id=1] 8. ගාමිණී ජාතක අටුවාව
+  --- para_id=1057 ---
+    [line_id=1] <b>අපි අ තරමානාන</b>න්ති (අනිවාර්යයෙන්ම කලබල නොවන්නාගේ) යන මෙම ධර්ම දේශනාව, භාග්‍යවතුන් වහන්සේ ජේතවනයෙහි වැඩසිටියදී වීර්යය අත්හළ එක් භික්ෂුවක් අරභයා වදාළහ.
+    [line_id=2] මෙම ජාතකයෙහි පවත්නා කතාව සහ අතීත කතාව එකාදස නිපාතයෙහි එන සංවර ජාතකයෙහි පැහැදිලි වනු ඇත.
+    [line_id=3] මන්ද යත්, එහි ඇති කතාව සහ මෙහි ඇති කතාව එක සමානම වන නමුත් ගාථා පමණක් වෙනස් වන බැවිනි.
+    [line_id=4] ගාමිණී කුමරු බෝධිසත්වයන්ගේ අනුශාසනයෙහි පිහිටා, සොහොයුරන් සියයකට බාලයා වුවද එම සියයකගේ පිරිවරින් වටවී, සුදු කුඩය යට අගනා පලඟක හිඳ, තමාගේ යස ඉසුරු දෙස බලා, 'මේ මාගේ යස ඉසුරු අපගේ ආචාර්යයන් වහන්සේගේ පිහිටෙන් ලැබුණකි' යි සතුටුව මෙම උදානය ගෙනහැර දැක්වීය -
+  --- para_id=1059 ---
+    [line_id=1] 8. කලබල නොවී කටයුතු කරන්නාගේ අරමුණ සාර්ථක වේ;
+  --- para_id=1060 ---
+    [line_id=1] මම පරිපූර්ණ වූ උතුම් ගුණ දහම් හි පිහිටියෙමි, ගාමිණී, මෙය දැනගන්න.
+  --- para_id=1061 ---
+    [line_id=1] එහි <b>අපි</b> යනු නිපාත මාත්‍රයකි.
+    [line_id=2] <b>අ තරමානාන</b>න්ති යනු නුවණැත්තන්ගේ අවවාදයෙහි පිහිටා, ඉක්මන් නොවී, අවේගශීලී නොවී, නිවැරදි ක්‍රමයෙන් කටයුතු කරන්නාහු යන අර්ථයයි.
+    [line_id=3] <b>ඵලාසාව සමිජ්ඣතී</b>ති යනු යම් බලාපොරොත්තුවක් ඇති තැනැත්තාට, එම අරමුණෙහි ප්‍රතිඵලය ලැබීමෙන් බලාපොරොත්තුව සැබෑවක්ම වේ.
+    [line_id=4] නැතහොත් <b>ඵලාසා</b> යනු බලාපොරොත්තු වූ ඵලයයි, බලාපොරොත්තු වූ පරිදිම ඵලය සැබෑවේ ය යනු මෙහි අර්ථයයි.
+    [line_id=5] <b>විපක්කබ්‍රහ්මචරියෝස්මී</b>ති යන්නෙහි සංග්‍රහ වස්තු සතර උතුම් පැවතුම් වන බැවින් බඹසර නම් වේ. එම බඹසර මුල් කොට ලැබුණු යස ඉසුරු ලද බැවින් විපක්ක (විපාක සහිත) නම් වේ.
+    [line_id=6] නැතහොත් ඔහුට ලැබුණු යම් යසසක් වේද, එයද උතුම් අර්ථයෙන් බඹසර නම් වේ.
+    [line_id=7] එබැවින් 'මම විපාක සහිත බඹසර ඇත්තෙමි' යි පැවසීය.
+    [line_id=8] <b>ඒවං ජානාහි ගාමිණී</b>ති යන්නෙහි ඇතැම් තැනෙක ගම් වැසියෙක් හෝ ගම් මුලාදෑනියෙක් ගාමිණී නම් වේ.
+    [line_id=9] නමුත් මෙහිදී ඔහු සියලු ජනයාගේ නායකයා වූ තමාම අදහස් කොට පැවසීය.
+    [line_id=10] ගාමිණී, ඔබ මේ කාරණය මෙසේ දැනගන්න, ආචාර්යයන් වහන්සේ සරණ කොට, සොහොයුරන් සියයක් පසුකර, මම මේ මහත් රාජ්‍යය ලැබුවෙමි යි උදාන වාක්‍යය පැවසීය.
+  --- para_id=1062 ---
+    [line_id=1] ඔහු රාජ්‍යය ලද පසු දින හත අටක් ගතවෙත්ම සියලු සොහොයුරෝ තම තමන්ගේ වාසස්ථාන කරා ගියහ.
+    [line_id=2] ගාමිණී රජු දහමින් රාජ්‍යය කරවා කර්මානුරූපව මියගියේය. බෝධිසත්වයන් වහන්සේද කුසල් දහම් කොට කර්මානුරූපව මියගියහ.
+  --- para_id=1063 ---
+    [line_id=1] භාග්‍යවතුන් වහන්සේ මේ ධර්ම දේශනාව ගෙනහැර දක්වා සත්‍යයන් පැහැදිලි කළහ. සත්‍යයන් අවසානයෙහි වීර්යය අත්හළ භික්ෂුව අර්හත්වයට පත්විය.
+    [line_id=2] භාග්‍යවතුන් වහන්සේ කතා දෙක පවසා අනුසන්ධිය ගළපා ජාතකය සමාධිමත් කළහ -
+    [line_id=3] 'එකල ගාමිණී කුමරු වීර්යය අත්හළ භික්ෂුවයි, ආචාර්යයන් වහන්සේ නම් මමම වෙමි' යි.
+  --- para_id=1064 ---
+    [line_id=1] ගාමිණී ජාතක අටුවාව අටවැන්නයි.
+  --- para_id=1066 ---
+    [line_id=1] 9. මඝදේව ජාතක අටුවාව
+  --- para_id=1067 ---
+    [line_id=1] <b>උත්තමංගරුහා මය්හං</b>ති යන මෙම ධර්ම දේශනාව, භාග්‍යවතුන් වහන්සේ ජේතවනයෙහි වැඩසිටියදී මහාභිනිෂ්ක්‍රමණය අරභයා වදාළහ.
+    [line_id=2] එය පෙර නිදාන කථාවෙහි පවසන ලදී.
+    [line_id=3] එකල භික්ෂූහු දසබලධාරීන්ගේ තනිවීම (නෙක්ඛම්මය) වර්ණනා කරමින් වාඩිවී සිටියහ.
+    [line_id=4] එවිට භාග්‍යවතුන් වහන්සේ දම්සභාවට පැමිණ බුද්ධාසනයෙහි හිඳ, භික්ෂූන් අමතා 'මහණෙනි, අද දින කුමන කථාවකින් හිඳගෙන සිටියහුද?' යි ඇසූහ.
+    [line_id=5] 'ස්වාමීනි, අන් කිසිවක් නොව ඔබ වහන්සේගේ මහාභිනිෂ්ක්‍රමණය වර්ණනා කරමින් සිටියෙමු' යි කී කල්හි 'මහණෙනි, තථාගතයන් වහන්සේ මේ ආත්මභාවයේදී පමණක් නොව, පෙරත් මහාභිනිෂ්ක්‍රමණය කළේය' යි වදාළහ.
+    [line_id=6] භික්ෂූහු එම අර්ථය පැහැදිලි කරන ලෙස භාග්‍යවතුන් වහන්සේගෙන් අයැද සිටියහ. භාග්‍යවතුන් වහන්සේ භවාන්තරයෙන් වැසුණු එම කාරණය ප්‍රකට කළහ.
+  --- para_id=1068 ---
+    [line_id=1] අතීතයෙහි විදේහ රාජ්‍යයේ මිථිලාවෙහි මඝදේව නමින් රජෙක් විය. ඔහු ධාර්මික වූ ධර්මරාජයෙකි.
+    [line_id=2] ඔහු අසූ හාරදහසක් වසරක් ළමා ක්‍රීඩා කළේය. එසේම උපරාජ තනතුරෙහි සහ රජ තනතුරෙහි බොහෝ කාලයක් ගත කොට, දිනක් කරණවෑමියා අමතා 'සමනීය කරණවෑමිය, මාගේ හිසෙහි කෙස් පැසී ඇති බව ඔබ දකින දිනක මට දන්වන්නැ'යි පැවසීය.
+    [line_id=3] කරණවෑමියාද බොහෝ කලක් ගෙවී දිනක් රජුගේ කළු කෙස් අතර එක් පැසුණු කෙස් ගසක් දැක 'මහරජ, ඔබ වහන්සේගේ කෙස් ගසක් පැසී ඇත' යි දැන්වීය.
+    [line_id=4] 'එසේ නම් එය උදුරා මාගේ අතෙහි තබන්න' යි කී කල්හි රන් මුවහතකින් උදුරා රජුගේ අතෙහි තැබීය.
+    [line_id=5] එකල රජුගේ ආයුෂ තවත් අසූ හාරදහසක් විය.
+    [line_id=6] එසේ වුවද පැසුණු කෙස් දැක, මෘත්‍යුරාජයා අසල සිටින්නාක් මෙන්ද, ගිනිගත් පැල්පතකට පිවිසියාක් මෙන්ද සිතා, සංවේගයට පත්ව 'මඝදේව මෝඩයා, පැසුණු කෙස් පෙනෙන තුරු මේ කෙලෙසුන් හැරීමට නොහැකි වුණේ දැ'යි සිතීය.
+  --- para_id=1069 ---
+    [line_id=1] එසේ කෙස් පැසීම ගැන සිතන රජුට සිරුර තුළ දැවිල්ලක් ඇති විය. සිරුරෙන් දහඩිය ගලා ගොස් වස්ත්‍ර තෙත් විය.
+    [line_id=2] ඔහු 'අදම මම පැවිදි විය යුතුය' යි සිතා, කරණවෑමියාට ලක්ෂයක් වටිනා ගමක් තෑගි කොට, වැඩිමහල් පුතු කැඳවා 'පුතේ, මාගේ හිසෙහි කෙස් පැසී ඇත. මම මිනිස් කාමයන් අනුභව කළෙමි. දැන් මම දේහ (දෙව්) කාමයන් සොයමි. මෙය මාගේ පැවිදි වීමේ කාලයයි. ඔබ මේ රාජ්‍යය පාලනය කරන්න. මම පැවිදිව මඝදේව අඹ වනයෙහි වසමින් රහත් දහම් පුරන්නෙමි' යි පැවසීය.
+    [line_id=3] පැවිදි වීමට සැරසෙන රජු දැක අමාත්‍යවරු පැමිණ 'මහරජ, ඔබ වහන්සේගේ පැවිදි වීමට හේතුව කුමක්ද?' යි ඇසූහ.
+    [line_id=4] රජු පැසුණු කෙස් ගස අතින් ගෙන අමාත්‍යවරුන්ට මෙම ගාථාව පැවසීය -
+  --- para_id=1071 ---
+    [line_id=1] 9. මාගේ හිසෙහි කෙස් පැසී ඇත, මේවා වයස හඟවන සලකුණුය;
+  --- para_id=1072 ---
+    [line_id=1] දේවදූතයෝ පහළ වූහ, මාගේ පැවිදි වීමේ කාලය පැමිණ ඇත.
+  --- para_id=1073 ---
+    [line_id=1] එහි <b>උත්තමංගරුහා</b>ති යනු හිසකෙස් ය.
+    [line_id=2] මක්නිසාද යත් කෙස් යනු සියලු අංගයන්ට වඩා උතුම් වූ හිස මත වැඩෙන බැවින් 'උත්තමංගරුහා' යි කියනු ලැබේ.
+    [line_id=3] <b>ඉමේ ජාතා වයෝහරා</b>ති යනු බලව පින්වත්නි, කෙස් පැසීමෙන් වයස හා කෙස් පැසීම යන කරුණු තුනම ගෙන යන බැවින් මේවා වයස හරින කෙස් ගස්ය.
+    [line_id=4] <b>පාතුභූතා</b>ති යනු හටගත් යන්නයි.
+    [line_id=5] <b>දේවදූතා</b>ති යනු මරණය 'දේව' යි කියනු ලැබේ, ඔහුගේ දූතයන් බැවින් දේවදූත නම් වේ.
+    [line_id=6] හිසෙහි කෙස් පැසුණු විට මෘත්‍යුරාජයාගේ අසල සිටින්නාක් මෙන් වන බැවින් කෙස් පැසීම මෘත්‍යුරාජයාගේ දූතයන් යයි කියනු ලැබේ.
+    [line_id=7] නැතහොත් දේවදූතයන් වැනි බැවින්ද දේවදූත නම් වේ.
+    [line_id=8] යම් සේ අලංකාර වූ දේවතාවෙක් අහසෙහි සිට 'ඔබ මෙදින මිය යන්නෙහි' යි පවසන විට එය ඒ ආකාරයෙන්ම සිදු වේද, එසේම හිසෙහි කෙස් පැසීමද දේවතාවාගේ අනාවැකියක් වැනි බැවින් දේවදූත නම් වේ.
+    [line_id=9] නැතහොත් විසුද්ධි දේවතාවුන්ගේ දූතයන් බැවින්ද දේවදූත නම් වේ.
+    [line_id=10] සියලු බෝධිසත්වයන් අජීර්ණය, ලෙඩ රෝග, මරණය සහ පැවිද්දා දැක සංවේගයට පත්ව තනිවම පැවිදි වෙති.
+    [line_id=11] යම් සේ වදාළාද -
+  --- para_id=1074 ---
+    [line_id=1] අජීර්ණය දැක, ලෙඩ රෝග දැක, අවසානය වූ මරණය දැක;
+  --- para_id=1075 ---
+    [line_id=1] කසාවතින් සැරසුණු පැවිද්දා දැක, එබැවින් රජතුමනි, මම පැවිදි වීමි.
+  --- para_id=1076 ---
+    [line_id=1] මෙම ආකාරයෙන් විසුද්ධි දේවතාවුන්ගේ දූතයන් බැවින් කෙස් පැසීම දේවදූත නම් වේ.
+    [line_id=2] <b>පබ්බජ්ජාසමයෝ මමා</b>ති යනු ගිහි ජීවිතයෙන් මිදීම නිසා 'පැවිද්ද' යයි නම් ලැබූ ශ්‍රමණ ආකල්පය ගැනීමේ කාලය මට එළඹ ඇතැයි දක්වයි.
+  --- para_id=1077 ---
+    [line_id=1] ඔහු එසේ පවසා එම දිනම රාජ්‍යය අත්හැර ඉසි පැවිද්දෙන් පැවිදි වී, මඝදේව අඹ වනයෙහි වසමින් අසූ හාරදහසක් වසරක් බ්‍රහ්ම විහරණ සතර වඩමින්, නොපිරිහුණු ဈානයෙහි පිහිටා මියගොස් බ්‍රහ්ම ලෝකයෙහි ඉපිද, නැවත එතැනින් චුතව මිථිලාවෙහිම නිමි රජු වී, තමාගේ කැඩී ගිය වංශය එකතු කොට, එම අඹ වනයෙහිම පැවිදි වී, බ්‍රහ්ම විහරණ වඩමින් නැවතත් බ්‍රහ්ම ලෝකවාසී විය.
+  --- para_id=1078 ---
+    [line_id=1] භාග්‍යවතුන් වහන්සේද 'මහණෙනි, තථාගතයන් වහන්සේ මේ ආත්මභාවයේදී පමණක් නොව, පෙරත් මහාභිනිෂ්ක්‍රමණය කළේය' යි මේ ධර්ම දේශනාව ගෙනහැර දක්වා සත්‍යයන් පැහැදිලි කළහ. සත්‍යයන් අවසානයෙහි ඇතැම්හු සෝවාන් වූහ, ඇතැම්හු සකදාගාමී වූහ, ඇතැම්හු අනාගාමී වූහ.
+    [line_id=2] භාග්‍යවතුන් වහන්සේ මේ කතා දෙක පවසා අනුසන්ධිය ගළපා ජාතකය සමාධිමත් කළහ: 'එකල කරණවෑමියා ආනන්දය, පුත්‍රයා රාහුලය, මඝදේව රජු නම් මමම වෙමි' යි.
+  --- para_id=1079 ---
+    [line_id=1] මඝදේව ජාතක අටුවාව නවවැන්නයි.
+
+[Thai translation]
+  --- para_id=1056 ---
+    [line_id=1] ๘. อรรถกถาคามนิชาดก
+  --- para_id=1057 ---
+    [line_id=1] พระศาสดาเมื่อประทับอยู่ในพระเชตวันมหาวิหาร ทรงปรารภภิกษุผู้ละความเพียร จึงตรัสพระธรรมเทศนานี้ที่มีคำเริ่มต้นว่า <b>Api ataramānānaṃ</b>
+    [line_id=2] อนึ่ง เนื้อความของชาดกเรื่องนี้ ทั้งในส่วนเรื่องปัจจุบันและเรื่องอดีต จะปรากฏชัดในสังวรชาดก เอกาทสนิบาต
+    [line_id=3] เพราะเรื่องราวในชาดกนั้นและชาดกนี้เป็นเรื่องเดียวกันอย่างสิ้นเชิง ต่างกันเพียงคาถาเท่านั้น
+    [line_id=4] คามนิกุมารตั้งอยู่ในโอวาทของพระโพธิสัตว์ แม้จะเป็นน้องชายคนสุดท้องในบรรดาพี่ชายทั้งร้อยคน แต่เมื่อถูกห้อมล้อมด้วยพี่ชายทั้งร้อยคน ประทับนั่งบนตั่งอันประเสริฐภายใต้เศวตฉัตร ทอดพระเนตรเห็นยศสมบัติของตน จึงเกิดความปีติยินดีและรำพึงว่า 'ยศสมบัติของเรานี้เป็นเพราะอาศัยอาจารย์ของเรา' จึงได้เปล่งอุทานนี้ว่า
+  --- para_id=1059 ---
+    [line_id=1] ๘. ความหวังในผลย่อมสำเร็จแก่ผู้ไม่รีบร้อน
+  --- para_id=1060 ---
+    [line_id=1] ข้าพเจ้าบรรลุผลอันบริบูรณ์แห่งพรหมจรรย์แล้ว ท่านคามณิ จงรู้ความจริงข้อนี้เถิด
+  --- para_id=1061 ---
+    [line_id=1] ในบทเหล่านั้น ศัพท์ว่า <i>api</i> เป็นเพียงนิบาต
+    [line_id=2] คำว่า <i>ataramānānaṃ</i> หมายถึงผู้ที่ตั้งอยู่ในโอวาทของบัณฑิต ดำเนินการงานโดยไม่รีบร้อน ไม่หุนหันพลันแล่น แต่กระทำตามวิธีการที่เหมาะสม
+    [line_id=3] คำว่า <i>phalāsāva samijjhati</i> หมายความว่า ความหวังในผลใดที่ปรารถนาไว้ ความหวังนั้นย่อมสำเร็จผลนั้นโดยการทำให้เกิดขึ้น
+    [line_id=4] หรืออีกนัยหนึ่ง คำว่า <i>phalāsā</i> หมายถึงผลแห่งความหวัง ความหมายคือผลตามที่ปรารถนานั้นย่อมสำเร็จจริง
+    [line_id=5] ในคำว่า <i>vipakkabrahmacariyosmi</i> นี้ สังคหวัตถุ ๔ ชื่อว่าเป็นพรหมจรรย์เพราะเป็นความประพฤติอันประเสริฐ และเพราะได้ยศสมบัติอันมีพรหมจรรย์นั้นเป็นมูลเหตุ จึงชื่อว่า <i>vipakka</i> (ผลที่สำเร็จแล้ว)
+    [line_id=6] หรือยศใดที่สำเร็จแก่เขายศนั้นก็ชื่อว่าเป็นพรหมจรรย์ในแง่ของความประพฤติอันประเสริฐ
+    [line_id=7] ด้วยเหตุนี้ท่านจึงกล่าวว่า 'ข้าพเจ้าบรรลุผลอันบริบูรณ์แห่งพรหมจรรย์แล้ว'
+    [line_id=8] คำว่า <i>evaṃ jānāhi gāmaṇi</i> ในบางแห่งคำว่า <i>gāmaṇi</i> หมายถึงชาวบ้านหรือผู้ใหญ่บ้าน
+    [line_id=9] แต่ในที่นี้พระองค์ทรงหมายถึงตนเองซึ่งเป็นหัวหน้าของคนทั้งปวง
+    [line_id=10] ทรงเปล่งอุทานว่า 'ท่านคามณิ ท่านจงรู้เหตุนี้เถิดว่า เราได้บรรลุราชสมบัติอันยิ่งใหญ่นี้ เพราะอาศัยอาจารย์และก้าวล่วงพี่ชายทั้งร้อยคนมาได้'
+  --- para_id=1062 ---
+    [line_id=1] ครั้นเมื่อพระองค์ได้ราชสมบัติแล้ว เวลาผ่านไป ๗ หรือ ๘ วัน พี่ชายทุกคนก็ต่างแยกย้ายไปยังที่อยู่ของตน
+    [line_id=2] พระเจ้าคามนิได้ทรงปกครองราชสมบัติโดยธรรมและเสด็จไปตามยถากรรม ส่วนพระโพธิสัตว์ก็บำเพ็ญบุญกุศลและเสด็จไปตามยถากรรมเช่นกัน
+  --- para_id=1063 ---
+    [line_id=1] พระศาสดาทรงนำพระธรรมเทศนานี้มาแสดง ทรงประกาศอริยสัจทั้งหลาย ในที่สุดแห่งการแสดงธรรม ภิกษุผู้ละความเพียรก็ได้ดำรงอยู่ในอรหัต
+    [line_id=2] พระศาสดาทรงเล่าเรื่องทั้งสองเรื่อง ทรงเชื่อมลำดับและประชุมชาดกว่า
+    [line_id=3] 'ในครั้งนั้น คามนิกุมาร คือภิกษุผู้ละความเพียร ส่วนอาจารย์คือเรานี่เอง'
+  --- para_id=1064 ---
+    [line_id=1] จบอรรถกถากามนิชาดกที่ ๘
+  --- para_id=1066 ---
+    [line_id=1] ๙. อรรถกถามฆเทวชาดก
+  --- para_id=1067 ---
+    [line_id=1] พระศาสดาเมื่อประทับอยู่ในพระเชตวันมหาวิหาร ทรงปรารภการเสด็จออกมหาภิเนษกรมณ์ จึงตรัสพระธรรมเทศนานี้ที่มีคำเริ่มต้นว่า <b>Uttamaṅgaruhā mayhaṃ</b>
+    [line_id=2] เรื่องนั้นได้กล่าวไว้แล้วในนิทานกถาข้างต้น
+    [line_id=3] ในกาลนั้น เหล่าภิกษุพากันนั่งพรรณนาถึงการเสด็จออกบรรพชาของพระทศพล
+    [line_id=4] ลำดับนั้น พระศาสดาสะด็จมายังโรงธรรมสภา ประทับบนพุทธอาสน์ ตรัสถามภิกษุทั้งหลายว่า 'ดูก่อนภิกษุทั้งหลาย วันนี้พวกเธอนั่งสนทนากันด้วยเรื่องอะไร'
+    [line_id=5] เมื่อภิกษุเหล่านั้นกราบทูลว่า 'ข้าแต่พระองค์ผู้เจริญ มิใช่เรื่องอื่นใด พวกข้าพระองค์นั่งพรรณนาถึงการเสด็จออกบรรพชาของพระองค์' พระศาสดาจึงตรัสว่า 'ดูก่อนภิกษุทั้งหลาย ตถาคตไม่ได้ออกบรรพชาเฉพาะในบัดนี้เท่านั้น แม้ในกาลก่อนก็เคยออกบรรพชามาแล้ว'
+    [line_id=6] เหล่าภิกษุจึงทูลอาราธนาให้พระผู้มีพระภาคเจ้าทรงเปิดเผยเรื่องราวนั้น พระผู้มีพระภาคเจ้าจึงทรงเปิดเผยเหตุการณ์ที่ถูกกาลเวลาปกปิดไว้ให้ปรากฏ
+  --- para_id=1068 ---
+    [line_id=1] ในอดีตกาล ณ กรุงมิถิลา แคว้นวิเทหะ มีพระราชาพระนามว่า มฆเทวะ ทรงเป็นธรรมราชาผู้ตั้งอยู่ในธรรม
+    [line_id=2] พระองค์ทรงเล่นสนุกแบบเด็กๆ เป็นเวลา ๘๔,๐๐๐ ปี เช่นเดียวกันกับการดำรงตำแหน่งอุปราชและการครองราชย์เป็นเวลาเท่ากัน เมื่อกาลเวลาล่วงไปนานวัน วันหนึ่งจึงตรัสสั่งช่างตัดผมว่า 'สหาย หากวันใดท่านเห็นผมหงอกบนศีรษะของเรา จงบอกเราในทันที'
+    [line_id=3] ช่างตัดผมนั้นเวลาล่วงไปนานวัน วันหนึ่งเขาก็เห็นผมหงอกเพียงเส้นเดียวในกลุ่มพระเกศาดำสนิทของพระราชา จึงกราบทูลว่า 'ข้าแต่พระองค์ผู้เจริญ ปรากฏมีผมหงอกเส้นหนึ่งบนศีรษะของพระองค์'
+    [line_id=4] เมื่อพระราชาตรัสว่า 'ถ้าเช่นนั้น ท่านจงถอนผมหงอกเส้นนั้นวางไว้บนฝ่ามือของเรา' เขาจึงใช้แหนบทองคำถอนแล้ววางบนฝ่าพระหัตถ์
+    [line_id=5] ในเวลานั้นพระราชายังมีพระชนมายุเหลืออยู่อีก ๘๔,๐๐๐ ปี
+    [line_id=6] กระนั้นก็ตาม เมื่อเห็นผมหงอกนั้น พระองค์กลับทรงรู้สึกเหมือนพญามัจจุราชมายืนอยู่ใกล้ หรือเหมือนตนเองติดอยู่ในกระท่อมที่ไฟกำลังลุกไหม้ จึงทรงสลดพระทัยและรำพึงว่า 'เจ้ามฆเทวะผู้เขลา เจ้าไม่อาจละกิเลสทั้งหลายได้จนกระทั่งผมหงอกเกิดขึ้น'
+  --- para_id=1069 ---
+    [line_id=1] เมื่อทรงรำพึงถึงผมหงอกที่ปรากฏนั้น ความเร่าร้อนภายในพระหฤทัยก็เกิดขึ้น พระเสโทไหลโทรมพระวรกายจนผ้าสาฎกเปียกชุ่ม
+    [line_id=2] พระองค์ทรงดำริว่า 'เราควรออกบรรพชาในวันนี้เอง' จึงประทานบ้านชั้นดีอันเป็นแหล่งรายได้ให้แก่ช่างตัดผม แล้วทรงเรียกพระราชโอรสองค์ใหญ่มาตรัสว่า 'พ่อเอย ผมหงอกปรากฏบนศีรษะของพ่อแล้ว พ่อแก่แล้ว กามของมนุษย์พ่อได้เสวยมาพอแล้ว บัดนี้พ่อจักแสวงหากามอันเป็นทิพย์ นี้เป็นเวลาออกบรรพชาของพ่อ เจ้าจงครองราชสมบัตินี้เถิด ส่วนพ่อจะออกบรรพชาไปประพฤติสมณธรรม ณ มฆเทวอัมพวัน'
+    [line_id=3] เหล่าอำมาตย์ทราบถึงความประสงค์จะบรรพชาของพระราชาจึงเข้าไปเฝ้าและทูลถามว่า 'ข้าแต่พระองค์ผู้เจริญ เหตุใดพระองค์จึงตัดสินพระทัยออกบรรพชา'
+    [line_id=4] พระราชาทรงถือเส้นผมหงอกนั้นไว้ในพระหัตถ์ แล้วตรัสคาถานี้แก่อำมาตย์ทั้งหลายว่า
+  --- para_id=1071 ---
+    [line_id=1] ๙. ผมหงอกบนศีรษะของเรานี้เกิดขึ้นแล้ว เป็นเครื่องนำไปสู่วัยที่เสื่อมสิ้น
+  --- para_id=1072 ---
+    [line_id=1] เทวทูตปรากฏแล้ว ถึงเวลาแห่งการบรรพชาของข้าพเจ้าแล้ว
+  --- para_id=1073 ---
+    [line_id=1] ในคาถานั้นคำว่า <i>uttamaṅgaruhā</i> หมายถึง ผม
+    [line_id=2] เพราะผมงอกบนอวัยวะที่สูงสุดคือศีรษะ จึงเรียกว่า <i>uttamaṅgaruhā</i>
+    [line_id=3] คำว่า <i>ime jātā vayoharā</i> หมายถึง 'ดูก่อนท่านทั้งหลาย จงดูเถิด ผมหงอกเหล่านี้เกิดขึ้นแล้ว เป็นเครื่องนำวัยไปเพราะนำวัยทั้งสามไปตามการปรากฏของผมหงอก'
+    [line_id=4] คำว่า <i>pātubhūtā</i> หมายถึง ปรากฏขึ้นแล้ว
+    [line_id=5] คำว่า <i>devadūtā</i> หมายถึง มัจจุราชเรียกว่าเทวะ ผมหงอกเหล่านี้เป็นทูตของมัจจุราชนั้นจึงเรียกว่า เทวทูต
+    [line_id=6] เพราะเมื่อผมหงอกปรากฏบนศีรษะ บุคคลย่อมเป็นเสมือนยืนอยู่ในสำนักของพญามัจจุราช ด้วยเหตุนี้ผมหงอกจึงเรียกว่าเทวทูต
+    [line_id=7] หรือเรียกว่าเทวทูตเพราะเป็นดั่งทูตของเทวดา
+    [line_id=8] เฉกเช่นเทวดาที่งดงามยืนอยู่บนอากาศแล้วกล่าวว่า 'ท่านจะตายในวันโน้น' และเหตุการณ์ก็เป็นไปตามนั้น การปรากฏของผมหงอกบนศีรษะก็เป็นเสมือนเทวดาพยากรณ์ไว้ จึงเรียกว่าเทวทูต
+    [line_id=9] หรือเรียกว่าเทวทูตเพราะเป็นทูตของวิสุทธิเทพทั้งหลาย
+    [line_id=10] เพราะพระโพธิสัตว์ทั้งปวงย่อมสลดพระทัยหลังจากได้เห็นคนแก่ คนเจ็บ คนตาย และนักบวช จึงเสด็จออกบรรพชา
+    [line_id=11] ดังที่ตรัสไว้ว่า
+  --- para_id=1074 ---
+    [line_id=1] 'เพราะเห็นคนแก่ เห็นคนเจ็บผู้มีความทุกข์ เห็นคนตายผู้ถึงคราวสิ้นอายุ'
+  --- para_id=1075 ---
+    [line_id=1] 'และเห็นบรรพชิตผู้ครองผ้ากาสาวะ ด้วยเหตุนี้ข้าพเจ้าจึงออกบวช'
+  --- para_id=1076 ---
+    [line_id=1] โดยปริยายนี้ ผมหงอกจึงถูกเรียกว่าเทวทูตเพราะเป็นทูตของวิสุทธิเทพทั้งหลาย
+    [line_id=2] คำว่า <i>pabbajjāsamayo mamā</i> เป็นการแสดงว่าถึงเวลาแห่งการรับเอาเพศบรรพชิต ซึ่งเรียกว่าบรรพชาเพราะเป็นการออกไปจากความเป็นคฤหัสถ์
+  --- para_id=1077 ---
+    [line_id=1] พระองค์ตรัสเช่นนั้นแล้วก็ทรงสละราชสมบัติออกผนวชเป็นฤาษีในวันนั้นเอง ประทับอยู่ในมฆเทวอัมพวันเจริญพรหมวิหาร ๔ ตลอด ๘๔,๐๐๐ ปี ดำรงอยู่ในฌานอันไม่เสื่อมสวรรคตแล้วบังเกิดในพรหมโลก จุติจากพรหมโลกนั้นแล้วมาเป็นพระราชาพระนามว่า นิมิ ในกรุงมิถิลา ทรงสืบต่อวงศ์ที่เสื่อมไป แล้วออกผนวชในอัมพวันนั้นอีก เจริญพรหมวิหารและกลับไปบังเกิดในพรหมโลกตามเดิม
+  --- para_id=1078 ---
+    [line_id=1] พระศาสดาทรงตรัสว่า 'ดูก่อนภิกษุทั้งหลาย ตถาคตไม่ได้ออกบรรพชาในบัดนี้เท่านั้น แม้ในกาลก่อนก็เคยออกบรรพชามาแล้ว' ทรงแสดงพระธรรมเทศนานี้ประกาศอริยสัจ ๔ ในเวลาจบพระธรรมเทศนา ผู้ฟังบางพวกเป็นพระโสดาบัน บางพวกเป็นพระสกทาคามี บางพวกเป็นพระอนาคามี
+    [line_id=2] พระผู้มีพระภาคเจ้าทรงเล่าเรื่องทั้งสองนี้แล้วประชุมชาดกว่า 'ช่างตัดผมในครั้งนั้นคืออานนท์ พระโอรสคือพระราหุล ส่วนพระเจ้ามฆเทวราชาคือเราตถาคตนั่นเอง'
+  --- para_id=1079 ---
+    [line_id=1] จบมฆเทวชาดกที่ ๙
+
+══════════════════════════════
+MYANMAR NISSAYA (word-by-word gloss, romanised)
+══════════════════════════════
+--- para_id=1057 ---
+  [line_id=1] **အပိ အတရမာနာနန္တိ** ဣဒံ: အပိ အတရမာနာနံ စသော ဤတရားဒေသနာတော်ကို။ | သတ္ထာ ဇေတဝနေ ဝိဟရန္တော: ဘုရားရှင်သည် ဇေတဝန်ကျောင်းတော်၌ နေတော်မူစဉ်။ | ဩဿဋ္ဌဝီရိယံ ဘိက္ခုံ အာရဗ္ဘ ကထေသိ: ကြိုးစားမှု စွန့်လွှတ်သော ရဟန်းကို အကြောင်းပြု၍ ဟောတော်မူပြီ။
+  [line_id=2] ဣမသ္မိံ ပန ဇာတကေ: ဤဂါမဏိဇာတ်၌ကား။ | ပစ္စုပ္ပန္နဝတ္ထု စ အတီတဝတ္ထု စ: ပစ္စုပ္ပန်ဝတ္ထုကြောင်းသည်လည်းကောင်း, အတိတ်ဝတ္ထုကြောင်းသည်လည်းကောင်း။ | ဧကာဒသကနိပါတေ သံဝရဇာတကေ အာဝိ ဘဝိဿတိ: ဧကာဒသကနိပါတ်၌ သံဝရဇာတ်၌ ထင်စွာ ဖြစ်လတ္တံ့။
+  [line_id=3] ဟိ ဝတ္ထု: မှန်၏ ဝတ္ထုကြောင်းသည်။ | တသ္မိဉ္စ ဣမသ္မိဉ္စ ဧကသဒိသမေဝ: ထိုသံဝရဇာတ်၌လည်းကောင်း, ဤဂါမဏိဇာတ်၌လည်းကောင်း တစ်ခုတည်းဖြစ်၍ တူသည်သာတည်း (အတူတူသာတည်း)။ | ဂါထာ ပန နာနာ: ဂါထာသည်ကား ကွဲပြား၏။
+  [line_id=4] ဂါမဏိကုမာရော ဗောဓိသတ္တဿ: ဂါမဏိမင်းသားသည် ဘုရားလောင်းအမတ်၏။ | ဩဝါဒေ ဌတွာ: အဆုံးအမ၌ တည်၍။ | ဘာတိကသတဿ ကနိဋ္ဌော ဟုတွာပိ: နောင်တော်တစ်ရာ၏ ညီငယ်သည် ဖြစ်ပါသော်လည်း။ | ဘာတိကသတပရိဝါရိတော: နောင်တော်တစ်ရာ ခြံရံအပ်လျက်။ | သေတစ္ဆတ္တဿ ဟေဋ္ဌာ: ထီးဖြူအောက်၌။ | ဝရပလ္လင်္ကေ နိသိန္နော: မြတ်သောပလ္လင်ပေါ်၌ ထိုင်လျက်။ | အတ္တနော အယံ ယသသမ္ပတ္တိ: ငါ ဂါမဏိမင်း၏ စည်းစိမ်အခြံအရံနှင့် ဤပြည့်စုံမှုသည်။ | အမှာကံ အာစရိယဿ သန္တကာ: ငါတို့၏ ဆရာအမတ်၏ ဥစ္စာတည်း"။ | ဣတိ တုဋ္ဌော: ဤသို့ တွေးတော နှစ်သက်၍။ | ဣမံ ဥဒါနံ ဥဒါနေသိ: ဤ ဥဒါန်းကို ကျူးရင့်ပြီ။ ဂါထာအနက်ကား--
+
+--- para_id=1059 ---
+  [line_id=1] ၈။ "အပိ အတရမာနာနံ: အလျင်စလို မပြုလုပ်သူတို့အား။ | ဖလာသာ သမိဇ္ဈတိ ဧဝ: အလိုရှိအပ် တောင့်တအပ်သော အကျိုးသည် ပြီးစီးပြည့်စုံသည်သာတည်း။ | (အဟံ: ငါဂါမဏိမင်းသည်)။
+
+--- para_id=1060 ---
+  [line_id=1] ဝိပက္ကဗြဟ္မစရိယော အသ္မိ: ရင့်ကျက်သော မြတ်သော အကြောင်း,မြတ်သောအကျိုး,ရှိသူသည် ဖြစ်၏။ | ဧဝံ ဇာနာဟိ ဂါမဏီ: ဤကဲ့သို့ ကိုယ့်ကိုယ်ကို သိလော့ ဂါမဏိမင်း"။
+
+--- para_id=1061 ---
+  [line_id=1] တတ္ထ အပီတိ နိပါတမတ္တံ: ထိုဥဒါန်း၌ အပိဟူသည်ကား နိပါတ်မျှတည်း။
+  [line_id=2] အတရမာနာနန္တိ: အတရမာနာနံ ဟူသည်ကား။ | ပဏ္ဍိတာနံ ဩဝါဒေ ဌတွာ: ပညာရှိတို့၏ ဆုံးမစကား၌ တည်၍။ | အတရိတွာ အဝေဂါယိတွာ: အဆောတလျင် မပြုမူ၍။ | ဥပါယေန ကမ္မံ ကရောန္တာနံ: နည်းလမ်းဖြင့် (နည်းလမ်းကျကျ) အမှုကို ပြုလုပ်သူတို့အား။ | (သမိဇ္ဈတိ: ပြီးစီးပြည့်စုံ၏)။
+  [line_id=3] ဖလာသာဝ သမိဇ္ဈတီတိ: ဖလာသာဝ သမိဇ္ဈတိဟူသည်ကား။ | ယထာပတ္ထိကေ ဖလေ: အကြင်အကြင် တောင့်တအပ်သော အကျိုး၌။ | တဿ ဖလဿ နိပ္ဖတ္တိယာ: ထိုအကျိုး၏ ပြီးစီးခြင်းငှာ။ | အာသာ သမိဇ္ဈတိယေဝ: အာသာဆန္ဒသည် ပြည့်စုံလုံလောက်သည်သာတည်း။
+  [line_id=4] အထ ဝါ ဖလာသာတိ အာသာဖလံ: တစ်နည်းကား ဖလာသာဟူသည် တောင့်တအပ်သော အကျိုးတည်း။ | ယထာပတ္ထိတံ ဖလံ: အကြင်အကြင် တောင့်တအပ်သော အကျိုးသည်။ | သမိဇ္ဈတိယေဝ ဣတိ အတ္ထော: ပြီးစီးပြည့်စုံသည်သာတည်း ဤကား ဖလာသာ၏ အနက်တည်း။
+  [line_id=5] **ဝိပက္ကဗြဟ္မစရိယောသ္မီ**တိ ဧတ္ထ: ဝိပက္ကဗြဟ္မစရိယောသ္မိ ဟူသော ဤပါဌ်၌။ | စတ္တာရိ သင်္ဂဟဝတ္ထူနိ: ပေးကမ်းခြင်း, ချစ်ဖွယ်ပြောခြင်း, တန်းတူထားခြင်း, ကောင်းကျိုးဆောင်ရွက်ခြင်း စည်းရုံးသိမ်းသွင်းကြောင်းတရား လေးပါးတို့သည်။ | သေဋ္ဌစရိယတ္တာ ဗြဟ္မစရိယံ နာမ: မြတ်သောအကျင့်၏ အ‌ဖြစ်ကြောင့် ဗြဟ္မစရိယ မည်၏။ | တဉ္စ တမ္မူလိကာယ ယသသမ္ပတ္တိယာ: ထိုဗြဟ္မစရိယသည်လည်း ထိုဗြဟ္မစရိယအကြောင်းရင်းကြောင့် ဖြစ်သော စည်းစိမ်အခြံအရံကို။ | ပဋိလဒ္ဓတ္တာ ဝိပက္ကံ နာမ: ရအပ်ပြီးသည်၏ အဖြစ်ကြောင့် ဝိပက္ကမည်၏။
+  [line_id=6] ဝါ အဿ: တစ်နည်းကား ထိုဂါမဏိမင်း၏။ | ယော ယသော နိပ္ဖန္နော: အကြင်စည်းစိမ်အခြံအရံသည် ပြီးစီးပြည့်စုံပြီ။ | သောပိ သေဋ္ဌဋ္ဌေန ဗြဟ္မစရိယံ နာမ: ထိုစည်းစိမ်အခြံအရံသည်လည်း မြတ်သော အနက်သဘောကြောင့် ဗြဟ္မစရိယမည်၏။
+  [line_id=7] တေန ဝိပက္ကဗြဟ္မစရိယောသ္မီတိ အာဟ: ထို့ကြောင့် ဝိပက္ကဗြဟ္မစရိယောသ္မိဟု ဂါမဏိမင်းဆိုပြီ။
+  [line_id=8] ဧဝံ ဇာနာဟိ ဂါမဏီတိ: ဧဝံ ဇာနာဟိ ဂါမဏိဟူသော ပါဌ်၌။ | ကတ္ထစိ ဂါမိကပုရိသောပိ: အချို့အရာ၌ ရွာသားသည်လည်းကောင်း။ | ဂါမဇေဋ္ဌကောပိ ဂါမဏီ: ရွာလူကြီးသည်လည်းကောင်း ဂါမဏိမည်ကုန်၏။
+  [line_id=9] ဣဓ ပန သဗ္ဗဇနဇေဋ္ဌကံ: ဤဂါထာ၌ကား လူအားလုံးတို့အကြီးအမှူးဖြစ်သော။ | အတ္တာနံ သန္ဓာယ အာဟ: မိမိဂါမဏိမင်းကို ရည်ရွယ်၍ ဂါမဏိမင်းဆိုပြီ။
+  [line_id=10] အမ္ဘော ဂါမဏိ တွံ: အမောင်ဂါမဏိမင်း သင်သည်။ | ဧတံ ကာရဏံ ဧဝံ ဇာနာဟိ: ဤဆိုခဲ့ပြီး အကြောင်းအရာကို ဤသို့ သိလော့။ | အာစရိယံ နိဿာယ: ဆရာကို မှီ၍။ | ဘာတိကသတံ အတိက္ကမိတွာ: နောင်တော် တစ်ရာကို ကျော်လွန်၍။ | ဣဒံ မဟာရဇ္ဇံ ပတ္တော: ကြီးကျယ်သော ဤမင်းအဖြစ်သို့ ‌ရောက်သည်။ | အသ္မီတိ ဥဒါနံ ဥဒါနေသိ: ငါဖြစ်၏ဟု ဥဒါန်းကို ကျူးရင့်ပြီ။
+
+--- para_id=1062 ---
+  [line_id=1] တသ္မိံ ရဇ္ဇံ ပတ္တေ ပန: ထိုဂါမဏိမင်းသည် မင်းအဖြစ်သို့ ရောက်သော်ကား။ | သတ္တဋ္ဌဒိဝသစ္စယေန သဗ္ဗေပိ ဘာတရော: ၇-ရက် ၈-ရက် လွန်သဖြင့် နောင်တော်အားလုံးတို့သည်လည်း။ | အတ္တနော ဝသနဋ္ဌာနံ ဂတာ: မိမိတို့၏ နေရာဌာနသို့ ပြန်သွားကုန်ပြီ။
+  [line_id=2] ဂါမဏိရာဇာ ဓမ္မေန: ဂါမဏိမင်းသည် တရားသဖြင့်။ | ရဇ္ဇံ ကာရေတွာ: မင်းအဖြစ်ကို ပြု၍။ | ယထာကမ္မံ ဂတော: ကံအားလျော်စွာ လားပြီ။ | ဗောဓိသတ္တောပိ ပုညာနိ ကတွာ: ဘုရားလောင်းပညာရှိအမတ်သည်လည်း ကောင်းမှုတို့ကို ပြု၍။ | ယထာကမ္မံ ဂတော: ကံအားလျော်စွာ လားပြီ။
+
+--- para_id=1063 ---
+  [line_id=1] သတ္ထာ ဣမံ ဓမ္မဒေသနံ: ဘုရားရှင်သည် ဤတရားဒေသနာတော်ကို။ | အာဟရိတွာ ဒဿေတွာ: ဆောင်ပြီး၍ ပြတော်မူ၍။ | သစ္စာနိ ပကာသေသိ: သစ္စာတို့ကို ပြတော်မူပြီ။ | သစ္စပရိယောသာနေ ဩဿဋ္ဌဝီရိယော ဘိက္ခု: သစ္စာပြပြီးသော အဆုံး၌ ကြိုးစားမှုစွန့်လွှတ်လိုက်သော ရဟန်းသည်။ | အရဟတ္တေ ပတိဋ္ဌိတော: ရဟန္တာအဖြစ်၌ တည်ပြီ။
+  [line_id=2] သတ္ထာ ဒွေ ဝတ္ထူနိ ကထေတွာ: ဘုရားရှင်သည် ပစ္စုပ္ပန်, အတိတ်ဝတ္ထု နှစ်ခုတို့ကို ဟောတော်မူပြီး၍။ | အနုသန္ဓိံ ဃဋေတွာ: အနုသန္ဓေကို ဆက်စပ်တော်မူပြီး၍။
+  [line_id=3] "တဒါ ဂါမဏိကုမာရော: ထိုအခါ၌ ဂါမဏိမင်းသားသည်။ | ဩဿဋ္ဌဝီရိယော ဘိက္ခု အဟောသိ: ကြိုးစားမှုစွန့်လွှတ်ပြီးသော ရဟန်းသည် ဖြစ်လာပြီ။ | အာစရိယော ပန အဟမေဝ အဟောသိန္တိ: ဆရာပညာရှိအမတ်သည်ကား ငါဘုရားသည်သာ ဖြစ်လာပြီ"ဟု။ | ဇာတကံ သမောဓာနေသိ: ဇာတ်ကို ပေါင်းတော်မူပြီ။
+
+--- para_id=1064 ---
+  [line_id=1] **ဂါမဏိဇာတကဝဏ္ဏနာ အဋ္ဌမာ**: **ရှစ်ခုမြောက် ဖြစ်သော ဂါမဏိဇာတ်အဖွင့်တည်း။**
+
+--- para_id=1067 ---
+  [line_id=1] **ဥတ္တမင်္ဂရုဟာ မယှန္တိ** ဣဒံ: ဥတ္တမင်္ဂရုဟာ မယှံစသော ဤတရားဒေသနာတော်ကို။ | သတ္ထာ ဇေတဝနေ ဝိဟရန္တော: လူနတ်တို့ဆရာ ဘုရားရှင်သည် ဇေတဝန်ကျောင်းတော်၌ နေတော်မူစဉ်။ | မဟာဘိနိက္ခမနံ အာရဗ္ဘ ကထေသိ: ကြီးကျယ်မြင့်မြတ်လှစွာသော, တောထွက်တော်မူခြင်းကို အကြောင်းပြု၍ ဟောတော်မူပြီ။
+  [line_id=2] တံ ဟေဋ္ဌာ နိဒါနကထာယံ ကထိတမေဝ: ထိုကြီးကျယ်မြင့်မြတ်လှစွာသော တောထွက်တော်မူခြင်းကို အောက်ခေါ်သော ရှေး၌ အဝိဒူရေနိဒါန်းစကား၌ ငါအဋ္ဌကထာဆရာ ဆိုအပ်ခဲ့ပြီးသည်သာ။
+  [line_id=3] တသ္မိံ ပန ကာလေ ဘိက္ခူ: ထိုအခါ၌ကား ရဟန်းတို့သည်။ | ဒသဗလဿ နေက္ခမ္မံ: ဘုရားရှင်၏ တောထွက်တော်မူခြင်းကို။ | ဝဏ္ဏယန္တာ နိသီဒိံသု: ချီးမွမ်းကုန်လျက် ထိုင်နေကုန်ပြီ။
+  [line_id=4] အထ သတ္ထာ: ချီးမွမ်းထိုင်နေရာ ထိုအခါ၌ ဘုရားရှင်သည်။ | ဓမ္မသဘံ အာဂန္တွာ: တရားသဘင်သို့ ကြွလာတော်မူ၍။ | ဗုဒ္ဓါသနေ နိသိန္နော: ဘုရားတို့နေရာ၌ ထိုင်တော်မူ၍။ | "ဘိက္ခဝေ ဧတရဟိ: ရဟန်းတို့ ယခုအခါ၌။ | ကာယ ကထာယ: အဘယ်စကားဖြင့်။ | သန္နိသိန္နာ အတ္ထ နု ဣတိ: ကောင်းစွာထိုင်နေကုန်သည် ဖြစ်ကြသနည်း"ဟု။ | ဘိက္ခူ အာမန္တေသိ: ရဟန်းတို့ကို မေးတော်မူပြီ။
+  [line_id=5] ဘန္တေ အညာယ ကထာယ န: မြတ်စွာဘုရား အခြားစကားဖြင့် မဟုတ်ပါ။ | ပန တုမှာကံ ယေဝ: အဟုတ်သော်ကား ရှင်တော်ဘုရားတို့၏သာ။ | နေက္ခမ္မံ ဝဏ္ဏယမာနာ: တောထွက်တော်မူမှုကို ချီးမွမ်းကြလျက်။ | နိသိန္နာ အမှာတိ ဝုတ္တေ: ထိုင်နေကြသည် ဖြစ်ပါကုန်၏ဟု လျှောက်ထားအပ်သော်။ | ဘိက္ခဝေ တထာဂတော ဧတရဟိယေဝ: ရဟန်းတို့ ငါဘုရားသည် ယခုအခါ၌သာ။ | နေက္ခမ္မံ န နိက္ခန္တော: တောထွက်မှုကို ထွက်ဖူးသည် မဟုတ်သေး။ | ပုဗ္ဗေပိ နိက္ခန္တောယေဝါတိ အာဟ: ရှေး၌လည်း ထွက်မှုပြုခဲ့ဖူးသည်သာဟု မိန့်တော်မူပြီ။
+  [line_id=6] ဘိက္ခူ တဿတ္ထဿ: ရဟန်းတို့သည် ထိုအကြောင်းအရာ၏။ | အာဝိဘာဝတ္ထံ ဘဂဝန္တံ ယာစိံသု: ထင်ရှားစွာ ဖြစ်ခြင်းငှာ ဘုရားရှင်ကို တောင်းပန်ကုန်ပြီ။ | ဘဂဝါ ဘဝန္တရေန ပဋိစ္ဆန္နံ: ဘုရားရှင်သည် ဘဝတစ်ပါးဖြင့် ဖုံးကွယ်အပ်သော။ | ကာရဏံ ပါကဋံ အကာသိ: အကြောင်းအရာကို ထင်ရှားသည်ကို ပြုတော်မူပြီ။
+
+--- para_id=1068 ---
+  [line_id=1] အတီတေ ဝိဒေဟရဋ္ဌေ မိထိလာယံ: လွန်လေပြီးသောအခါ၌ ဝိဒေဟတိုင်း၌ မိထိလာမြို့၌။ | ဓမ္မိကော ဓမ္မရာဇာ: မင်းကျင့်တရားနှင့်ပြည့်စုံသော တရားသဖြင့် မင်းပြုသော။ | မဃဒေဝေါ နာမ ရာဇာ အဟောသိ: မဃဒေဝမည်သော မင်းသည်ဖြစ်ပြီ။
+  [line_id=2] သော စတုရာသီတိဝဿသဟဿာနိ: ထိုမဃဒေဝမင်းသည် နှစ်ပေါင်းရှစ်သောင်းလေးထောင်တို့ပတ်လုံး။ | ကုမာရကီဠံ ကီဠိ: ကလေးဘဝကစားမှုကို ကစားပြီ။ | တထာ ဩပရဇ္ဇံ: ထို့အတူ နှစ်ပေါင်းရှစ်သောင်းလေးထောင်တို့ပတ်လုံး အိမ်ရှေ့မင်းအဖြစ်ကို လည်းကောင်း။ | တထာ မဟာရဇ္ဇံ ကတွာ: ထို့အတူ နှစ်ပေါင်းရှစ်သောင်းလေးထောင်တို့ပတ်လုံး မင်းကြီးအဖြစ်ကိုလည်းကောင်း ပြု၍။ | ဒီဃမဒ္ဓါနံ ခေပေတွာ: ရှည်စွာသော အခါ၌ ကုန်စေ၍။ | ဧကဒိဝသံ ကပ္ပကံ: တစ်နေ့သ၌ ဆေတ္တာသည်ကို။ | "သမ္မ ကပ္ပက ယဒါ: အချင်းဆေတ္တာသည် အကြင်အခါ၌။ | မေ သိရသ္မိံ: ငါမဃဒေဝမင်း၏ ဦးခေါင်း၌။ | ပလိတာနိ ပဿေယျာသိ: ဆံပင်ဖြူတို့ကို တွေ့မြင်၏။ | အထ မေ: ဆံပင်ဖြူတွေ့ရာ ထိုအခါ၌ ငါမဃဒေဝမင်းအား။ | အာရောစေယျာသီ"တိ အာမန္တေသိ: ပြောကြားလော့"ဟု မှာထားပြီ။
+  [line_id=3] ကပ္ပကောပိ ဒီဃမဒ္ဓါနံ ခေပေတွာ: ဆေတ္တာသည်သည်လည်း ရှည်စွာသောအခါကို ကုန်စေ၍။ | ဧကဒိဝသံ ရညော: တစ်နေ့သ၌ မဃဒေဝမင်း၏။ | အဉ္ဇနဝဏ္ဏာနံ ကေသာနံ အန္တရေ: မျက်စဉ်းညိုအဆင်းရှိကုန်သော ဆံပင်တို့၏အကြား၌။ | ဧကမေဝ ပလိတံ ဒိသွာ: တစ်ချောင်းသာဖြစ်သော ဆံပင်ဖြူကို တွေ့မြင်၍။ | ဒေဝ တေ ဧကံ ပလိတံ: အရှင်မင်းကြီး အရှင်မင်းကြီးမှာ ဆံပင်ဖြူတစ်ချောင်းကို။ | ဒိဿတီတိ အာရောစေသိ: တွေ့မြင်ရ၏ဟု သံတော်ဦးတင်ပြီ။
+  [line_id=4] သမ္မ တေန ဟိ: အချင်းဆေတ္တာသည် ထိုသို့ဖြစ်လျှင်။ | မေ တံ ပလိတံ ဥဒ္ဓရိတွာ: ငါ၏ ထိုဆံပင်ဖြူကို နုတ်ယူ၍။ | ပါဏိမှိ ဌပေဟီတိ စ ဝုတ္တေ: ငါ့လက်ပေါ်၌ ထားပါလော့ဟုလည်း ပြောအပ်သော်။ | သုဝဏ္ဏသဏ္ဍာသေန ဥဒ္ဓရိတွာ: ရွှေမွေးညှပ်ဖြင့် နုတ်၍။ | ရညော ပါဏိမှိ ပတိဋ္ဌာပေသိ: မဃဒေဝမင်းကြီး၏ လက်ဖဝါးပေါ်၌ တင်ထားပြီ။
+  [line_id=5] တဒါ ရညော အာယု: ဆံပင်ဖြူပေါက်ရာ ထိုအခါ၌ မဃဒေဝမင်းကြီး၏ သက်တော်သည်။ | စတုရာသီတိဝဿသဟဿာနိ အဝသိဋ္ဌံ ဟောတိ: နှစ်ပေါင်း ရှစ်သောင်းလေးထောင်တို့ပတ်လုံး ကြွင်းကျန်သေးသည် ဖြစ်၏။
+  [line_id=6] ဧဝံ သန္တေပိ ပလိတံ ဒိသွာဝ: ဤသို့ နှစ်ပေါင်း ရှစ်သောင်းလေးထောင် အသက်ကြွင်းကျန်သည် ဖြစ်သော်လည်း ဆံဖြူတစ်ပင်ကို မြင်၍သာ။ | မစ္စုရာဇာနံ အာဂန္တွာ: သေမင်း၏ လာ၍။ | သမီပေ ဌိတံ ဝိယ: အနီး၌ ရပ်တည်နေခြင်းကဲ့သို့ လည်းကောင်း။ | အတ္တာနံ အာဒိတ္တပဏ္ဏသာလံ: မိမိကိုယ်ကို ရဲရဲတောက်နေသော သစ်ရွက်မိုးအဆောက်အဦးသို့။ | ပဝိဋ္ဌံ ဝိယ စ မညမာနော: ဝင်မိဘိသကဲ့သို့လည်းကောင်း မှတ်ထင်၍။ | သံဝေဂံ အာပဇ္ဇိတွာ: ထိတ်လန့်ခြင်းသို့ ‌ရောက်၍။ | "ဗာလ မဃဒေဝ ပလိတဿ: မဃဒေဝမင်းမိုက် ဆံပင်ဖြူ၏။ | ယာဝ ဥပ္ပါဒါဝ ဣမေ ကိလေသေ: ဖြစ်ရာကာလတိုင်အောင် ဤလေသာတို့ကို။ | ဇဟိတုံ နာသက္ခီတိ စိန္တေသိ: ပယ်စွန့်ခြင်းငှာ မစွမ်းနိုင်"ဟုကြံပြီ။
+
+--- para_id=1069 ---
+  [line_id=1] ဧဝံ ပလိတပါတုဘာဝံ: ဤသို့ ဆံပင်ဖြူထင်ရှားဖြစ်ခြင်းကို။ | အာဝဇ္ဇေန္တဿ တဿ: ဆင်ခြင်သော ထိုမဃဒေဝမင်းကြီး၏။ | အန္တောဒါဟော ဥပ္ပဇ္ဇိ: ကိုယ်တွင်းပူလောင်ခြင်းသည် ဖြစ်ပြီ။ | သရီရာ သေဒါ မုစ္စိံသု: ကိုယ်မှ ချွေးတို့သည် လွတ်ကုန်ပြီ ထွက်ကုန်ပြီ။ | သာဋကာ ပီဠေတွာ: ဝတ်လဲတော်တို့သည် ညှစ်၍။ | အပနေတဗ္ဗာကာရပ္ပတ္တာ အဟေသုံ: ပယ်အပ်သော အခြင်းအရာရောက်ကုန်သည် ဖြစ်ကုန်ပြီ။
+  [line_id=2] သော: ထိုမဃ‌ဒေဝမင်းကြီးသည်။ | "အဇ္ဇေဝ မယာ နိက္ခမိတွာ: ယနေ့ပင် ငါသည် တောထွက်၍။ | ပဗ္ဗဇိတုံ ဝဋ္ဋတီတိ: ရသေ့ရဟန်းပြုခြင်းငှာ သင့်၏ဟု ကြံ၍။ | ကပ္ပကဿ သတသဟဿုဋ္ဌာနကံ: ဆေတ္တာသည်အား အခွန်တစ်သိန်းထွက်သော။ | ဂါမဝရံ ဒတွာ: ရွာစားဆုကို ပေး၍။ | ဇေဋ္ဌပုတ္တံ ပက္ကောသာပေတွာ: သားတော်ကြီးကို ခေါ်စေ၍။ | "တာတ မမ သီသေ: ချစ်သား ငါခမည်းတော်၏ ခေါင်း၌။ | ပလိတံ ပါတုဘူတံ: ဆံပင်ဖြူသည် ထင်ရှားဖြစ်လာပြီ။ | မဟလ္လကော ဇာတော အမှိ: ကြီးသည် ဖြစ်သည် ဖြစ်၏။ | မာနုသကာ ကာမာ: လူတို့ဥစ္စာဖြစ်ကုန်သော ကာမတို့ကို။ | မေ ဘုတ္တာ ခေါ ပန: ငါသည် ခံစားအပ်ပြီးကုန်သည်သာတည်း။ | ဒိဗ္ဗေ ကာမေ: နတ်တို့ဥစ္စာဖြစ်ကုန်သော ကာမတို့ကို။ | ဣဒါနိ ပရိယေသိဿာမိ: ယခုအခါ၌ ရှာမှီးအံ့။ | မယှံ နေက္ခမ္မကာလော: ငါခမည်းတော်၏ တောထွက်ရမည့်အခါတည်း။ | တွံ ဣမံ ရဇ္ဇံ ပဋိပဇ္ဇ: သင်သားတော်ကြီးသည် ဤမင်းအဖြစ်ကို ပြုလော့။ | အဟံ ပန ပဗ္ဗဇိတွာ: ငါသည်ကား ရသေ့ရဟန်းပြု၍။ | မဃဒေဝအမ္ဗဝနုယျာနေ ဝသန္တော: မဃဒေဝသရက်ဥယျာဉ်တော်၌ နေလျက်။ | သမဏဓမ္မံ ကရိဿာမီတိ အာဟ: ရဟန်းတရားကို ပြုလုပ်အားထုတ်အံ့"ဟု ပြောပြီ။
+  [line_id=3] ဧဝံ ပဗ္ဗဇိတုကာမံ တံ: ဤသို့ ရသေ့ရဟန်းပြုလိုသော ထိုမဃဒေဝမင်းကြီးသို့။ | အမစ္စာ ဥပသင်္ကမိတွာ: အမတ်တို့သည် ချဉ်းကပ်၍။ | ဒေဝ တုမှာကံ ပဗ္ဗဇ္ဇာကာရဏံ: အရှင်မင်းမြတ် အရှင်မင်းမြတ်တို့၏ ရသေ့ရဟန်းပြုခြင်းအကြောင်းကား။ | ကိန္တိ ပုစ္ဆိံသု: အဘယ်ပါနည်းဟု မေးလျှောက်ကုန်ပြီ။
+  [line_id=4] ရာဇာ ပလိတံ ဟတ္ထေန ဂဟေတွာ: မဃဒေဝမင်းကြီးသည် ဆံပင်ဖြူကို လက်ဖြင့် ကိုင်ယူ၍။ | ဣမံ ဂါထံ အမစ္စာနံ အာဟ: ဤဂါထာကို အမတ်တို့အား ပြောပြပြီ။ ဂါထာအနက်ကား--
+
+--- para_id=1071 ---
+  [line_id=1] ၉။ "မယှံ ဝယောဟရာ: ငါ၏အရွယ်သုံးပါး ဆောင်ယူတတ်ကုန်သော။ | ဣမေ ဥတ္တမင်္ဂရုဟာ မယှံ ဇာတာ: ဤဆံပင်ဖြူတို့သည် ငါ့အား ဖြစ်ပေါ် ပေါက်ရောက်ကုန်ပြီ။
+
+--- para_id=1072 ---
+  [line_id=1] ဒေဝဒူတာ ပါတုဘူတာ: သေမင်းတမန်, နတ်တမန်တို့သည် ထင်ရှား ဖြစ်လာကုန်ပြီ။ | မမ ပဗ္ဗဇ္ဇာသမယောတိ: ငါ့အဖို့ ရသေ့ရဟန်းပြုရမည့် အခါတည်း"ဟု။
+
+--- para_id=1073 ---
+  [line_id=1] တတ္ထ ဥတ္တမင်္ဂရုဟာတိ ကေသာ: ထိုဂါထာ၌ ဥတ္တမင်္ဂရုဟာ ဟူသည်ကား ဆံပင်တို့တည်း။
+  [line_id=2] ဟိ ကေသာ: မှန်၏ ဆံပင်တို့ကို။ | ဟတ္ထပါဒါဒီနံ သဗ္ဗေသံ အင်္ဂါနံ: လက်ခြေစကုန်သော အင်္ဂါအစိတ်အပိုင်းအားလုံးတို့ထက်။ | ဥတ္တမေ သိရသ္မိံ ရုဟတ္တာ: မြတ်သော ဦးခေါင်း၌ ပေါက်ကြသည့်အဖြစ်ကြောင့်။ | ဥတ္တမင်္ဂရုဟာတိ ဝုစ္စန္တိ: ဥတ္တမင်္ဂရုဟတို့ဟူ၍ ခေါ်အပ်ကုန်၏။
+  [line_id=3] ဣမေ ဇာတာ ဝယောဟရာတိ: ဣမေ ဇာတာ ဝယောဟရာ ဟူသည်ကား။ | ပဿထ တာတာ: ကြည့်ကြလော့ ချစ်သားအမတ်တို့။ | ပလိတပါတုဘာဝေန: ဆံဖြူထင်ရှား ဖြစ်သောအားဖြင့်။ | တိဏ္ဏံ ဝယာနံ ဟရဏတော: အရွယ်သုံးပါးတို့ကို ဆောင်ယူတတ်သောကြောင့်။ | ဣမေ ဝယောဟရာ ဇာတာ: အရွယ်ဆောင်ယူ ဤဆံပင်ဖြူတို့သည် ဖြစ်ပွားပေါက်ရောက်ကုန်ပြီ။
+  [line_id=4] ပါတုဘူတာတိ နိဗ္ဗတ္တာ: ပါတုဘူတာ ဟူသည်ကား ဖြစ်ကုန်ပြီ။
+  [line_id=5] ဒေဝဒူတာတိ မစ္စု: ဒေဝဒူတာဟူသော ပါဌ်၌ သေမင်းကို။ | ဒေဝေါ ဝုစ္စတိ: ဒေဝဟု ခေါ်ရ၏။ | တဿ ဒူတာတိ ဒေဝဒူတာ: ထိုသေမင်း၏ တမန်တို့တည်း ထို့ကြောင့် ဒေဝဒူတမည်ကုန်၏။
+  [line_id=6] ဟိ သိရသ္မိံ: မှန်၏ ဦးခေါင်း၌။ | ပလိတေသု ပါတုဘူတေသု: ဆံပင်ဖြူတို့သည် ထင်ရှားဖြစ်ကုန်သော်။ | မစ္စုရာဇဿ သန္တိကေ: သေမင်း၏ အနီးအနား၌။ | ဌိတော ဝိယ ဟောတိ: ရပ်တည်နေရသကဲ့သို့ ဖြစ်၏။ | တသ္မာ ပလိတာနိ: ထို့ကြောင့် ဆံပင်ဖြူတို့ကို။ | မစ္စုဒေဝဿ ဒူတာတိ ဝုစ္စန္တိ: သေမင်း၏ တမန်တို့ဟူ၍ ခေါ်ရကုန်၏။
+  [line_id=7] ဒေဝါ ဝိယ ဒူတာ: နတ်တို့ကဲ့သို့ တမန်တို့တည်း။ | ဣတိပိ ဒေဝဒူတာ: ဤသို့သော အကြောင်းကြောင့်လည်း ဒေဝဒူတမည်ကုန်၏။
+  [line_id=8] ဟိ အလင်္ကတပဋိယတ္တာယ: ထင်ရှားအောင် ပြောရသော် တန်ဆာဆင်မှုနှင့် ယှဉ်စပ်သော။ | ဒေဝတာယ အာကာသေ ဌတွာ: နတ်သည် ကောင်းကင်၌ တည်၍။ | အသုကဒိဝသေ တွံ: ထိုမည်သောနေ့၌ သင်သည်။ | မရိဿသီတိ ဝုတ္တေ: သေလိမ့်မည်ဟု ပြောဆိုအပ်သော်။ | တံ တထေဝ ဟောတိ ယထာ: နတ်ပြောသည့် ထိုစကားသည် ထိုပြောသည့်အတိုင်းသာ ဖြစ်သကဲ့သို့။ | ဧဝံ သိရသ္မိံ: ဤအတူ ဦးခေါင်း၌။ | ပလိတေသု ပါတုဘူတေသု: ဆံပင်ဖြူတို့သည် ထင်ရှားဖြစ်ကုန်သော်။ | ဒေဝတာယ ဗျာကရဏသဒိသမေဝ ဟောတိ: နတ်၏ ပြောကြားမှုနှင့်တူသည်သာ ဖြစ်၏။ | တသ္မာ ပလိတာနိ: ထို့ကြောင့် ဆံပင်ဖြူတို့ကို။ | ဒေဝသဒိသာ ဒူတာတိ ဝုစ္စန္တိ: နတ်နှင့်တူကုန်သော တမန်တို့ဟူ၍ ခေါ်ရကုန်၏။
+  [line_id=9] ဝိသုဒ္ဓိဒေဝါနံ ဒူတာ: ဘုရား, ပစ္စေကဗုဒ္ဓါ, ရဟန္တာ, ဝိသုဒ္ဓိနတ်တို့၏ တမန်တို့တည်း။ | ဣတိပိ ဒေဝဒူတာ: ထို့ကြောင့်လည်း ဒေဝဒူတမည်ကုန်၏။
+  [line_id=10] ဟိ: ချဲ့ပြောရသော်။ | သဗ္ဗဗောဓိသတ္တာ ဇိဏ္ဏဗျာဓိမတပဗ္ဗဇိတေ ဒိသွာဝ: နောက်ဆုံးဘဝရောက်, ဘုရားလောင်းအားလုံးတို့သည် သူအို,သူနာ,သူသေ,ရဟန်းတို့ကို မြင်၍သာ။ | သံဝေဂံ အာပဇ္ဇိတွာ: ထိတ်လန့်ခြင်းသို့ ရောက်၍။ | နိက္ခမ္မ ပဗ္ဗဇန္တိ: တောထွက်၍ ရဟန်းပြုကုန်၏။
+  [line_id=11] ယထာဟ: အဘယ်ပုဂ္ဂိုလ် အဘယ်ကဲ့သို့ ဟောတော်မူပြီနည်း။
+
+--- para_id=1074 ---
+  [line_id=1] "ဇိဏ္ဏံ တသ္မာ ဒိသွာ စ: အိုသူကို ထိုသို့ မြင်မှုကြောင့်လည်းကောင်း။ | ဒုခိတံ ဗျာဓိတံ တသ္မာ ဒိသွာ စ: ဆင်းရဲကြီးလှသော နာသူကို ထိုသို့မြင်မှုကြောင့်လည်းကောင်း။ | အာယုသင်္ခယံ ဂတံ မတံ တသ္မာ ဒိသွာ စ: အသက်ကုန်ခြင်းသို့ ရောက်သော သေသူကို ထိုသို့မြင်မှုကြောင့်လည်းကောင်း။
+
+--- para_id=1075 ---
+  [line_id=1] ကာသာယဝတ္ထံ ပဗ္ဗဇိတံ တသ္မာ ဒိသွာ စ: ဖန်ရည်စွမ်းသော အဝတ်ရှိသော ရဟန်းကို ထိုသို့ မြင်မှုကြောင့်လည်းကောင်း။ | အဟံ ပဗ္ဗဇိတော အမှိ ရာဇ ဣတိ: ငါသိဒ္ဓတ္ထမင်းသားသည် ရဟန်းပြုသည် ဖြစ်၏ ဗိမ္ဗိသာရမင်းမြတ်"ဟု ဘုရားလောင်း ရဟန်းမြတ် ဤသို့ ‌ဟောတော်မူပြီ။
+
+--- para_id=1076 ---
+  [line_id=1] ဣမိနာ ပရိယာယေန ဝိသုဒ္ဓိဒေဝါနံ ဒူတတ္တာ: ဤနည်းလမ်းအားဖြင့် ဝိသုဒ္ဓိနတ်တို့၏ တမန်တို့အဖြစ်ကြောင့်။ | ပလိတာနိ ဒေဝဒူတာတိ ဝုစ္စန္တိ: ဆံပင်ဖြူတို့ကို ဒေဝဒူတတို့ဟူ၍ ဆိုရကုန်၏။
+  [line_id=2] ပဗ္ဗဇ္ဇာသမယော မမာတိ: ပဗ္ဗဇ္ဇာသမယော မမ ဟူသည်ကား။ | ဂိဟိဘာဝတော နိက္ခန္တဋ္ဌေန: လူ့အဖြစ်မှ ထွက်မြောက်တတ်သော အနက်သဘောကြောင့်။ | ပဗ္ဗဇ္ဇာတိ လဒ္ဓနာမဿ: ပဗ္ဗဇ္ဇာဟု ရအပ်သောအမည်ရှိသော။ | သမဏလိင်္ဂဂဟဏဿ: ရဟန်းအသွင် ယူဖို့။ | မယှံ ကာလောတိ ဒဿေတိ: ငါ့အတွက် အချိန်အခါတည်းဟု ပြ၏။
+
+--- para_id=1077 ---
+  [line_id=1] သော ဧဝံ ဝတွာ: ထိုမဃဒေဝမင်းကြီးသည် ဤသို့ ပြောပြီး၍။ | တံ ဒိဝသမေဝ ရဇ္ဇံ ပဟာယ: ထိုပြောရာနေ့၌ပင် မင်းအဖြစ်ကို ပယ်စွန့်၍။ | ဣသိပဗ္ဗဇ္ဇံ ပဗ္ဗဇိတွာ: ရသေ့ရဟန်းအဖြစ်သို့ ကပ်ရောက်၍။ | တသ္မိံယေဝ မဃဒေဝအမ္ဗဝနေ ဝိဟရန္တော: ထိုမဃဒေဝသရက်ဥယျာဉ်၌သာ နေလျက်။ | စတုရာသီတိဝဿသဟဿာနိ: နှစ်ပေါင်း (၈၄၀၀၀)တို့ပတ်လုံး။ | စတ္တာရော ဗြဟ္မဝိဟာရေ ဘာဝေတွာ: ဗြဟ္မဝိဟာရတရားလေးပါးတို့ကို ဖြစ်စေ, ပွားစေ၍။ | အပရိဟီနဇ္ဈာနေ ဌိတော: မယုတ်သောဈာန်၌ တည်လျက်။ | ကာလံ ကတွာ: သေခြင်းကို ပြု၍။ | ဗြဟ္မလောကေ နိဗ္ဗတ္တိတွာ: မဟာဗြဟ္မာဘုံ၌ ဖြစ်၍။ | ပုန တတော စုတော: တဖန် ထိုမဟာဗြဟ္မာ့ဘုံမှ စုတေခဲ့၍။ | မိထိလာယံယေဝ နိမိ နာမ ရာဇာ ဟုတွာ: မိထိလာမြို့၌ပင် နိမိမည်သောမင်းသည် ဖြစ်၍။ | အတ္တနော ဩသက္ကမာနံ ဝံသံ ဃဋေတွာ: မိမိ၏ ပြတ်စဲခါနီးဖြစ်သော ရဟန်းပြုမှုအနွယ်အစဉ်အဆက်ကို ဆက်စပ်၍။ | တတ္ထေဝ ပဗ္ဗဇိတွာ: ထိုမဃဒေဝသရက်ဥယျာဉ်၌ပင် ရသေ့ရဟန်းပြု၍။ | ဗြဟ္မဝိဟာရေ ဘာဝေတွာ: ဗြဟ္မဝိဟာရတရားတို့ကို ဖြစ်စေ, ပွားစေ၍။ | ပုန ဗြဟ္မလောကူပဂေါဝ အဟောသိ: တဖန် မဟာဗြဟ္မာဘုံသို့ကပ်ရောက်သည်သာ ဖြစ်ပြီ။
+
+--- para_id=1078 ---
+  [line_id=1] သတ္ထာပိ: ဘုရားရှင်သည်လည်း။ | "ဘိက္ခဝေ တထာဂတော ဣဒါနေဝ: ရဟန်းတို့ ငါဘုရားသည် ယခုအခါ၌သာ။ | မဟာဘိနိက္ခမနံ န နိက္ခန္တော: ကြီးကျယ်မြင့်မြတ်လှစွာသော တောထွက်မှုကို ထွက်သည် မဟုတ်သေး။ | ပုဗ္ဗေပိ နိက္ခန္တော ယေဝါတိ: ရှေးကလည်း ထွက်ခဲ့ဖူးသည်သာ"ဟု။ | ဣမံ ဓမ္မဒေသနံ အာဟရိတွာ ဒဿေတွာ: ဤတရားဒေသနာတော်ကို ဆောင်၍ ပြတော်မူ၍။ | စတ္တာရိ သစ္စာနိ ပကာသေသိ: သစ္စာလေးပါးတို့ကို ပြတော်မူပြီ။ | သစ္စပရိယောသာနေ ကေစိ: သစ္စာပြပြီးသည့်အဆုံး၌ အချို့တို့သည်။ | သောတာပန္နာ အဟေသုံ: သောတာပန်တို့သည် ဖြစ်ကုန်ပြီ။ | ကေစိ သကဒါဂါမိနော: အချို့တို့ကား သကဒါဂါမ်တို့သည်။ | (အဟေသုံ: ဖြစ်ကုန်ပြီ)။ | ကေစိ အနာဂါမိနော: အချို့တို့ကား အနာဂါမ်တို့သည်။ | (အဟေသုံ: ဖြစ်ကုန်ပြီ)။
+  [line_id=2] ဣတိ ဘဂဝါ: ဤသို့ ဘုရားရှင်သည်။ | ဣမာနိ ဒွေ ဝတ္ထူနိ ကထေတွာ: ပစ္စုပ္ပန်အတိတ်ဤဝတ္ထု နှစ်ခုတို့ကို ဟောတော်မူပြီး၍။ | အနုသန္ဓိံ ဃဋေတွာ: အနုသန္ဓေကို ဆက်စပ်တော်မူ၍။ | "တဒါ ကပ္ပကော: ထိုမဃဒေဝမင်းကြီးဖြစ်ရာအခါ၌ ဆေတ္တာသည်သည်။ | အာနန္ဒော အဟောသိ: အာနန္ဒာသည် ဖြစ်လာပြီ။ | ပုတ္တော ရာဟုလော: သားတော်ကြီးကား ရာဟုလာတည်း။ | မဃဒေဝရာဇာပန အဟမေဝ အဟောသိန္တိ: မဃဒေဝမင်းကြီးသည်ကား ငါဘုရားသည်သာ ဖြစ်လာပြီ"ဟု။ | ဇာတကံ သမောဓာနေသိ: ဇာတ်ကို ပေါင်းတော်မူပြီ။
+
+--- para_id=1079 ---
+  [line_id=1] **မဃဒေဝဇာတကဝဏ္ဏနာ နဝမာ**: **ကိုးခုမြောက်ဖြစ်သော မဃဒေဝဇာတ်အဖွင့်တည်း။**
+
+══════════════════════════════
+SENTENCES TO TRANSLATE (JSON array)
+══════════════════════════════
+[
+  {
+    "para_id": 1056,
+    "line_id": 1,
+    "pali": "8. Gāmaṇijātakavaṇṇanā"
+  },
+  {
+    "para_id": 1057,
+    "line_id": 1,
+    "pali": "<b>Api ataramānānan</b>ti idaṃ satthā jetavane viharanto ossaṭṭhavīriyaṃ bhikkhuṃ ārabbha kathesi."
+  },
+  {
+    "para_id": 1057,
+    "line_id": 2,
+    "pali": "Imasmiṃ pana jātake paccuppannavatthu ca atītavatthu ca ekādasakanipāte saṃvarajātake āvibhavissati."
+  },
+  {
+    "para_id": 1057,
+    "line_id": 3,
+    "pali": "Vatthu hi tasmiñca imasmiñca ekasadisameva, gāthā pana nānā."
+  },
+  {
+    "para_id": 1057,
+    "line_id": 4,
+    "pali": "Gāmaṇikumāro bodhisattassa ovāde ṭhatvā bhātikasatassa kaniṭṭhopi hutvā bhātikasataparivārito setacchattassa heṭṭhā varapallaṅke nisinno attano yasasampattiṃ oloketvā ‘‘ayaṃ mayhaṃ yasasampatti amhākaṃ ācariyassa santakā’’ti tuṭṭho imaṃ udānaṃ udānesi –"
+  },
+  {
+    "para_id": 1059,
+    "line_id": 1,
+    "pali": "8. ‘‘Api ataramānānaṃ, phalāsāva samijjhati;"
+  },
+  {
+    "para_id": 1060,
+    "line_id": 1,
+    "pali": "Vipakkabrahmacariyosmi, evaṃ jānāhi gāmaṇī’’ti."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 1,
+    "pali": "Tattha <b>apī</b>ti nipātamattaṃ."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 2,
+    "pali": "<b>Ataramānānan</b>ti paṇḍitānaṃ ovāde ṭhatvā ataritvā avegāyitvā upāyena kammaṃ karontānaṃ."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 3,
+    "pali": "<b>Phalāsāva samijjhatī</b>ti yathāpatthike phale āsā tassa phalassa nipphattiyā samijjhatiyeva."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 4,
+    "pali": "Atha vā <b>phalāsā</b>ti āsāphalaṃ, yathāpatthitaṃ phalaṃ samijjhatiyevāti attho."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 5,
+    "pali": "<b>Vipakkabrahmacariyosmī</b>ti ettha cattāri saṅgahavatthūni seṭṭhacariyattā brahmacariyaṃ nāma, tañca tammūlikāya yasasampattiyā paṭiladdhattā vipakkaṃ nāma."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 6,
+    "pali": "Yo vāssa yaso nipphanno, sopi seṭṭhaṭṭhena brahmacariyaṃ nāma."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 7,
+    "pali": "Tenāha ‘‘vipakkabrahmacariyosmī’’ti."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 8,
+    "pali": "<b>Evaṃ jānāhi gāmaṇī</b>ti katthaci gāmikapurisopi gāmajeṭṭhakopi gāmaṇī."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 9,
+    "pali": "Idha pana sabbajanajeṭṭhakaṃ attānaṃ sandhāyāha."
+  },
+  {
+    "para_id": 1061,
+    "line_id": 10,
+    "pali": "Ambho gāmaṇi, tvaṃ etaṃ kāraṇaṃ evaṃ jānāhi, ācariyaṃ nissāya bhātikasataṃ atikkamitvā idaṃ mahārajjaṃ pattosmīti udānaṃ udānesi."
+  },
+  {
+    "para_id": 1062,
+    "line_id": 1,
+    "pali": "Tasmiṃ pana rajjaṃ patte sattaṭṭhadivasaccayena sabbepi bhātaro attano attano vasanaṭṭhānaṃ gatā."
+  },
+  {
+    "para_id": 1062,
+    "line_id": 2,
+    "pali": "Gāmaṇirājā dhammena rajjaṃ kāretvā yathākammaṃ gato, bodhisattopi puññāni katvā yathākammaṃ gato."
+  },
+  {
+    "para_id": 1063,
+    "line_id": 1,
+    "pali": "Satthā imaṃ dhammadesanaṃ āharitvā dassetvā saccāni pakāsesi, saccapariyosāne ossaṭṭhavīriyo bhikkhu arahatte patiṭṭhito."
+  },
+  {
+    "para_id": 1063,
+    "line_id": 2,
+    "pali": "Satthā dve vatthūni kathetvā anusandhiṃ ghaṭetvā jātakaṃ samodhānesi –"
+  },
+  {
+    "para_id": 1063,
+    "line_id": 3,
+    "pali": "‘‘tadā gāmaṇikumāro ossaṭṭhavīriyo bhikkhu ahosi, ācariyo pana ahameva ahosin’’ti."
+  },
+  {
+    "para_id": 1064,
+    "line_id": 1,
+    "pali": "Gāmaṇijātakavaṇṇanā aṭṭhamā."
+  },
+  {
+    "para_id": 1066,
+    "line_id": 1,
+    "pali": "9. Maghadevajātakavaṇṇanā"
+  },
+  {
+    "para_id": 1067,
+    "line_id": 1,
+    "pali": "<b>Uttamaṅgaruhā mayhan</b>ti idaṃ satthā jetavane viharanto mahābhinikkhamanaṃ ārabbha kathesi."
+  },
+  {
+    "para_id": 1067,
+    "line_id": 2,
+    "pali": "Taṃ heṭṭhā nidānakathāyaṃ kathitameva."
+  },
+  {
+    "para_id": 1067,
+    "line_id": 3,
+    "pali": "Tasmiṃ pana kāle bhikkhū dasabalassa nekkhammaṃ vaṇṇayantā nisīdiṃsu."
+  },
+  {
+    "para_id": 1067,
+    "line_id": 4,
+    "pali": "Atha satthā dhammasabhaṃ āgantvā buddhāsane nisinno bhikkhū āmantesi ‘‘kāya nuttha, bhikkhave, etarahi kathāya sannisinnā’’ti."
+  },
+  {
+    "para_id": 1067,
+    "line_id": 5,
+    "pali": "‘‘Bhante, na aññāya kathāya, tumhākaṃyeva pana nekkhammaṃ vaṇṇayamānā nisinnāmhā’’ti vutte ‘‘na, bhikkhave, tathāgato etarahiyeva nekkhammaṃ nikkhanto, pubbepi nikkhantoyevā’’ti āha."
+  },
+  {
+    "para_id": 1067,
+    "line_id": 6,
+    "pali": "Bhikkhū tassatthassāvibhāvatthaṃ bhagavantaṃ yāciṃsu, bhagavā bhavantarena paṭicchannaṃ kāraṇaṃ pākaṭaṃ akāsi."
+  },
+  {
+    "para_id": 1068,
+    "line_id": 1,
+    "pali": "Atīte videharaṭṭhe mithilāyaṃ maghadevo nāma rājā ahosi dhammiko dhammarājā."
+  },
+  {
+    "para_id": 1068,
+    "line_id": 2,
+    "pali": "So caturāsīti vassasahassāni kumārakīḷaṃ kīḷi, tathā oparajjaṃ, tathā mahārajjaṃ katvā dīghamaddhānaṃ khepetvā ekadivasaṃ kappakaṃ āmantesi ‘‘yadā me, samma kappaka, sirasmiṃ palitāni passeyyāsi, atha me āroceyyāsī’’ti."
+  },
+  {
+    "para_id": 1068,
+    "line_id": 3,
+    "pali": "Kappakopi dīghamaddhānaṃ khepetvā ekadivasaṃ rañño añjanavaṇṇānaṃ kesānaṃ antare ekameva palitaṃ disvā ‘‘deva, ekaṃ te palitaṃ dissatī’’ti ārocesi."
+  },
+  {
+    "para_id": 1068,
+    "line_id": 4,
+    "pali": "‘‘Tena hi me, samma, taṃ palitaṃ uddharitvā pāṇimhi ṭhapehī’’ti ca vutte suvaṇṇasaṇḍāsena uddharitvā rañño pāṇimhi patiṭṭhāpesi."
+  },
+  {
+    "para_id": 1068,
+    "line_id": 5,
+    "pali": "Tadā rañño caturāsīti vassasahassāni āyu avasiṭṭhaṃ hoti."
+  },
+  {
+    "para_id": 1068,
+    "line_id": 6,
+    "pali": "Evaṃ santepi palitaṃ disvāva maccurājānaṃ āgantvā samīpe ṭhitaṃ viya attānaṃ ādittapaṇṇasālaṃ paviṭṭhaṃ viya ca maññamāno saṃvegaṃ āpajjitvā ‘‘bāla maghadeva, yāva palitassuppādāva ime kilese jahituṃ nāsakkhī’’ti cintesi."
+  },
+  {
+    "para_id": 1069,
+    "line_id": 1,
+    "pali": "Tassevaṃ palitapātubhāvaṃ āvajjentassa antoḍāho uppajji, sarīrā sedā mucciṃsu, sāṭakā pīḷetvā apanetabbākārappattā ahesuṃ."
+  },
+  {
+    "para_id": 1069,
+    "line_id": 2,
+    "pali": "So ‘‘ajjeva mayā nikkhamitvā pabbajituṃ vaṭṭatī’’ti kappakassa satasahassuṭṭhānakaṃ gāmavaraṃ datvā jeṭṭhaputtaṃ pakkosāpetvā ‘‘tāta, mama sīse palitaṃ pātubhūtaṃ, mahallakomhi jāto, bhuttā kho pana me mānusakā kāmā, idāni dibbe kāme pariyesissāmi, nekkhammakālo mayhaṃ, tvaṃ imaṃ rajjaṃ paṭipajja, ahaṃ pana pabbajitvā maghadevaambavanuyyāne vasanto samaṇadhammaṃ karissāmī’’ti āha."
+  },
+  {
+    "para_id": 1069,
+    "line_id": 3,
+    "pali": "Taṃ evaṃ pabbajitukāmaṃ amaccā upasaṅkamitvā ‘‘deva, kiṃ tumhākaṃ pabbajjākāraṇan’’ti pucchiṃsu."
+  },
+  {
+    "para_id": 1069,
+    "line_id": 4,
+    "pali": "Rājā palitaṃ hatthena gahetvā amaccānaṃ imaṃ gāthamāha –"
+  },
+  {
+    "para_id": 1071,
+    "line_id": 1,
+    "pali": "9. ‘‘Uttamaṅgaruhā mayhaṃ, ime jātā vayoharā;"
+  },
+  {
+    "para_id": 1072,
+    "line_id": 1,
+    "pali": "Pātubhūtā devadūtā, pabbajjāsamayo mamā’’ti."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 1,
+    "pali": "Tattha <b>uttamaṅgaruhā</b>ti kesā."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 2,
+    "pali": "Kesā hi sabbesaṃ hatthapādādīnaṃ aṅgānaṃ uttame sirasmiṃ ruhattā ‘‘uttamaṅgaruhā’’ti vuccanti."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 3,
+    "pali": "<b>Ime jātā vayoharā</b>ti passatha, tātā, palitapātubhāvena tiṇṇaṃ vayānaṃ haraṇato ime jātā vayoharā."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 4,
+    "pali": "<b>Pātubhūtā</b>ti nibbattā."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 5,
+    "pali": "<b>Devadūtā</b>ti devo vuccati maccu, tassa dūtāti devadūtā."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 6,
+    "pali": "Sirasmiñhi palitesu pātubhūtesu maccurājassa santike ṭhito viya hoti, tasmā palitāni ‘‘maccudevassa dūtā’’ti vuccanti."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 7,
+    "pali": "Devā viya dūtātipi devadūtā."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 8,
+    "pali": "Yathā hi alaṅkatapaṭiyattāya devatāya ākāse ṭhatvā ‘‘asukadivase tvaṃ marissasī’’ti vutte taṃ tatheva hoti, evaṃ sirasmiṃ palitesu pātubhūtesu devatāya byākaraṇasadisameva hoti, tasmā palitāni ‘‘devasadisā dūtā’’ti vuccanti."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 9,
+    "pali": "Visuddhidevānaṃ dūtātipi devadūtā."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 10,
+    "pali": "Sabbabodhisattā hi jiṇṇabyādhimatapabbajite disvāva saṃvegamāpajjitvā nikkhamma pabbajanti."
+  },
+  {
+    "para_id": 1073,
+    "line_id": 11,
+    "pali": "Yathāha –"
+  },
+  {
+    "para_id": 1074,
+    "line_id": 1,
+    "pali": "‘‘Jiṇṇañca disvā dukhitañca byādhitaṃ, matañca disvā gatamāyusaṅkhayaṃ;"
+  },
+  {
+    "para_id": 1075,
+    "line_id": 1,
+    "pali": "Kāsāyavatthaṃ pabbajitañca disvā, tasmā ahaṃ pabbajitomhi rājā’’ti.(theragā.73 thokaṃ visadisaṃ);"
+  },
+  {
+    "para_id": 1076,
+    "line_id": 1,
+    "pali": "Iminā pariyāyena palitāni visuddhidevānaṃ dūtattā ‘‘devadūtā’’ti vuccanti."
+  },
+  {
+    "para_id": 1076,
+    "line_id": 2,
+    "pali": "<b>Pabbajjāsamayo mamā</b>ti gihibhāvato nikkhantaṭṭhena ‘‘pabbajjā’’ti laddhanāmassa samaṇaliṅgagahaṇassa kālo mayhanti dasseti."
+  },
+  {
+    "para_id": 1077,
+    "line_id": 1,
+    "pali": "So evaṃ vatvā taṃ divasameva rajjaṃ pahāya isipabbajjaṃ pabbajitvā tasmiṃyeva maghadevaambavane viharanto caturāsīti vassasahassāni cattāro brahmavihāre bhāvetvā aparihīnajjhāne ṭhito kālaṃ katvā brahmaloke nibbattitvā puna tato cuto mithilāyaṃyeva nimi nāma rājā hutvā osakkamānaṃ attano vaṃsaṃ ghaṭetvā tattheva ambavane pabbajitvā brahmavihāre bhāvetvā puna brahmalokūpagova ahosi."
+  },
+  {
+    "para_id": 1078,
+    "line_id": 1,
+    "pali": "Satthāpi ‘‘na, bhikkhave, tathāgato idāneva mahābhinikkhamanaṃ nikkhanto, pubbepi nikkhantoyevā’’ti imaṃ dhammadesanaṃ āharitvā dassetvā cattāri saccāni pakāsesi, saccapariyosāne keci sotāpannā ahesuṃ, keci sakadāgāmino, keci anāgāmino."
+  },
+  {
+    "para_id": 1078,
+    "line_id": 2,
+    "pali": "Iti bhagavā imāni dve vatthūni kathetvā anusandhiṃ ghaṭetvā jātakaṃ samodhānesi ‘‘tadā kappako ānando ahosi, putto rāhulo, maghadevarājā pana ahameva ahosin’’ti."
+  },
+  {
+    "para_id": 1079,
+    "line_id": 1,
+    "pali": "Maghadevajātakavaṇṇanā navamā."
+  }
+]

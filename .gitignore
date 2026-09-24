@@ -1,0 +1,22 @@
+# Secrets — never commit real API keys (.env.example is the tracked template)
+.env
+
+# Python environment and caches
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS metadata
+.DS_Store
+
+# Local data dir (default is a symlink to ../data; or real DBs downloaded
+# by runner.sh) — never commit large SQLite files
+/data
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.zip
+gemini_key_rate_state_*.json
+glossary_build_*_state.json

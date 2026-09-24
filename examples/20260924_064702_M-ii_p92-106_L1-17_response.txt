@@ -1,0 +1,258 @@
+```json
+{
+  "translations": [
+    {
+      "para_id": 92,
+      "line_id": 1,
+      "translation": "«Này gia chủ, ví như có một hố than hồng sâu hơn tầm một người, đầy những than hồng không có ngọn lửa và khói."
+    },
+    {
+      "para_id": 92,
+      "line_id": 2,
+      "translation": "Rồi có một người đi đến, muốn sống, không muốn chết, muốn hạnh phúc, ghê tởm đau khổ."
+    },
+    {
+      "para_id": 92,
+      "line_id": 3,
+      "translation": "Rồi hai người lực lưỡng bắt lấy người ấy ở cả hai cánh tay và kéo lê về phía hố than hồng ấy."
+    },
+    {
+      "para_id": 92,
+      "line_id": 4,
+      "translation": "Này gia chủ, ông nghĩ thế nào, người ấy có uốn éo thân thể theo mọi hướng hay không?»"
+    },
+    {
+      "para_id": 93,
+      "line_id": 1,
+      "translation": "«Thưa vâng, bạch Thế Tôn.»"
+    },
+    {
+      "para_id": 94,
+      "line_id": 1,
+      "translation": "«Vì sao vậy?»"
+    },
+    {
+      "para_id": 95,
+      "line_id": 1,
+      "translation": "«Bởi vì, bạch Thế Tôn, người ấy biết rõ: "Nếu ta té xuống hố than hồng này, do duyên ấy ta sẽ đi đến cái chết hoặc sự đau khổ đến chết"»."
+    },
+    {
+      "para_id": 95,
+      "line_id": 2,
+      "translation": "«Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 95,
+      "line_id": 3,
+      "translation": "'Các dục được Thế Tôn ví như hố than hồng, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn.'"
+    },
+    {
+      "para_id": 95,
+      "line_id": 4,
+      "translation": "Sau khi thấy rõ điều ấy như thật với tuệ quyền đúng đắn… vị ấy tu luyện xả ấy."
+    },
+    {
+      "para_id": 96,
+      "line_id": 1,
+      "translation": "«Này gia chủ, ví như một người chiêm bao thấy những khu vườn tươi đẹp, những khu rừng tươi đẹp, những vùng đất tươi đẹp, những hồ nước tươi đẹp."
+    },
+    {
+      "para_id": 96,
+      "line_id": 2,
+      "translation": "Khi tỉnh dậy, người ấy không thấy gì cả."
+    },
+    {
+      "para_id": 96,
+      "line_id": 3,
+      "translation": "Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 96,
+      "line_id": 4,
+      "translation": "'Các dục được Thế Tôn ví như giấc chiêm bao, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn.'... vị ấy tu luyện xả ấy."
+    },
+    {
+      "para_id": 97,
+      "line_id": 1,
+      "translation": "«Này gia chủ, ví như một người đi mượn các vật dụng đã đi mượn, tức là một cỗ xe thích hợp cho người và đôi hoa tai bằng ngọc báu tuyệt hảo."
+    },
+    {
+      "para_id": 97,
+      "line_id": 2,
+      "translation": "Được các vật dụng đã đi mượn ấy đi trước dẫn đường và vây quanh, người ấy đi vào chợ."
+    },
+    {
+      "para_id": 97,
+      "line_id": 3,
+      "translation": "Dân chúng nhìn thấy người ấy liền nói thế này –"
+    },
+    {
+      "para_id": 97,
+      "line_id": 4,
+      "translation": "'Này các ngài, thật là một người giàu có thay! Người giàu có tận hưởng tài sản như thế này đây!'"
+    },
+    {
+      "para_id": 97,
+      "line_id": 5,
+      "translation": "Rồi những người chủ, hễ thấy người ấy ở đâu thì lấy lại các vật dụng của mình ở đó."
+    },
+    {
+      "para_id": 97,
+      "line_id": 6,
+      "translation": "Này gia chủ, ông nghĩ thế nào, điều đó có đủ khiến cho người ấy rơi vào sự biến đổi tâm trạng hay không?»"
+    },
+    {
+      "para_id": 98,
+      "line_id": 1,
+      "translation": "«Thưa vâng, bạch Thế Tôn.»"
+    },
+    {
+      "para_id": 99,
+      "line_id": 1,
+      "translation": "«Vì sao vậy?»"
+    },
+    {
+      "para_id": 100,
+      "line_id": 1,
+      "translation": "«Bởi vì các chủ nhân lấy lại các vật dụng của mình, bạch Thế Tôn.»"
+    },
+    {
+      "para_id": 100,
+      "line_id": 2,
+      "translation": "«Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 100,
+      "line_id": 3,
+      "translation": "'Các dục được Thế Tôn ví như vật mượn, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn.'... vị ấy tu luyện xả ấy."
+    },
+    {
+      "para_id": 101,
+      "line_id": 1,
+      "translation": "«Này gia chủ, ví như có một khu rừng rậm không xa làng hoặc thị trấn."
+    },
+    {
+      "para_id": 101,
+      "line_id": 2,
+      "translation": "Ở đó có một cội cây vừa laden with fruit và sum suê trái, nhưng không có một trái nào rơi xuống đất."
+    },
+    {
+      "para_id": 101,
+      "line_id": 3,
+      "translation": "Rồi có một người cần trái cây, tìm kiếm trái cây, đi lang thang tìm kiếm trái cây đi đến."
+    },
+    {
+      "para_id": 101,
+      "line_id": 4,
+      "translation": "Người ấy đi sâu vào khu rừng ấy và thấy cội cây vừa laden with fruit vừa sum suê trái ấy."
+    },
+    {
+      "para_id": 101,
+      "line_id": 5,
+      "translation": "Ý nghĩ này đã khởi lên cho người ấy –"
+    },
+    {
+      "para_id": 101,
+      "line_id": 6,
+      "translation": "'Cội cây này vừa laden with fruit vừa sum suê trái, và không có một trái nào rơi xuống đất cả."
+    },
+    {
+      "para_id": 101,
+      "line_id": 7,
+      "translation": "Và ta biết cách trèo lên cây."
+    },
+    {
+      "para_id": 101,
+      "line_id": 8,
+      "translation": "Hay là ta trèo lên cội cây này, ăn bao nhiêu tùy thích và làm đầy vạt áo của mình.'"
+    },
+    {
+      "para_id": 101,
+      "line_id": 9,
+      "translation": "Người ấy trèo lên cội cây ấy, ăn bao nhiêu tùy thích và làm đầy vạt áo."
+    },
+    {
+      "para_id": 101,
+      "line_id": 10,
+      "translation": "Rồi người thứ hai cần trái cây, tìm kiếm trái cây, đi lang thang tìm kiếm trái cây đi đến, cầm theo một chiếc rìu sắc bén."
+    },
+    {
+      "para_id": 101,
+      "line_id": 11,
+      "translation": "Người ấy đi sâu vào khu rừng ấy và thấy cội cây vừa laden with fruit vừa sum suê trái ấy."
+    },
+    {
+      "para_id": 101,
+      "line_id": 12,
+      "translation": "Ý nghĩ này đã khởi lên cho người ấy –"
+    },
+    {
+      "para_id": 101,
+      "line_id": 13,
+      "translation": "'Cội cây này vừa laden with fruit vừa sum suê trái, và không có một trái nào rơi xuống đất cả."
+    },
+    {
+      "para_id": 101,
+      "line_id": 14,
+      "translation": "Nhưng ta không biết cách trèo lên cây."
+    },
+    {
+      "para_id": 101,
+      "line_id": 15,
+      "translation": "Hay là ta chặt cội cây này từ gốc, ăn bao nhiêu tùy thích và làm đầy vạt áo.'"
+    },
+    {
+      "para_id": 101,
+      "line_id": 16,
+      "translation": "Người ấy chặt cội cây ấy ngay từ gốc."
+    },
+    {
+      "para_id": 101,
+      "line_id": 17,
+      "translation": "Này gia chủ, ông nghĩ thế nào, nếu người nọ đã trèo lên cây trước đó mà không nhanh chóng xuống, khi cây ấy đổ xuống, nó có làm gãy tay, gãy chân hay gãy một phần chi thể nào khác của người ấy, và do duyên ấy người ấy có thể đi đến cái chết hoặc sự đau khổ đến chết hay không?»"
+    },
+    {
+      "para_id": 102,
+      "line_id": 1,
+      "translation": "«Thưa vâng, bạch Thế Tôn.»"
+    },
+    {
+      "para_id": 103,
+      "line_id": 1,
+      "translation": "«Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 103,
+      "line_id": 2,
+      "translation": "'Các dục được Thế Tôn ví như trái cây trên cây, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn.'"
+    },
+    {
+      "para_id": 103,
+      "line_id": 3,
+      "translation": "Sau khi thấy rõ điều ấy như thật với tuệ quyền đúng đắn, vị ấy từ bỏ loại xả có tính phân tán, nương nơi sự phân tán, và tu tập loại xả có tính nhất trí, nương nơi sự nhất trí, nơi mà mọi sự chấp thủ bám víu vào các vật thế gian hoàn toàn chấm dứt không còn dư tàn."
+    },
+    {
+      "para_id": 104,
+      "line_id": 1,
+      "translation": "«Này gia chủ, chính vị thánh đệ tử ấy, dựa trên sự thanh tịnh của chánh niệm và xả vô thượng ấy, nhớ đến nhiều đời sống quá khứ, nghĩa là một kiếp, hai kiếp… Như vậy với các nét đặc thù và chi tiết, vị ấy nhớ đến nhiều đời sống quá khứ."
+    },
+    {
+      "para_id": 105,
+      "line_id": 1,
+      "translation": "«Này gia chủ, chính vị thánh đệ tử ấy, dựa trên sự thanh tịnh của chánh niệm và xả vô thượng ấy, với thiên nhãn trong sạch vượt human, thấy các chúng sinh đang chết và tái sinh, hạ liệt và cao quý, đẹp và xấu, may mắn và bất hạnh… vị ấy hiểu rõ các chúng sinh đi theo nghiệp của họ."
+    },
+    {
+      "para_id": 106,
+      "line_id": 1,
+      "translation": "«Này gia chủ, chính vị thánh đệ tử ấy, dựa trên sự thanh tịnh của chánh niệm và xả vô thượng ấy, do tự mình chứng ngộ với thắng trí ngay trong hiện tại, đạt được và trú vào tâm giải thoát và tuệ giải thoát không còn lậu hoặc do sự đoạn tận các lậu hoặc."
+    },
+    {
+      "para_id": 106,
+      "line_id": 2,
+      "translation": "Này gia chủ, đến mức độ này là sự chấm dứt hoàn toàn và trọn vẹn mọi vấn đề trong giới luật của bậc Thánh.»"
+    }
+  ],
+  "glossary": [],
+  "remarks": []
+}
+```

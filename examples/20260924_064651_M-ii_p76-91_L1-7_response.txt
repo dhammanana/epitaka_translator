@@ -1,0 +1,302 @@
+{
+  "translations": [
+    {
+      "para_id": 76,
+      "line_id": 1,
+      "translation": "38. «Câu nói rằng: "Nương vào việc không chỉ trích hằn học, sự chỉ trích hằn học phải được từ bỏ" — được nói đến như thế, nhưng câu này do duyên gì mà được nói đến?"
+    },
+    {
+      "para_id": 76,
+      "line_id": 2,
+      "translation": "Này gia chủ, ở đây vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 76,
+      "line_id": 3,
+      "translation": "\"Do duyên vào những triền phược nào mà ta có thể chỉ trích hằn học, ta đang thực hành con đường để đoạn trừ, để triệt tiêu những triền phược ấy.\""
+    },
+    {
+      "para_id": 76,
+      "line_id": 4,
+      "translation": "Và nếu quả thật ta là kẻ chỉ trích hằn học, chính bản thân cũng sẽ quở trách ta vì duyên chỉ trích hằn học; các bậc trí giả sau khi điều tra cũng sẽ chỉ trích ta vì duyên chỉ trích hằn học; và sau khi thân hoại mạng終, ác thú là điều có thể mong chờ do duyên chỉ trích hằn học."
+    },
+    {
+      "para_id": 76,
+      "line_id": 5,
+      "translation": "Chính sự chỉ trích hằn học ấy quả thật là triền phược, chính sự chỉ trích hằn học ấy là triền cái."
+    },
+    {
+      "para_id": 76,
+      "line_id": 6,
+      "translation": "Và những lậu hoặc, sự dày vò và sự nung nấu nào có thể khởi lên do duyên chỉ trích hằn học, đối với người không chỉ trích hằn học, những lậu hoặc, sự dày vò và sự nung nấu ấy không còn nữa.\""
+    },
+    {
+      "para_id": 76,
+      "line_id": 7,
+      "translation": "\"Nương vào việc không chỉ trích hằn học, sự chỉ trích hằn học phải được từ bỏ\" — câu nói như thế này được nói đến chính là do duyên điều này."
+    },
+    {
+      "para_id": 77,
+      "line_id": 1,
+      "translation": "39. «Câu nói rằng: "Nương vào việc không giận hờn bức não, sự giận hờn bức não phải được từ bỏ" — được nói đến như thế, nhưng câu này do duyên gì mà được nói đến?"
+    },
+    {
+      "para_id": 77,
+      "line_id": 2,
+      "translation": "Này gia chủ, ở đây vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 77,
+      "line_id": 3,
+      "translation": "\"Do duyên vào những triền phược nào mà ta có thể giận hờn bức não, ta đang thực hành con đường để đoạn trừ, để triệt tiêu những triền phược ấy.\""
+    },
+    {
+      "para_id": 77,
+      "line_id": 4,
+      "translation": "Và nếu quả thật ta là kẻ giận hờn bức não, chính bản thân cũng sẽ quở trách ta vì duyên giận hờn bức não; các bậc trí giả sau khi điều tra cũng sẽ chỉ trích ta vì duyên giận hờn bức não; và sau khi thân hoại mạng終, ác thú là điều có thể mong chờ do duyên giận hờn bức não."
+    },
+    {
+      "para_id": 77,
+      "line_id": 5,
+      "translation": "Chính sự giận hờn bức não ấy quả thật là triền phược, chính sự giận hờn bức não ấy là triền cái."
+    },
+    {
+      "para_id": 77,
+      "line_id": 6,
+      "translation": "Và những lậu hoặc, sự dày vò và sự nung nấu nào có thể khởi lên do duyên giận hờn bức não, đối với người không giận hờn bức não, những lậu hoặc, sự dày vò và sự nung nấu ấy không còn nữa.\""
+    },
+    {
+      "para_id": 77,
+      "line_id": 7,
+      "translation": "\"Nương vào việc không giận hờn bức não, sự giận hờn bức não phải được từ bỏ\" — câu nói như thế này được nói đến chính là do duyên điều này."
+    },
+    {
+      "para_id": 78,
+      "line_id": 1,
+      "translation": "40. «Câu nói rằng: "Nương vào việc không ngã mạn, sự ngã mạn phải được từ bỏ" — được nói đến như thế, nhưng câu này do duyên gì mà được nói đến?"
+    },
+    {
+      "para_id": 78,
+      "line_id": 2,
+      "translation": "Này gia chủ, ở đây vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 78,
+      "line_id": 3,
+      "translation": "\"Do duyên vào những triền phược nào mà ta có thể ngã mạn, ta đang thực hành con đường để đoạn trừ, để triệt tiêu những triền phược ấy.\""
+    },
+    {
+      "para_id": 78,
+      "line_id": 4,
+      "translation": "Và nếu quả thật ta là kẻ ngã mạn, chính bản thân cũng sẽ quở trách ta vì duyên ngã mạn; các bậc trí giả sau khi điều tra cũng sẽ chỉ trích ta vì duyên ngã mạn; và sau khi thân hoại mạng終, ác thú là điều có thể mong chờ do duyên ngã mạn."
+    },
+    {
+      "para_id": 78,
+      "line_id": 5,
+      "translation": "Chính sự ngã mạn ấy quả thật là triền phược, chính sự ngã mạn ấy là triền cái."
+    },
+    {
+      "para_id": 78,
+      "line_id": 6,
+      "translation": "Và những lậu hoặc, sự dày vò và sự nung nấu nào có thể khởi lên do duyên ngã mạn, đối với người không ngã mạn, những lậu hoặc, sự dày vò và sự nung nấu ấy không còn nữa.\""
+    },
+    {
+      "para_id": 78,
+      "line_id": 7,
+      "translation": "\"Nương vào việc không ngã mạn, sự ngã mạn phải được từ bỏ\" — câu nói như thế này được nói đến chính là do duyên điều này."
+    },
+    {
+      "para_id": 79,
+      "line_id": 1,
+      "translation": "41. «Này gia chủ, tám pháp này được nói đến tóm tắt, được phân tích chi tiết, dẫn đến sự cắt đứt các sự vụ trong giáo pháp của bậc Thánh;"
+    },
+    {
+      "para_id": 79,
+      "line_id": 2,
+      "translation": "nhưng sự cắt đứt các sự vụ trong giáo pháp của bậc Thánh chưa phải là hoàn toàn và trọn vẹn về mọi mặt.»"
+    },
+    {
+      "para_id": 80,
+      "line_id": 1,
+      "translation": "«Bạch Thế Tôn, thế nào là sự cắt đứt các sự vụ trong giáo pháp của bậc Thánh được hoàn toàn và trọn vẹn về mọi mặt?"
+    },
+    {
+      "para_id": 80,
+      "line_id": 2,
+      "translation": "Thật lành thay, bạch Thế Tôn, nếu Thế Tôn thuyết pháp cho con để con thấy được sự cắt đứt các sự vụ trong giáo pháp của bậc Thánh được hoàn toàn và trọn vẹn về mọi mặt.»"
+    },
+    {
+      "para_id": 80,
+      "line_id": 3,
+      "translation": "«Vậy thì, này gia chủ, hãy lắng nghe, hãy khéo tác ý, Ta sẽ giảng.»"
+    },
+    {
+      "para_id": 80,
+      "line_id": 4,
+      "translation": "«Thưa vâng, bạch Thế Tôn,» gia chủ Potaliya vâng đáp Thế Tôn."
+    },
+    {
+      "para_id": 80,
+      "line_id": 5,
+      "translation": "Thế Tôn đã nói như thế này –"
+    },
+    {
+      "para_id": 81,
+      "line_id": 1,
+      "translation": "Bài kinh về sự nguy hiểm của các dục"
+    },
+    {
+      "para_id": 82,
+      "line_id": 1,
+      "translation": "42. «Này gia chủ, ví như một con chó bị cơn đói và sự suy yếu hành hạ, đứng chờ ở lò sát sinh."
+    },
+    {
+      "para_id": 82,
+      "line_id": 2,
+      "translation": "Rồi một người đồ tể khéo léo hay đệ tử của người đồ tể ấy ném cho con chó ấy một bộ xương không thịt, dính máu, đã được lóc sạch sẽ, lóc kỹ càng."
+    },
+    {
+      "para_id": 82,
+      "line_id": 3,
+      "translation": "Này gia chủ, ông nghĩ thế nào? Con chó ấy liếm láp bộ xương không thịt, dính máu, đã được lóc sạch sẽ, lóc kỹ càng ấy, liệu có thể dứt trừ được cơn đói và sự suy yếu hay không?»"
+    },
+    {
+      "para_id": 83,
+      "line_id": 1,
+      "translation": "«Thưa không, bạch Thế Tôn.»"
+    },
+    {
+      "para_id": 84,
+      "line_id": 1,
+      "translation": "«Vì sao thế?»"
+    },
+    {
+      "para_id": 85,
+      "line_id": 1,
+      "translation": "«Vì rằng, bạch Thế Tôn, bộ xương ấy không thịt, dính máu, đã được lóc sạch sẽ, lóc kỹ càng."
+    },
+    {
+      "para_id": 85,
+      "line_id": 2,
+      "translation": "Con chó ấy chỉ rước lấy sự mệt mỏi và sự bức rức mà thôi.»"
+    },
+    {
+      "para_id": 85,
+      "line_id": 3,
+      "translation": "«Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 85,
+      "line_id": 4,
+      "translation": "\"Các dục được Thế Tôn ví như bộ xương, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn.\""
+    },
+    {
+      "para_id": 85,
+      "line_id": 5,
+      "translation": "Sau khi thấy rõ điều ấy như thật với tuệ quyền đúng đắn, vị ấy từ bỏ loại hỷ xả có tính đa tạp, y cứ trên tính đa tạp; và tu luyện loại hỷ xả có tính nhất nhất, y cứ trên tính nhất nhất — nơi mà sự chấp thủ vào vật chất thế gian hoàn toàn tiêu diệt không còn dư sót."
+    },
+    {
+      "para_id": 86,
+      "line_id": 1,
+      "translation": "43. «Này gia chủ, ví như một con kên kên, con diều hâu, hay con chim cắt quắp lấy một miếng thịt rồi bay đi."
+    },
+    {
+      "para_id": 86,
+      "line_id": 2,
+      "translation": "Rồi các con kên kên, các con diều hâu, các con chim cắt ấy bay theo rượt đuổi, mổ xé và cướp lấy."
+    },
+    {
+      "para_id": 86,
+      "line_id": 3,
+      "translation": "Này gia chủ, ông nghĩ thế nào? Nếu con kên kên, con diều hâu, hay con chim cắt ấy không nhanh chóng buông bỏ miếng thịt ấy, do duyên ấy nó có thể đi đến cái chết hoặc sự đau khổ đến chết hay không?»"
+    },
+    {
+      "para_id": 87,
+      "line_id": 1,
+      "translation": "«Thưa vâng, bạch Thế Tôn.»"
+    },
+    {
+      "para_id": 88,
+      "line_id": 1,
+      "translation": "«Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 88,
+      "line_id": 2,
+      "translation": "\"Các dục được Thế Tôn ví như miếng thịt, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn.\""
+    },
+    {
+      "para_id": 88,
+      "line_id": 3,
+      "translation": "Sau khi thấy rõ điều ấy như thật với tuệ quyền đúng đắn, vị ấy từ bỏ loại hỷ xả có tính đa tạp, y cứ trên tính đa tạp; và tu luyện loại hỷ xả có tính nhất nhất, y cứ trên tính nhất nhất — nơi mà sự chấp thủ vào vật chất thế gian hoàn toàn tiêu diệt không còn dư sót."
+    },
+    {
+      "para_id": 89,
+      "line_id": 1,
+      "translation": "44. «Này gia chủ, ví như một người cầm một ngọn đuốc cỏ đang bốc cháy đi ngược chiều gió."
+    },
+    {
+      "para_id": 89,
+      "line_id": 2,
+      "translation": "Này gia chủ, ông nghĩ thế nào? Nếu người ấy không nhanh chóng buông bỏ ngọn đuốc cỏ đang bốc cháy ấy, ngọn đuốc cỏ đang bốc cháy ấy có thể đốt cháy bàn tay, đốt cháy cánh tay, hay đốt cháy một phần chi thể nào khác của người ấy, và do duyên ấy người ấy có thể đi đến cái chết hoặc sự đau khổ đến chết hay không?»"
+    },
+    {
+      "para_id": 90,
+      "line_id": 1,
+      "translation": "«Thưa vâng, bạch Thế Tôn.»"
+    },
+    {
+      "para_id": 91,
+      "line_id": 1,
+      "translation": "«Này gia chủ, cũng vậy, vị thánh đệ tử suy xét như thế này –"
+    },
+    {
+      "para_id": 91,
+      "line_id": 2,
+      "translation": "\"Các dục được Thế Tôn ví như ngọn đuốc cỏ, chứa đựng nhiều sự khổ, nhiều sự bức não, sự nguy hiểm trong ấy rất lớn.\""
+    },
+    {
+      "para_id": 91,
+      "line_id": 3,
+      "translation": "Sau khi thấy rõ điều ấy như thật với tuệ quyền đúng đắn… vị ấy tu luyện hỷ xả ấy."
+    }
+  ],
+  "glossary": [
+    {
+      "pali": "nindārosa",
+      "translation": "sự chỉ trích hằn học",
+      "domain": "sutta",
+      "sub_domain": "ethics",
+      "context": "as a fetter or hindrance to be abandoned"
+    },
+    {
+      "pali": "kodhūpāyāsa",
+      "translation": "sự giận hờn bức não",
+      "domain": "sutta",
+      "sub_domain": "ethics",
+      "context": "as a fetter or hindrance to be abandoned"
+    },
+    {
+      "pali": "vohārasamucchedo",
+      "translation": "sự cắt đứt các sự vụ",
+      "domain": "sutta",
+      "sub_domain": "practice",
+      "context": "in the noble discipline"
+    },
+    {
+      "pali": "aṭṭhikaṅkala",
+      "translation": "bộ xương",
+      "domain": "sutta",
+      "sub_domain": "simile",
+      "context": "simile for sensual pleasures"
+    },
+    {
+      "pali": "tiṇukka",
+      "translation": "đuốc cỏ",
+      "domain": "sutta",
+      "sub_domain": "simile",
+      "context": "simile for sensual pleasures"
+    }
+  ],
+  "remarks": []
+}
