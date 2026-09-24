@@ -103,14 +103,25 @@ ensure_data_files || exit 1
 export EPITAKA_DB="${EPITAKA_DB:-$DATA_DIR/epitaka.db}"
 
 # ---------------------------------------------------------------------------
-# 2. Python environment
+# 2. Python environment — create .venv and install requirements if needed
 # ---------------------------------------------------------------------------
-if [ -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
-    # shellcheck disable=SC1091
-    source "$SCRIPT_DIR/.venv/bin/activate"
+if [ ! -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
+    echo "[PYTHON] No .venv found — creating it (python3 -m venv .venv)..."
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "[PYTHON] ERROR: python3 is required but not installed." >&2
+        exit 1
+    fi
+    python3 -m venv "$SCRIPT_DIR/.venv" || exit 1
+fi
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/.venv/bin/activate"
+
+VENV_PY="$SCRIPT_DIR/.venv/bin/python"
+if ! "$VENV_PY" -c "import google.genai, dotenv, requests" 2>/dev/null; then
+    echo "[PYTHON] Installing dependencies (pip install -r requirements.txt)..."
+    "$VENV_PY" -m pip install -r "$SCRIPT_DIR/requirements.txt" || exit 1
 else
-    echo "[WARN] No .venv found at $SCRIPT_DIR/.venv — using system python."
-    echo "[WARN] See README.md for setup: python3 -m venv .venv && pip install -r requirements.txt"
+    echo "[PYTHON] Dependencies OK."
 fi
 
 # ---------------------------------------------------------------------------

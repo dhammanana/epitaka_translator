@@ -8,6 +8,18 @@ Translate Pāli Theravāda books (Tipiṭaka, commentaries, sub-commentaries) in
 modern languages with Gemini, one book at a time. Translations accumulate in
 per-language SQLite files that the Epitaka app / web server reads directly.
 
+## Quickstart — translate to Vietnamese
+
+```bash
+git clone <this-repo> && cd translator
+cp .env.example .env   # then add your GEMINI_KEY_<N> lines to .env
+./runner.sh vi         # data, venv, and dependencies are set up automatically
+```
+
+That's it: the runner downloads any missing database files, creates `.venv`,
+installs `requirements.txt`, and loops the translation until done (sleeping
+3 h and resuming whenever all API keys are exhausted). Details below.
+
 ## How it works
 
 `src/book_translator.py` translates a whole book, part by part:
@@ -200,6 +212,8 @@ schema, glossary upserts, stem lookup, script-bleed detection),
 cd translator
 
 # 1. Environment + dependencies
+# (skipped automatically when you use ./runner.sh — it creates .venv and
+# installs requirements.txt on first run)
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
