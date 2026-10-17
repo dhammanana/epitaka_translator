@@ -177,6 +177,12 @@ MIN_CHUNK_PENDING_LINES = int(os.environ.get("MIN_CHUNK_PENDING_LINES", 5))
 SECTION_MERGE_MAX_BYTES = int(os.environ.get("SECTION_MERGE_MAX_BYTES", 300_000))
 SECTION_MERGE_MAX_LINES = int(os.environ.get("SECTION_MERGE_MAX_LINES", 50))
 
+# Circuit breaker: stop a book early after this many CONSECUTIVE chunks that
+# save zero sentences (None/empty response, parse failure, all-bleed). Without
+# this a dead model/quota can burn through ~50 chunks × full prompt tokens
+# while saving nothing. Override via env. Dry-run never trips it.
+MAX_CONSECUTIVE_FAILED_CHUNKS = int(os.environ.get("MAX_CONSECUTIVE_FAILED_CHUNKS", 10))
+
 
 # ══════════════════════════════════════════════════════════════════
 # Stub modules
@@ -669,6 +675,24 @@ def merge_small_chunks(
 def _build_system_prompt(lang: str) -> str:
     """Build the system prompt with the correct target language injected."""
     lang_name = cu.lang_name(lang)
+    pali_script = cu.pali_script_name(lang)
+    if pali_script:
+        pali_note = (
+            f"PĀLI SCRIPT IN THIS PROMPT: The Pāli source text is written in {pali_script} "
+            f"script, not romanised. When you retain or quote a Pāli term inside a "
+            f"translation, write it in {pali_script} script as well — never transliterate "
+            f"it back to Roman letters.\n"
+            f"EXCEPTION — the \"pali\" field of every glossary entry must ALWAYS be "
+            f"Roman/IAST (e.g. \"bhikkhu\", \"samādhi\"), because it is stored as a "
+            f"dictionary lookup key. Never put {pali_script} script in a glossary "
+            f"\"pali\" field."
+        )
+    else:
+        pali_note = (
+            f"PĀLI SCRIPT IN THIS PROMPT: Pāli is romanised (IAST) throughout, because "
+            f"{lang_name} has no traditional Pāli script. Keep Pāli terms in Roman letters "
+            f"in your output, and write the glossary \"pali\" field in Roman/IAST as well."
+        )
     return f"""You are an expert scholar-translator of Pāli Theravāda Buddhist literature
 (canonical texts, commentaries [aṭṭhakathā] and sub-commentaries [ṭīkā]).
 
@@ -680,6 +704,8 @@ strictly adhere to Theravāda Buddhist translation conventions. Do not mix in te
 concepts, or phrasing associated with Mahāyāna, Tibetan Buddhism, or other religions.
 Try to minimize the use of pali term in translation except commonly accepted terms like nibbāna, tathāgata, etc.
 All glossary "translation" fields must also be in {lang_name}.
+
+{pali_note}
 
 ⚠ LANGUAGE-BLEED WARNING: You will be shown reference translations in OTHER
 languages (see block 6 below), which may include a language closely related to,
@@ -718,7 +744,8 @@ You will be given several reference blocks:
                                     translations of these same lines, for
                                     meaning and terminology reference only
                                     (see language-bleed warning above).
-  7. MYANMAR NISSAYA              — word-by-word gloss (romanised) for each sentence.
+  7. MYANMAR NISSAYA              — word-by-word gloss (Pāli in the same script as
+                                    the rest of this prompt) for each sentence.
   8. SENTENCES TO TRANSLATE      — JSON array of Pāli sentences (para_id + line_id).
 
 Return ONE JSON object with exactly three keys: "translations", "glossary",
@@ -801,6 +828,9 @@ B. "glossary" — NEW TRANSLATION TERMS FOR FUTURE CONSISTENCY
       inflected form found in the text. E.g. use "bhikkhu" not "bhikkhūnaṃ";
       use "samādhi" not "samādhiṃ"; use "sīla" not "sīlāni".
     • If a compound, give the whole compound in its uninflected/stem form.
+    • Always write this field in Roman/IAST letters, even when the Pāli in
+      this prompt is shown in {pali_script or "Roman"} script. This field is a
+      dictionary lookup key, so a non-Roman value would be unusable.
 
   CRITICAL RULES for the "translation" field:
     • Must be in {lang_name}.
@@ -896,6 +926,7 @@ def build_prompt(
     mula_block:       str,
     nissaya_block:    str,
     parallel_block:   str = "",
+    lang:             str = "",
 ) -> tuple[str, list[dict]]:
     """Fill in USER_TEMPLATE for one chunk. Returns (prompt_text, flat_sentence_list)."""
     flat_sentences = []
@@ -904,7 +935,7 @@ def build_prompt(
             flat_sentences.append({
                 "para_id":       para["para_id"],
                 "line_id":       s["line_id"],
-                "pali": s["pali"],
+                "pali": cu.to_pali_script(s["pali"] or "", lang),
             })
 
     prompt = USER_TEMPLATE.format(
@@ -945,7 +976,12 @@ def process_book(
     # GlossaryContextStemmed(params, ...) from this dict, and without the key
     # every prompt silently gets "(no glossary DB configured)" instead of the
     # established-glossary block (this exact omission happened before).
-    params = {"epitaka_db": epitaka_db, "lang_db": lang_db, "glossary_db": glossary_db}
+    params = {
+        "epitaka_db": epitaka_db,
+        "lang_db": lang_db,
+        "glossary_db": glossary_db,
+        "lang": args.lang,
+    }
 
     print("=" * 60)
     print(f"BOOK: {book_id}  paras={args.start}..{'end' if args.end == -1 else args.end} "
@@ -973,6 +1009,7 @@ def process_book(
     total_updated  = 0
     total_glossary = 0
     total_remarks  = 0
+    consecutive_failures = 0
 
     for part_idx, part in enumerate(sections, 1):
         if args.max_parts != -1 and part_idx > args.max_parts:
@@ -1086,6 +1123,7 @@ def process_book(
                     commentary_block=local_commentary_block, pali_defs_block=local_pali_defs_block,
                     prev_para_block=prev_para_block, mula_block=mula_block,
                     nissaya_block=nissaya_block, parallel_block=parallel_block,
+                    lang=args.lang,
                 )
 
             prompt, flat_sentences = _build()
@@ -1194,8 +1232,27 @@ def process_book(
             total_glossary += g
             total_remarks  += r
 
+            # Circuit breaker: consecutive zero-save chunks mean the model is
+            # returning None/''/unparsable (or quota is gone). Stop this book
+            # early instead of burning tokens over dozens more chunks.
+            if not args.dry_run:
+                if u == 0:
+                    consecutive_failures += 1
+                    if consecutive_failures >= MAX_CONSECUTIVE_FAILED_CHUNKS:
+                        print(f"  [abort] {consecutive_failures} consecutive chunk(s) saved 0 sentences — "
+                              f"stopping book {book_id} early to preserve quota. "
+                              f"Check logs/API quota and re-run (without --overwrite).")
+                        break
+                else:
+                    consecutive_failures = 0
+
         print(f"  Section done. Running: sentences={total_updated}, "
               f"glossary={total_glossary}, remarks={total_remarks}.")
+
+        if consecutive_failures >= MAX_CONSECUTIVE_FAILED_CHUNKS and not args.dry_run:
+            print(f"  [abort] book {book_id} stopped early after "
+                  f"{consecutive_failures} consecutive failures.")
+            break
 
     return total_updated, total_glossary, total_remarks
 
@@ -1416,7 +1473,12 @@ def main() -> int:
     explicit_keys = [k.strip() for k in args.api_keys.split(",") if k.strip()]
     rotator = ai.make_rotator(explicit_keys)
 
-    params = {"epitaka_db": epitaka_db, "lang_db": lang_db, "glossary_db": glossary_db}
+    params = {
+        "epitaka_db": epitaka_db,
+        "lang_db": lang_db,
+        "glossary_db": glossary_db,
+        "lang": args.lang,
+    }
     translation_writer = TranslationWriter(params, log_info=print, log_warn=print, log_error=print)
     glossary_writer    = GlossaryWriter(params, log_info=print, log_warn=print, log_error=print)
     remark_writer      = RemarkWriter(params, log_info=print, log_warn=print, log_error=print)

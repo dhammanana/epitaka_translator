@@ -27,6 +27,7 @@ ai_client.py.
 import os
 import re
 from contextlib import contextmanager
+from functools import lru_cache
 from pathlib import Path
 import sqlite3
 
@@ -129,6 +130,121 @@ LANG_NAMES: dict[str, str] = {
 def lang_name(lang: str) -> str:
     """Human-readable name for a language code, falling back to its uppercased code."""
     return LANG_NAMES.get(lang, lang.upper())
+
+
+# ══════════════════════════════════════════════════════════════════
+# Pāli script used in prompts
+#
+# The source Pāli in epitaka.db is romanised (IAST). When the target
+# language is traditionally written in a script that also has a Pāli
+# tradition, Pāli text sent to the model is transliterated into that
+# script — e.g. Lao for --lang lo, Thai for --lang th, Sinhala for
+# --lang si. Languages with no such script (French, English, German, …)
+# keep the roman form as the fallback.
+#
+# Values are aksharamukha script names (the transliteration engine used
+# by the Epitaka web reader too). Only scripts aksharamukha can actually
+# produce are listed; anything absent falls back to Roman.
+# ══════════════════════════════════════════════════════════════════
+
+PALI_SCRIPT_BY_LANG: dict[str, str] = {
+    "si": "Sinhala",
+    "th": "Thai",
+    "lo": "Lao",
+    "my": "Burmese",
+    "km": "Khmer",
+
+    # Devanagari is shared by Hindi / Marathi / Nepali
+    "hi": "Devanagari",
+    "mr": "Devanagari",
+    "ne": "Devanagari",
+    "np": "Devanagari",  # legacy alias of ne
+
+    "bn": "Bengali",
+    "be": "Bengali",   # legacy script-code alias of bn
+    "gu": "Gujarati",
+    "pa": "Gurmukhi",
+    "gm": "Gurmukhi",  # legacy script-code alias of pa
+    "te": "Telugu",
+    "kn": "Kannada",
+    "ka": "Kannada",   # legacy script-code alias of kn
+    "ml": "Malayalam",
+    "mm": "Malayalam", # legacy script-code alias of ml
+    "or": "Oriya",
+    "ta": "Tamil",
+    "as": "Assamese",
+    "bo": "Tibetan",
+    "tb": "Tibetan",   # legacy script-code alias of bo
+}
+
+
+def pali_script_name(lang: str) -> str:
+    """aksharamukha script name for Pāli in `lang`, or "" for Roman fallback."""
+    return PALI_SCRIPT_BY_LANG.get(lang, "")
+
+
+# HTML tags / entities and number tokens must survive transliteration
+# untouched. Pāli lines can contain <b>/<i> markup (converting that turns tag
+# names into target-script letters and breaks the HTML), and many lines start
+# with a verse/page number like "2933." — that number has to stay recognisable
+# because the prompt tells the model to return an empty string for numbered-only
+# lines, and because transliterated digits are easy to mistake for text.
+_PROTECTED_RE = re.compile(
+    r"(<[^>]+>|&(?:[a-zA-Z][a-zA-Z0-9]*|#\d+|#x[0-9A-Fa-f]+);|\d+(?:\.\d+)*\.?)"
+)
+
+
+@lru_cache(maxsize=20_000)
+def _transliterate_segment(text: str, source: str, target: str) -> str:
+    """Transliterate one non-markup segment; cached because the same Pāli lines
+    recur across several context blocks in a prompt."""
+    try:
+        from aksharamukha import transliterate
+        converted = transliterate.process(source, target, text)
+        return converted or text
+    except Exception:
+        # Missing/broken transliteration must never break prompt building —
+        # fall back to the roman source for this segment.
+        return text
+
+
+def to_pali_script(text: str, lang: str, *, source: str = "IASTPali") -> str:
+    """
+    Convert `text` into the Pāli script that matches the target language.
+
+    No transliteration happens (the roman text is returned unchanged) when
+    the target language has no mapped script — this is the deliberate
+    fallback for French, English, Vietnamese, etc. HTML tags and entities
+    are preserved verbatim.
+    """
+    target = pali_script_name(lang)
+    if not text or not target:
+        return text
+
+    parts = _PROTECTED_RE.split(text)
+    if len(parts) == 1:
+        return _transliterate_segment(text, source, target)
+    return "".join(
+        part if _PROTECTED_RE.fullmatch(part) else _transliterate_segment(part, source, target)
+        for part in parts
+    )
+
+
+def to_roman_pali(text: str) -> str:
+    """
+    Best-effort reverse transliteration into Roman/IAST.
+
+    Used only for glossary keys: those are dictionary lookup keys and must
+    stay Roman even when the model saw (and possibly echoed) Pāli in the
+    target script. Roman input comes back effectively unchanged.
+    """
+    if not text:
+        return text
+    try:
+        from aksharamukha import transliterate
+        return transliterate.process("autodetect", "IASTPali", text) or text
+    except Exception:
+        return text
 
 
 # Common Pāli particles / inflections that must NOT be added to the glossary
@@ -529,6 +645,12 @@ def save_glossary_terms(
         translation = str(term.get("translation") or term.get("english") or "").strip()
         if not pali or not translation:
             continue
+
+        # Glossary keys are dictionary lookup keys and must stay Roman. If the
+        # model echoed the Pāli in the prompt's target script instead, convert
+        # it back before the stem/particle handling below.
+        if lang and pali_script_name(lang):
+            pali = to_roman_pali(pali).strip().lower()
 
         if pali in GLOSSARY_SKIP_TERMS:
             continue

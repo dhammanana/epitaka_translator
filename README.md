@@ -154,10 +154,11 @@ special rule for rendering `<b>`-wrapped Pāli terms.
 
 ### Nissaya + previous paragraph
 
-- `NissayaContext` adds the Myanmar **word-by-word gloss** (romanised to
-  IAST) for each line, with edition labels where several exist — the most
-  literal layer of help, and a listed trigger for `low` confidence when it is
-  missing.
+- `NissayaContext` adds the Myanmar **word-by-word gloss** for each line,
+  with its Pāli rendered in the prompt's target script (Roman/IAST fallback
+  when the target language has no mapped script), with edition labels where
+  several exist — the most literal layer of help, and a listed trigger for
+  `low` confidence when it is missing.
 - `PreviousTranslationContext` carries the immediately preceding paragraph's
   translation forward for tone and terminology continuity.
 
@@ -196,6 +197,7 @@ Related tools in `src/`:
 | Script | Purpose |
 |---|---|
 | `book_translator.py` | Main translation run (this README's focus) |
+| `description_builder.py` | One short SEO description + a longer readable summary per heading section (stored in `epitaka_en.db` / `descriptions`) |
 | `glossary_builder.py` | Extract glossary terms from *already-translated* books (no new translations); `--check-only` flags suspect translations |
 | `verify_translation.py` | Spot-check translation quality via a second model |
 | `cleanup_bleeding.py` | Remove wrong-script rows already stored in a DB |
@@ -297,6 +299,39 @@ default 3000), `--max-parts` (stop after N sections — for testing),
 (path overrides), `--log-dir` (prompt/response audit logs),
 `--api-keys` (comma-separated keys instead of env vars).
 
+### Section descriptions (`description_builder.py`)
+
+Separately from translating, `src/description_builder.py` writes a short SEO
+description and a longer readable summary for every heading section of a
+book. The web server uses the short one both as the page's
+`<meta name="description">` and as the intro shown at the top of the open
+section, with the long summary behind a "Read a longer summary" toggle.
+
+```bash
+# English descriptions for the whole preset list (resumes what is saved):
+python src/description_builder.py --lang en
+
+# A couple of books, first section only, to check the output:
+python src/description_builder.py --lang en --books M-i,D-i --max-sections 1
+
+# Describe the same sections in Sinhala:
+python src/description_builder.py --lang si --books M-i
+```
+
+How it works: sections come from `headings` (level 10 — the per-paragraph
+numbering — is skipped by default; `--exclude-levels` changes that), a
+section with fewer than `--min-lines` (default 20) sentences is skipped, and
+the section text sent to the model prefers the target language's translation,
+then English, then Pāli. Text is truncated to `--max-input-tokens` (default
+100,000) before sending. Each call returns
+`{"description": "…", "summary": "…"}`; the description is trimmed to at
+most 200 characters (target ~150) before being saved.
+
+Rows go to the `descriptions` table in `epitaka_en.db` (same policy as
+`summaries`), keyed by `(book_id, para_id, lang)` with `lang` defaulting to
+`en` — other languages add rows to the same table and the web server falls
+back to the English row when the requested language has none.
+
 ### Languages (`--lang`)
 
 Any code in `LANG_NAMES` (`src/common/common_utils.py`) works; the name is
@@ -321,6 +356,25 @@ for every other language.
 | `cs` | Czech | `hu` | Hungarian | `sv` | Swedish |
 | `da` | Danish | `fi` | Finnish | `no` | Norwegian |
 | `ar` | Arabic | `he` | Hebrew | `fa` | Persian |
+
+### Pāli script in prompts
+
+The source Pāli in `epitaka.db` is romanised (IAST), but the Pāli sent to the
+model is converted to the target language's own Pāli script whenever that
+language has one: Lao for `--lang lo`, Thai for `th`, Sinhala for `si`,
+Myanmar for `my`, Khmer for `km`, Devanagari for `hi`/`mr`/`ne`, and the
+corresponding Indic scripts for `bn`, `gu`, `pa`, `te`, `kn`, `ml`, `or`,
+`ta`, and `as` (mapping in `PALI_SCRIPT_BY_LANG`, `src/common/common_utils.py`).
+This applies to every Pāli block in the prompt — sentences to translate,
+commentary, mūla/aṭṭhakathā references, previous paragraph, word definitions,
+nissaya gloss, and glossary headwords. HTML tags and verse/page numbers are
+left untouched.
+
+Languages without a traditional Pāli script (French, English, German,
+Vietnamese, …) keep roman Pāli as the fallback. The system prompt tells the
+model to use the same script for quoted Pāli inside translations, while the
+glossary's `pali` field always stays Roman/IAST because it is a dictionary
+lookup key.
 
 ### `--books preset` order
 
@@ -364,11 +418,12 @@ translator/
 ├── data/                # SQLite DBs (downloaded by runner.sh if missing)
 ├── examples/            # real prompt/response pairs (see above)
 └── src/
-    ├── book_translator.py    # main translation run
-    ├── glossary_builder.py   # glossary from existing translations
-    ├── study_builder.py      # English study guides
-    ├── verify_translation.py # quality spot-checks
-    ├── cleanup_bleeding.py   # wrong-script cleanup
+    ├── book_translator.py      # main translation run
+    ├── description_builder.py  # section SEO descriptions + long summaries
+    ├── glossary_builder.py     # glossary from existing translations
+    ├── study_builder.py        # English study guides
+    ├── verify_translation.py   # quality spot-checks
+    ├── cleanup_bleeding.py     # wrong-script cleanup
     └── common/
         ├── common_utils.py     # DB paths/schema, glossary, script-bleed
         ├── ai_client.py        # Gemini calls, key rotation, retries

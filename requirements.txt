@@ -4,6 +4,9 @@
 # google-genai   — Gemini API client (used by src/common/ai_client.py)
 # python-dotenv  — loads GEMINI_KEY_* etc. from .env
 # requests       — HTTP client used by src/common/ai_client_bai.py (verify_translation.py)
+# aksharamukha   — Pāli transliteration into the target language's script
+#                  (Lao/Thai/Sinhala/Myanmar/Devanagari/… in prompts)
 google-genai==2.18.1
 python-dotenv==1.2.2
 requests==2.34.2
+aksharamukha==2.3

@@ -54,6 +54,11 @@ def _glossary_db_path(params: dict) -> str:
     return str(params.get("glossary_db") or "")
 
 
+def _pali_for_prompt(params: dict, text: str) -> str:
+    """Render Pāli text in the target language's Pāli script (Roman fallback)."""
+    return _cu.to_pali_script(text, params.get("lang", ""))
+
+
 def _fetch_lang_translations(params: dict, triples: list[tuple[str, int, int]]) -> dict[tuple[str, int, int], str]:
     """
     Look up translations for specific (book_id, para_id, line_id) triples from the
@@ -263,6 +268,9 @@ class NissayaContext(ContextBlock):
         log_warn:   _Log = _noop,
     ):
         super().__init__(params, log_info, log_warn)
+        script = _cu.pali_script_name(params.get("lang", ""))
+        if script:
+            self.label = f"MYANMAR NISSAYA (word-by-word gloss, {script} script)"
         if paragraphs is not None:
             self._paragraphs = paragraphs
         elif book_id:
@@ -313,8 +321,13 @@ class NissayaContext(ContextBlock):
             grouped[r["line_id"]].append((label, r["content"] or ""))
         return dict(grouped)
 
-    @staticmethod
-    def _translit(text: str) -> str:
+    def _translit(self, text: str) -> str:
+        # With a script-bearing target language (e.g. Lao, Thai, Sinhala) the
+        # gloss's Pāli words follow that language's script too, matching the
+        # rest of the prompt. Roman targets keep the existing IAST conversion.
+        lang = self.params.get("lang", "")
+        if _cu.pali_script_name(lang):
+            return _cu.to_pali_script(text, lang, source="autodetect")
         _ROMAN = set("aāiīuūeokKgGcCjJṭḍnpPbBmMyrlLvsh")
         if not text or text[0] in _ROMAN or text[0].isupper():
             return text
@@ -326,8 +339,7 @@ class NissayaContext(ContextBlock):
         except Exception:
             return text
 
-    @staticmethod
-    def _format_nissaya_json(raw: str) -> str:
+    def _format_nissaya_json(self, raw: str) -> str:
         import json
         if not raw:
             return "(none)"
@@ -345,7 +357,7 @@ class NissayaContext(ContextBlock):
             if "note" in e and "pali" not in e:
                 parts.append(f"[Note: {e['note']}]")
                 continue
-            pali    = NissayaContext._translit(e.get("pali", ""))
+            pali    = self._translit(e.get("pali", ""))
             meaning = e.get("meaning", "")
             if pali and meaning:
                 parts.append(f"{pali}: {meaning}")
@@ -537,7 +549,7 @@ class GlossaryContext(ContextBlock):
             return self._wrap("(no matching glossary entries yet)")
 
         self.log_info(f"[GlossaryContext] {len(rows)} term(s) found.")
-        lines = GlossaryContextStemmed._format_grouped(rows)
+        lines = GlossaryContextStemmed._format_grouped(rows, lang=self.params.get("lang", ""))
         return self._wrap("\n".join(lines))
 
 # ══════════════════════════════════════════════════════════════════
@@ -711,11 +723,11 @@ class GlossaryContextStemmed(ContextBlock):
             return self._wrap("(no matching glossary entries yet)")
 
         self.log_info(f"[GlossaryContextStemmed] {len(rows)} term(s) found.")
-        lines = self._format_grouped(rows)
+        lines = self._format_grouped(rows, lang=self.params.get("lang", ""))
         return self._wrap("\n".join(lines))
 
     @staticmethod
-    def _format_grouped(rows, max_variants_per_term: int = 3) -> list[str]:
+    def _format_grouped(rows, max_variants_per_term: int = 3, lang: str = "") -> list[str]:
         """
         Group hits by pali headword and cap the number of distinct-translation
         variants shown per word. Established glossaries accumulate many
@@ -735,13 +747,14 @@ class GlossaryContextStemmed(ContextBlock):
         for pali, entries in grouped.items():
             shown = entries[:max_variants_per_term]
             extra = len(entries) - len(shown)
+            pali_display = _cu.to_pali_script(pali, lang)
             for r in shown:
-                line = f"  {pali} → {r['translation']}"
+                line = f"  {pali_display} → {r['translation']}"
                 if r["context"]:
                     line += f"  [{r['context']}]"
                 lines.append(line)
             if extra > 0:
-                lines.append(f"  ({extra} more existing variant(s) for '{pali}' omitted — "
+                lines.append(f"  ({extra} more existing variant(s) for '{pali_display}' omitted — "
                               f"reuse one of the above rather than adding another)")
         return lines
 
@@ -818,7 +831,7 @@ class CommentaryContext(ContextBlock):
         lang_map = _fetch_lang_translations_with_fallback(self.params, triples)
         sections: dict[tuple, list[str]] = {}
         for r in rows:
-            pali = r["pali"] or ""
+            pali = _pali_for_prompt(self.params, r["pali"] or "")
             en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
             line = f"  [{r['line_id']}] {pali}"
             if en:
@@ -1288,7 +1301,7 @@ class PaliDefsContext(ContextBlock):
                 stem_ctx: dict[str, list[str]] = defaultdict(list)
                 for r in ctx_rows:
                     en = (lang_map.get((r["book_id"], r["para_id"], r["line_id"])) or "").strip()
-                    entry = r["pali"]
+                    entry = _pali_for_prompt(self.params, r["pali"])
                     if en:
                         entry += f" [{en}]"
                     stem_ctx[r["stem"]].append(entry)
@@ -1306,9 +1319,9 @@ class PaliDefsContext(ContextBlock):
                     usages = stem_ctx.get(stem)
                     if not usages:
                         continue
-                    lines.append(f"    - {stem}: " + " … ".join(usages))
+                    lines.append(f"    - {_pali_for_prompt(self.params, stem)}: " + " … ".join(usages))
                 if lines:
-                    defs.append(f"  {word}:")
+                    defs.append(f"  {_pali_for_prompt(self.params, word)}:")
                     defs.extend(lines)
 
             print(f"[DEBUG PaliDefsContext] total build: {time.perf_counter()-t0:.3f}s  ({len(defs)} lines)")
@@ -1442,7 +1455,7 @@ class PreviousTranslationContext(ContextBlock):
             for pid, sentences in collected:
                 lines = [f"[Para {pid}]"]
                 for s in sentences:
-                    pali = (s.get("pali") or "").strip()
+                    pali = _pali_for_prompt(self.params, (s.get("pali") or "").strip())
                     en   = (s.get("translation") or "").strip()
                     line = f"  [line_id={s['line_id']}] Pali: {pali}"
                     if en:
@@ -1545,7 +1558,7 @@ class MulaAtthaContext(ContextBlock):
                             continue
                         any_translated = True
                         lines.append(
-                            f"  [{sr['line_id']}] Pāli: {sr['pali'] or ''}\n"
+                            f"  [{sr['line_id']}] Pāli: {_pali_for_prompt(self.params, sr['pali'] or '')}\n"
                             f"          EN:   {en}"
                         )
 
@@ -1851,6 +1864,10 @@ class GlossaryWriter:
                 translation = str(term.get("translation", "")).strip()
                 if not pali or not translation:
                     continue
+                # Glossary keys are dictionary lookup keys; keep them Roman
+                # even if the model returned them in the target script.
+                if _cu.pali_script_name(self.params.get("lang", "")):
+                    pali = _cu.to_roman_pali(pali).strip()
                 try:
                     conn.execute(
                         "INSERT INTO glossary "

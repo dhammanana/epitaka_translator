@@ -125,6 +125,12 @@ RATE_WINDOW_SECONDS = 60
 DEFAULT_RPM_LIMIT    = int(os.environ.get("AI_RPM_LIMIT", "3"))
 DEFAULT_TPM_LIMIT    = int(os.environ.get("AI_TPM_LIMIT", "250000"))
 
+# Retry budgets. Empty (None/""/whitespace) responses are treated as failures,
+# not successes — otherwise a dead model can burn quota over dozens of chunks
+# while saving nothing. Override via env without touching code.
+MAX_RETRY_ATTEMPTS = int(os.environ.get("AI_MAX_RETRIES", "3"))
+MAX_EMPTY_RETRIES  = int(os.environ.get("AI_MAX_EMPTY_RETRIES", "2"))
+
 # Where per-key "last used" state is persisted. This is a small JSON file
 # guarded by an OS-level file lock (fcntl.flock), so it stays correct even
 # when several separate processes (e.g. book_translator.py and
@@ -590,7 +596,8 @@ def _generate_with_retry(
     One Gemini generateContent request with the standard retry/backoff loop:
     acquire a throttled key for the pool's current model, run the call in a
     background thread so a hung request can be abandoned after `timeout`,
-    handle 429 / invalid-key / generic errors, retry up to 10 attempts.
+    handle 429 / invalid-key / generic errors, retry up to MAX_RETRY_ATTEMPTS
+    (default 3, override via AI_MAX_RETRIES).
 
     Model fallback: when the current model is 429'd enough times to be
     removed from the pool (see ModelPool), the next model in the pool is
@@ -603,7 +610,7 @@ def _generate_with_retry(
     from google import genai
 
     attempt = 0
-    while attempt < 10:
+    while attempt < MAX_RETRY_ATTEMPTS:
         model = pool.current()
         if model is None:
             # Every model in the pool has been disabled — i.e. every key is
@@ -691,6 +698,21 @@ def _generate_with_retry(
     return None, None, None
 
 
+def _response_text_or_none(response) -> str | None:
+    """Safely extract response.text; return None on missing/empty/exception."""
+    if response is None:
+        return None
+    try:
+        text = response.text
+    except (ValueError, TypeError, AttributeError):
+        return None
+    if text is None:
+        return None
+    if not str(text).strip():
+        return None
+    return text
+
+
 def call_gemini(
     rotator:            KeyRotator,
     prompt:             str,
@@ -720,7 +742,11 @@ def call_gemini(
       - On HTTP 401/403 or any other error: waits 20s and retries with the
         same rotation (does not remove the key — those are usually transient
         or auth hiccups, not proof the key itself is bad).
-      - Retries up to 10 attempts total before giving up and returning None.
+      - Retries up to MAX_RETRY_ATTEMPTS (default 3) before giving up.
+      - A None/empty/whitespace-only response text is treated as a FAILURE
+        (not a success): it is retried up to MAX_EMPTY_RETRIES (default 2)
+        and then returns None so the caller skips the chunk instead of
+        saving nothing while burning quota.
       - If the key pool is ever fully exhausted, sends a Telegram alert and
         exits the whole process — a translation run with zero usable keys
         should stop loudly, not silently produce empty output.
@@ -740,14 +766,29 @@ def call_gemini(
     contents = [genai_types.Content(
         role="user", parts=[genai_types.Part.from_text(text=prompt)],
     )]
-    response, _, model_used = _generate_with_retry(
-        rotator, pool, contents, config, estimated_tokens, timeout,
-    )
-    if response is None:
-        return None
-    if used_model is not None and model_used:
-        used_model.append(model_used)
-    return response.text
+    empty_strikes = 0
+    while True:
+        response, key, model_used = _generate_with_retry(
+            rotator, pool, contents, config, estimated_tokens, timeout,
+        )
+        if response is None:
+            return None
+        text = _response_text_or_none(response)
+        if text is not None:
+            if used_model is not None and model_used:
+                used_model.append(model_used)
+            return text
+        # Empty response — mark this key as failed (it was recorded as
+        # success inside _generate_with_retry) so stats stay honest, then
+        # retry a bounded number of times before giving up on this chunk.
+        if key and model_used:
+            rotator.record_result(key, success=False, error="empty_response", model=model_used)
+        empty_strikes += 1
+        log.warning(f"[Gemini] Empty response text (None/'') on {model_used} "
+                    f"({empty_strikes}/{MAX_EMPTY_RETRIES + 1}). Treating as failure.")
+        if empty_strikes > MAX_EMPTY_RETRIES:
+            log.error("[Gemini] Giving up on chunk after repeated empty responses.")
+            return None
 
 
 def call_gemini_with_tools(
@@ -1002,6 +1043,8 @@ def call_ai_with_logging(
     given, receives the model that actually produced the response.
 
     Returns the raw response text, or None if the call ultimately failed.
+    None/empty/whitespace-only responses are treated as failure and return
+    None so callers skip the chunk instead of parsing/saving nothing.
     """
     os.makedirs(log_dir, exist_ok=True)
     timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -1037,7 +1080,9 @@ def call_ai_with_logging(
         raw = call_gemini(rotator, prompt, system_prompt, model=model,
                           models=models, max_output_tokens=max_output_tokens,
                           used_model=used_model)
-    if raw is None:
+    if raw is None or not str(raw).strip():
+        print(f"[AI] failed: book={book_id} chunk={chunk_id} — "
+              f"empty response (None/''). Treated as failure, chunk skipped.")
         return None
 
     response_path = os.path.join(log_dir, f"{base_name}_response.txt")
